@@ -28,13 +28,15 @@ var convertCmd = &cobra.Command{
 
 		case len(batchFiles) > 0:
 			fmt.Println("Processing batch files...")
+			processor := &image.ThemeConverter{}
 			expandedFiles := utils.ExpandHomeDirectory(batchFiles)
-			image.ProcessBatchImgs(expandedFiles,theme)
+			image.ProcessBatchImgs(expandedFiles,theme,processor)
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
+			processor := &image.ThemeConverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			image.ProcessImg(expandFile[0], theme)
+			image.ProcessImg(expandFile[0], processor,theme)
 			
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")

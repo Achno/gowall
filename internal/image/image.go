@@ -31,6 +31,11 @@ var encoders = map[string]func(file *os.File, img image.Image) error{
     },
 }
 
+// Create a Processor of this interface and call 'ProcessImg'
+type  ImageProcessor interface{
+	Process(image.Image, string) (image.Image, error)
+}
+
 func LoadImage(filePath string) (image.Image , error){
 	
 	file,err := os.Open(filePath)
@@ -67,7 +72,9 @@ func SaveImage(img image.Image, filePath string, format string) error{
 
 }
 
-func ProcessImg(imgPath string, theme string ) error {
+// 1. Loads the img, 2. Processes it depending on the type of Processor you put which impliments 
+// the 'ImageProcessor' interface, 3. Creates the necessary directories ,4. Saves the image there 
+func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 
 	img, err := LoadImage(imgPath)
 
@@ -76,21 +83,7 @@ func ProcessImg(imgPath string, theme string ) error {
 		return err
 	}
 
-	var selectedTheme Theme
-
-	selectedTheme , err = SelectTheme(theme)
-
-	if err != nil{
-		fmt.Println("Unknown theme:", theme)
-		return err
-	}
-
-	newImg, err := convertImage(img,selectedTheme)
-
-	if err != nil {
-		fmt.Println("Error Converting image:", err)
-		return err
-	}
+	newImg, err := processor.Process(img,theme)
 
 	//Extract file extension from imgPath
 	extension := strings.ToLower(filepath.Ext(imgPath))
@@ -127,7 +120,7 @@ func ProcessImg(imgPath string, theme string ) error {
 
 }
 
-func ProcessBatchImgs(files []string , theme string){
+func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
 
 	var wg sync.WaitGroup
 
@@ -138,12 +131,12 @@ func ProcessBatchImgs(files []string , theme string){
 		go func (file string, index int)  {
 			defer wg.Done()
 
-			ok :=ProcessImg(file,theme)
+			ok :=ProcessImg(file,processor,theme)
 
 			if ok != nil {
 				os.Exit(1)
 			}
-
+			// TODO fix the index / concurency issue
 			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,len(files) -index -1)
 		}(file,index)
 

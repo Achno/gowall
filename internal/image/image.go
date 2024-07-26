@@ -78,14 +78,11 @@ func ProcessImg(imgPath string, theme string ) error {
 
 	var selectedTheme Theme
 
-	switch theme {
-	case "catpuccin":
-		selectedTheme = Catpuccin
-	
-	default: 
+	selectedTheme , err = SelectTheme(theme)
+
+	if err != nil{
 		fmt.Println("Unknown theme:", theme)
 		return err
-
 	}
 
 	newImg, err := convertImage(img,selectedTheme)

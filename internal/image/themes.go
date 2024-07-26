@@ -12,7 +12,7 @@ type Theme struct{
 
 // Available themes
 var themes = map[string]Theme{
-	"catpuccin":Catpuccin,
+	"catppuccin":Catppuccin,
 	"nord":Nord,
 	"everforest":Everforest,
 	"solarized":Solarized,
@@ -36,7 +36,7 @@ func SelectTheme(theme string) (Theme, error) {
 
 var(
 
-	Catpuccin = Theme{
+	Catppuccin = Theme{
 		Name: "Catpuccin",
 		Colors: []color.Color{
 			color.RGBA{R: 245, G: 224, B: 220, A: 255},

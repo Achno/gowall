@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/Achno/gowall/utils"
 
@@ -131,15 +132,25 @@ func ProcessImg(imgPath string, theme string ) error {
 
 func ProcessBatchImgs(files []string , theme string){
 
+	var wg sync.WaitGroup
+
 	for index, file := range files{
 		
-		
-		ok :=ProcessImg(file,theme)
+		wg.Add(1)
 
-		if ok != nil {
-			os.Exit(1)
-		}
+		go func (file string, index int)  {
+			defer wg.Done()
 
-		fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,len(files) -index -1)
+			ok :=ProcessImg(file,theme)
+
+			if ok != nil {
+				os.Exit(1)
+			}
+
+			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,len(files) -index -1)
+		}(file,index)
+
 	}
+
+	wg.Wait()
 }

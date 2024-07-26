@@ -66,13 +66,13 @@ func SaveImage(img image.Image, filePath string, format string) error{
 
 }
 
-func ProcessImg(imgPath string, theme string )  {
+func ProcessImg(imgPath string, theme string ) error {
 
 	img, err := LoadImage(imgPath)
 
 	if err != nil {
-		fmt.Println("Error loading image unsupported format:", err)
-		return
+		fmt.Println("Error loading image :", err)
+		return err
 	}
 
 	var selectedTheme Theme
@@ -83,7 +83,7 @@ func ProcessImg(imgPath string, theme string )  {
 	
 	default: 
 		fmt.Println("Unknown theme:", theme)
-		return
+		return err
 
 	}
 
@@ -91,7 +91,7 @@ func ProcessImg(imgPath string, theme string )  {
 
 	if err != nil {
 		fmt.Println("Error Converting image:", err)
-		return
+		return err
 	}
 
 	//Extract file extension from imgPath
@@ -99,7 +99,7 @@ func ProcessImg(imgPath string, theme string )  {
 
 	if extension == "" {
 		fmt.Println("Error: Could not determine file extension.")
-		return
+		return err
 	}
 
 	// remove '.' from the extension
@@ -113,16 +113,33 @@ func ProcessImg(imgPath string, theme string )  {
 
 	if err != nil{
 		fmt.Println("Error creating Directory or getting path")
-		return
+		return err
 	}
 
 	err = SaveImage(newImg, outputFilePath, extension)
 
 	if err != nil {
 		fmt.Println("Error saving image:", err, outputFilePath)
-		return
+		return err
 	}
 
 	fmt.Printf("Image processed and saved as %s\n", outputFilePath)
+	
+	return nil
 
+}
+
+func ProcessBatchImgs(files []string , theme string){
+
+	for index, file := range files{
+		
+		
+		ok :=ProcessImg(file,theme)
+
+		if ok != nil {
+			os.Exit(1)
+		}
+
+		fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,len(files) -index -1)
+	}
 }

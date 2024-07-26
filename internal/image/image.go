@@ -85,6 +85,11 @@ func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 
 	newImg, err := processor.Process(img,theme)
 
+	if err != nil {
+		fmt.Println("Error processing image :", err)
+		return err
+	}
+
 	//Extract file extension from imgPath
 	extension := strings.ToLower(filepath.Ext(imgPath))
 

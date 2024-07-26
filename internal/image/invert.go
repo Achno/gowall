@@ -6,6 +6,22 @@ import (
 	"image/color"
 )
 
+
+type Inverter struct{
+
+}
+
+func (Invrt *Inverter) Process( img image.Image, theme string) (image.Image , error){
+
+	newImg , err := invertImage(img)
+
+	if err != nil{
+		return nil,err
+	}
+
+	return newImg,nil
+}
+
 func invertImage(img image.Image ) (image.Image, error){
 	bounds := img.Bounds()
 	newImg := image.NewRGBA(bounds)

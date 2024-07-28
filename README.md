@@ -101,9 +101,30 @@ Notes 🗒️ :
 
 # Installation ⬇️
 
-Under construction : 🔨
+## Arch linux - AUR
 
-Will have a package in the `AUR` and a way to `build from source`
+```
+yay -Sy gowall
+```
+## Build from source
+
+🔨 Clone the repo, build the project and move it inside your `$PATH`
+
+```
+git clone https://github.com/Achno/gowall
+cd gowall
+go build
+sudo cp gols /usr/local/bin/
+gowall
+```
+
+Notes 🗒️ : You dont have to use `sudo cp gols /usr/local/bin/` if you have `$GOPATH` setup correctly
+Eg. you have the following in your .zshrc / .bashrc
+```bash
+export GOPATH=$(go env GOPATH)
+export GOBIN=$GOPATH/bin
+export PATH=$PATH:$GOBIN
+```
 
 # Contributions 🤝
 

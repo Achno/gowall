@@ -22,16 +22,16 @@ var themes = map[string]Theme{
 	"onedark":Onedark,
     "monokai":Monokai,
     "material":Material,
-    "atomonelight":AtomOneLight,
+    "atom-one-light":AtomOneLight,
     "sweet":Sweet,
-    "synthwave84":Synthwave84,
+    "synthwave-84":Synthwave84,
     "atomdark":AtomDark,
-    "oceanicnext":OceanicNext,
-    "shadesofpurple":ShadesOfPurple,
+    "oceanic-next":OceanicNext,
+    "shades-of-purple":ShadesOfPurple,
     "arcdark":ArcDark,
-    "sunsetaurant":SunsetAurant,
-    "sunsetsaffron":SunsetSaffron,
-    "sunsettangerine":SunsetTangerine,
+    "sunset-aurant":SunsetAurant,
+    "sunset-saffron":SunsetSaffron,
+    "sunset-tangerine":SunsetTangerine,
 }
 
 func SelectTheme(theme string) (Theme, error) {

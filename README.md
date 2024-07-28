@@ -118,7 +118,7 @@ sudo cp gowall /usr/local/bin/
 gowall
 ```
 
-Notes 🗒️ : You dont have to use `sudo cp gols /usr/local/bin/` if you have `$GOPATH` setup correctly
+Notes 🗒️ : You dont have to use `sudo cp gowall /usr/local/bin/` if you have `$GOPATH` setup correctly
 Eg. you have the following in your .zshrc / .bashrc
 ```bash
 export GOPATH=$(go env GOPATH)

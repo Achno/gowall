@@ -114,7 +114,7 @@ yay -Sy gowall
 git clone https://github.com/Achno/gowall
 cd gowall
 go build
-sudo cp gols /usr/local/bin/
+sudo cp gowall /usr/local/bin/
 gowall
 ```
 

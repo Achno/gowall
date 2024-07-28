@@ -61,6 +61,18 @@ The currently supported themes are featured below, if your favourite theme is mi
 - **Dracula**
 - **Tokyo-moon**
 - **Onedark**
+- **Monokai**
+- **Material**
+- **Atom One Light**
+- **Sweet**
+- **Synthwave 84**
+- **Atom Dark**
+- **Oceanic Next**
+- **Shades of Purple**
+- **Arc Dark**
+- **Sunset Aurant**
+- **Sunset Saffron**
+- **Sunset Tangerine**
 
   <br>
 

@@ -84,6 +84,8 @@ Notes 🗒️ :
    ```bash
      gowall convert -b path/img.png,path/im2.png -t <theme-name-lowercase>
    ```
+
+   ⚠️ Do not leave any white spaces between the comma `,` , do it like this :  `path/img.png,path/im2.png`
 <br>
 
 3. `Invert colors`

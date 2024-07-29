@@ -63,18 +63,22 @@ The currently supported themes are featured below, if your favourite theme is mi
 - **Tokyo-moon**
 - **Onedark**
 - **Monokai**
-- **Material**
-- **Atom One Light**
-- **Sweet**
-- **Synthwave 84**
-- **Atom Dark**
-- **Oceanic Next**
-- **Shades of Purple**
-- **Arc Dark**
-- **Sunset Aurant**
-- **Sunset Saffron**
-- **Sunset Tangerine**
-
+<details>
+  <summary>Click to see more themes</summary>
+  <ul>
+    <li><strong>Material</strong></li>
+    <li><strong>Atom One Light</strong></li>
+    <li><strong>Sweet</strong></li>
+    <li><strong>Synthwave 84</strong></li>
+    <li><strong>Atom Dark</strong></li>
+    <li><strong>Oceanic Next</strong></li>
+    <li><strong>Shades of Purple</strong></li>
+    <li><strong>Arc Dark</strong></li>
+    <li><strong>Sunset Aurant</strong></li>
+    <li><strong>Sunset Saffron</strong></li>
+    <li><strong>Sunset Tangerine</strong></li>
+  </ul>
+</details>
   <br>
 
 # Usage :gear:

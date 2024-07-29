@@ -45,7 +45,7 @@ var convertCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(convertCmd)
-	convertCmd.Flags().StringVarP(&theme, "theme", "t", "catpuccin", "Usage : --theme [ThemeName-Lowercase]")
+	convertCmd.Flags().StringVarP(&theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName-Lowercase]")
 	convertCmd.Flags().StringSliceVarP(&batchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
 
 	// Here you will define your flags and configuration settings.

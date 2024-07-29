@@ -13,7 +13,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "gowall",
 	Short: "A tool to convert an img's color shceme ",
-	Long: `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catpuccin ) `,
+	Long: `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 

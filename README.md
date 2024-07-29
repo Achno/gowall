@@ -186,8 +186,17 @@ Notes 🗒️ :
 ```
 yay -S gowall
 ```
+### Void Linux - XBPS-SRC ( Maintainer : elbachir-one ) 
 
+Assuming you have [void-packages](https://github.com/void-linux/void-packages)
 
+```bash
+git clone https://github.com/elbachir-one/void-templates
+cd void-templates/ && cp -r gowall/ void-packages/srcpkgs/
+cd void-packages/
+./xbps-src pkg gowall
+sudo xbps-install -R hostdir/binpkgs gowall
+```
 
 ### Build from source
 

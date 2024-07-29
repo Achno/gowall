@@ -1,41 +1,122 @@
 package image
 
 import (
+	"encoding/hex"
 	"errors"
 	"image/color"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
-type Theme struct{
-	Name string
+type Theme struct {
+	Name   string
 	Colors []color.Color
+}
+
+type themeWrapper struct {
+	Name   string   `yaml:"Name"`
+	Colors []string `yaml:"Colors"`
 }
 
 // Available themes
 var themes = map[string]Theme{
-	"catppuccin":Catppuccin,
-	"nord":Nord,
-	"everforest":Everforest,
-	"solarized":Solarized,
-	"gruvbox":Gruvbox,
-	"dracula":Dracula,
-	"tokyo-moon":Tokyo_Moon,
-	"onedark":Onedark,
+	"catppuccin": Catppuccin,
+	"nord":       Nord,
+	"everforest": Everforest,
+	"solarized":  Solarized,
+	"gruvbox":    Gruvbox,
+	"dracula":    Dracula,
+	"tokyo-moon": Tokyo_Moon,
+	"onedark":    Onedark,
+}
 
+func init() {
+	loadCustomThemes()
+}
+
+func loadCustomThemes() {
+	// if you ever standardize config files change this
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		configDir = filepath.Join(os.Getenv("HOME"), ".config")
+	}
+	configPath := filepath.Join(configDir, "gowall", "config.yml")
+
+	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
+		// file doesnt exist skip custom themes
+		return
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		log.Printf("error reading config file: %v", err)
+		return
+	}
+
+	var rawConfig struct {
+		Themes []themeWrapper `yaml:"themes"`
+	}
+	err = yaml.Unmarshal(data, &rawConfig)
+	if err != nil {
+		log.Printf("error unmarshalling config file: %v", err)
+		return
+	}
+	for _, tw := range rawConfig.Themes {
+		valid := true
+		theme := Theme{
+			Name:   tw.Name,
+			Colors: make([]color.Color, len(tw.Colors)),
+		}
+		for i, hexColor := range tw.Colors {
+			col, err := hexToRGBA(hexColor)
+			if err != nil {
+				log.Printf("invalid color %s in theme %s: %v", hexColor, tw.Name, err)
+				valid = false
+				break
+			}
+			theme.Colors[i] = col
+		}
+		if !valid {
+			continue
+		}
+		themes[strings.ToLower(theme.Name)] = theme
+	}
+}
+
+func hexToRGBA(hexStr string) (color.RGBA, error) {
+	if len(hexStr) != 7 || hexStr[0] != '#' {
+		return color.RGBA{}, errors.New("invalid hex color format")
+	}
+	bytes, err := hex.DecodeString(hexStr[1:])
+	if err != nil {
+		return color.RGBA{}, err
+	}
+	return color.RGBA{R: bytes[0], G: bytes[1], B: bytes[2], A: 255}, nil
+}
+
+func ListThemes() []string {
+	allThemes := make([]string, 0, len(themes))
+	for theme := range themes {
+		allThemes = append(allThemes, theme)
+	}
+	return allThemes
 }
 
 func SelectTheme(theme string) (Theme, error) {
-
 	selectedTheme, exists := themes[theme]
 
-	if !exists{
-		return Theme{},errors.New("unknown theme")
+	if !exists {
+		return Theme{}, errors.New("unknown theme")
 	}
 
-	return selectedTheme,nil
+	return selectedTheme, nil
 }
 
-var(
-
+var (
 	Catppuccin = Theme{
 		Name: "Catpuccin",
 		Colors: []color.Color{
@@ -65,7 +146,6 @@ var(
 			color.RGBA{R: 30, G: 30, B: 46, A: 255},
 			color.RGBA{R: 24, G: 24, B: 37, A: 255},
 			color.RGBA{R: 17, G: 17, B: 27, A: 255},
-	
 		},
 	}
 
@@ -221,33 +301,32 @@ var(
 	Onedark = Theme{
 		Name: "Onedark",
 		Colors: []color.Color{
-			color.RGBA{R: 24, G: 26, B: 31, A: 255}, 
-			color.RGBA{R: 40, G: 44, B: 52, A: 255}, 
-			color.RGBA{R: 49, G: 53, B: 63, A: 255}, 
-			color.RGBA{R: 57, G: 63, B: 74, A: 255}, 
-			color.RGBA{R: 59, G: 63, B: 76, A: 255}, 
-			color.RGBA{R: 33, G: 37, B: 43, A: 255}, 
-			color.RGBA{R: 115, G: 184, B: 241, A: 255}, 
-			color.RGBA{R: 235, G: 208, B: 156, A: 255}, 
-			color.RGBA{R: 171, G: 178, B: 191, A: 255}, 
-			color.RGBA{R: 198, G: 120, B: 221, A: 255}, 
-			color.RGBA{R: 152, G: 195, B: 121, A: 255}, 
-			color.RGBA{R: 209, G: 154, B: 102, A: 255}, 
-			color.RGBA{R: 97, G: 175, B: 239, A: 255}, 
-			color.RGBA{R: 229, G: 192, B: 123, A: 255}, 
-			color.RGBA{R: 86, G: 182, B: 194, A: 255}, 
-			color.RGBA{R: 232, G: 102, B: 113, A: 255}, 
-			color.RGBA{R: 92, G: 99, B: 112, A: 255}, 
-			color.RGBA{R: 132, G: 139, B: 152, A: 255}, 
-			color.RGBA{R: 43, G: 111, B: 119, A: 255}, 
-			color.RGBA{R: 153, G: 57, B: 57, A: 255}, 
-			color.RGBA{R: 147, G: 105, B: 29, A: 255}, 
-			color.RGBA{R: 138, G: 63, B: 160, A: 255}, 
-			color.RGBA{R: 49, G: 57, B: 43, A: 255}, 
-			color.RGBA{R: 56, G: 43, B: 44, A: 255}, 
-			color.RGBA{R: 28, G: 52, B: 72, A: 255}, 
-			color.RGBA{R: 44, G: 83, B: 114, A: 255}, 
+			color.RGBA{R: 24, G: 26, B: 31, A: 255},
+			color.RGBA{R: 40, G: 44, B: 52, A: 255},
+			color.RGBA{R: 49, G: 53, B: 63, A: 255},
+			color.RGBA{R: 57, G: 63, B: 74, A: 255},
+			color.RGBA{R: 59, G: 63, B: 76, A: 255},
+			color.RGBA{R: 33, G: 37, B: 43, A: 255},
+			color.RGBA{R: 115, G: 184, B: 241, A: 255},
+			color.RGBA{R: 235, G: 208, B: 156, A: 255},
+			color.RGBA{R: 171, G: 178, B: 191, A: 255},
+			color.RGBA{R: 198, G: 120, B: 221, A: 255},
+			color.RGBA{R: 152, G: 195, B: 121, A: 255},
+			color.RGBA{R: 209, G: 154, B: 102, A: 255},
+			color.RGBA{R: 97, G: 175, B: 239, A: 255},
+			color.RGBA{R: 229, G: 192, B: 123, A: 255},
+			color.RGBA{R: 86, G: 182, B: 194, A: 255},
+			color.RGBA{R: 232, G: 102, B: 113, A: 255},
+			color.RGBA{R: 92, G: 99, B: 112, A: 255},
+			color.RGBA{R: 132, G: 139, B: 152, A: 255},
+			color.RGBA{R: 43, G: 111, B: 119, A: 255},
+			color.RGBA{R: 153, G: 57, B: 57, A: 255},
+			color.RGBA{R: 147, G: 105, B: 29, A: 255},
+			color.RGBA{R: 138, G: 63, B: 160, A: 255},
+			color.RGBA{R: 49, G: 57, B: 43, A: 255},
+			color.RGBA{R: 56, G: 43, B: 44, A: 255},
+			color.RGBA{R: 28, G: 52, B: 72, A: 255},
+			color.RGBA{R: 44, G: 83, B: 114, A: 255},
 		},
 	}
-
 )

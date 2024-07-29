@@ -10,11 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// invertCmd represents the invert command
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists available themes",
-	Long:  `List all available themes. This includes the predefined and custom user provided themes`,
+	Long:  `List all available themes. This includes the predefined and custom user provided themes in ~/.config/gowall/config.yml`,
 	Run: func(cmd *cobra.Command, args []string) {
 		allThemes := image.ListThemes()
 		for _, theme := range allThemes {

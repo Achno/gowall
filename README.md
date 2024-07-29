@@ -27,6 +27,8 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 - It supports `single` and `batch` conversion of images to any of the available themes below.
 - It also has the ability to `invert` the colors of the image and convert them later
 
+- Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
+
 ### Supported formats
 
 `png` `jpeg` `jpg` `webp`
@@ -53,6 +55,8 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 
 The currently supported themes are featured below, if your favourite theme is missing open an issue or a pull request
 
+All themes can be shown (both default and user-created via `~/.config/gowall/config.yml`) by `gowall list`
+
 - **Catppuccin Mocha**
 - **Nord**
 - **Everforest**
@@ -63,6 +67,58 @@ The currently supported themes are featured below, if your favourite theme is mi
 - **Onedark**
 
   <br>
+
+### Community Themes 🌐
+
+Themes that were requested by the community and added to `gowall`
+
+- **Srcery**
+
+### Create your own Theme 
+
+Step 1. Create the directory and file : `~/.config/gowall/config.yml`
+
+Step 2. Paste the below template and change the name and hex values for your theme
+
+```yml
+themes:
+  - name: "placeholder1"
+    colors:
+      - "#F5E0DC"
+      - "#F2CDCD"
+      - "#F5C2E7"
+      - "#CBA6F7"
+      - "#F38BA8"
+      - "#EBA0AC"
+      - "#FAB387"
+      - "#F9E2AF"
+      - "#A6E3A1"
+      - "#94E2D5"
+      - "#89DCEB"
+      - "#74C7EC"
+      - "#89B4FA"
+      - "#B4BEFE"
+      - "#CDD6F4"
+      - "#BAC2DE"
+      - "#A6ADC8"
+      - "#9399B2"
+      - "#7F849C"
+      - "#6C7086"
+      - "#585B70"
+      - "#45475A"
+      - "#313244"
+      - "#1E1E2E"
+      - "#181825"
+      - "#11111B"
+  - name: "placeholder2"
+    colors:
+      - "#F73253"
+      - "#FA39DF"
+      - "#005382"
+      - "#123456"
+```
+Notes 🗒️ :
+- Duplicate theme names will not be loaded
 
 # Usage :gear:
 
@@ -97,6 +153,12 @@ Notes 🗒️ :
 
    ```bash
     gowall invert -b path/img.png,path/img2.png
+   ```
+
+4. `List all theme names`
+
+   ```bash
+    gowall list
    ```
    
 <br> 

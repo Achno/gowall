@@ -32,6 +32,7 @@ var themes = map[string]Theme{
 	"dracula":    Dracula,
 	"tokyo-moon": Tokyo_Moon,
 	"onedark":    Onedark,
+	"srcery" :    Srcery,
 }
 
 func init() {
@@ -39,8 +40,10 @@ func init() {
 }
 
 func loadCustomThemes() {
-	// if you ever standardize config files change this
+
+	// look for $XDG_CONFIG_HOME/gowall/config.yml or $HOME/.config/gowall/config.yml
 	configDir, err := os.UserConfigDir()
+
 	if err != nil {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -70,16 +73,19 @@ func loadCustomThemes() {
 		log.Printf("error unmarshalling config file: %v", err)
 		return
 	}
+
 	for _, tw := range rawConfig.Themes {
 		valid := true
 		if tw.Name == "" || len(tw.Colors) == 0 {
 			// skip invalid color
 			continue
 		}
+
 		theme := Theme{
 			Name:   tw.Name,
 			Colors: make([]color.Color, len(tw.Colors)),
 		}
+
 		for i, hexColor := range tw.Colors {
 			col, err := hexToRGBA(hexColor)
 			if err != nil {
@@ -89,10 +95,11 @@ func loadCustomThemes() {
 			}
 			theme.Colors[i] = col
 		}
-		if !valid {
-			continue
+
+		if valid && !themeExists(theme.Name) {
+
+			themes[strings.ToLower(theme.Name)] = theme
 		}
-		themes[strings.ToLower(theme.Name)] = theme
 	}
 }
 
@@ -123,6 +130,14 @@ func SelectTheme(theme string) (Theme, error) {
 	}
 
 	return selectedTheme, nil
+}
+
+func themeExists(theme string) bool{
+	
+	_, exists := themes[theme]
+
+
+	return exists
 }
 
 var (
@@ -338,4 +353,29 @@ var (
 			color.RGBA{R: 44, G: 83, B: 114, A: 255},
 		},
 	}
+
+	Srcery = Theme{
+		Name: "Srcery",
+		Colors: []color.Color{
+			color.RGBA{R: 28, G: 27, B: 25, A: 255}, // #1C1B19
+			color.RGBA{R: 239, G: 47, B: 39, A: 255}, // #EF2F27
+			color.RGBA{R: 81, G: 159, B: 80, A: 255}, // #519F50
+			color.RGBA{R: 251, G: 184, B: 41, A: 255}, // #FBB829
+			color.RGBA{R: 44, G: 120, B: 191, A: 255}, // #2C78BF
+			color.RGBA{R: 224, G: 44, B: 109, A: 255}, // #E02C6D
+			color.RGBA{R: 10, G: 174, B: 179, A: 255}, // #0AAEB3
+			color.RGBA{R: 186, G: 166, B: 127, A: 255}, // #BAA67F
+			color.RGBA{R: 145, G: 129, B: 117, A: 255}, // #918175
+			color.RGBA{R: 247, G: 83, B: 65, A: 255}, // #F75341
+			color.RGBA{R: 152, G: 188, B: 55, A: 255}, // #98BC37
+			color.RGBA{R: 254, G: 208, B: 110, A: 255}, // #FED06E
+			color.RGBA{R: 104, G: 168, B: 228, A: 255}, // #68A8E4
+			color.RGBA{R: 255, G: 92, B: 143, A: 255}, // #FF5C8F
+			color.RGBA{R: 43, G: 228, B: 208, A: 255}, // #2BE4D0
+			color.RGBA{R: 252, G: 232, B: 195, A: 255}, // #FCE8C3
+		},
+	}
+	
+
+
 )

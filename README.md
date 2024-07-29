@@ -1,11 +1,11 @@
 ###### *<div align = right><sub>Design By Achno</sub></div>*
 <div align = center><img src="assets/go-sticker-overlay-small.png"><br><br>
 
-&ensp;[<kbd> <br> Overview <br> </kbd>](#Overview)&ensp;
-&ensp;[<kbd> <br> Themes <br> </kbd>](#Themes)&ensp;
-&ensp;[<kbd> <br> Usage <br> </kbd>](#Usage)&ensp;
-&ensp;[<kbd> <br> Installation <br> </kbd>](#Installation)&ensp;
-&ensp;[<kbd> <br> Contributions <br> </kbd>](#Contributions)&ensp;
+&ensp;[<kbd> <br> Overview <br> </kbd>](#overview)&ensp;
+&ensp;[<kbd> <br> Themes <br> </kbd>](#themes)&ensp;
+&ensp;[<kbd> <br> Usage <br> </kbd>](#usage)&ensp;
+&ensp;[<kbd> <br> Installation <br> </kbd>](#installation)&ensp;
+&ensp;[<kbd> <br> Contributions <br> </kbd>](#contributions)&ensp;
 <br><br><br><br></div>
 
 
@@ -27,19 +27,18 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 - It supports `single` and `batch` conversion of images to any of the available themes below.
 - It also has the ability to `invert` the colors of the image and convert them later
 
-- Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
-
 ### Supported formats
 
 `png` `jpeg` `jpg` `webp`
 
 ### Planned features
 
-1. `Random mode` : by using this mode your image will be go through some stages randomly
-   ex. First invert the colors, then convert to nord theme , then convert to catppuccin etc...
-   The end product will be a random wallpaper different from any normal conversion. ~ Use it if you want to discover new Color-schemes or dont like the normal conversion of an image
+1. `Random mode`: This mode applies a series of transformations to your image in a random order.
+For example, it might first invert the colors, then apply the Nord theme, and then switch to the Catppuccin theme, among other possibilities.
+The final result will be a unique wallpaper that differs from standard conversions.
+Use this mode if you want to explore new color schemes or if you're looking for something beyond typical image conversions.
 
-2. `Extract command` : using this command on an image will extract the color-scheme and give you a pallete of 5 hex color codes ( aka. pywall )
+2. `Extract command`: Using this command on an image will extract the color-scheme and give you a pallete of 5 hex color codes ( aka. pywall )
 
 3. `TUI` : Will also have a pretty TUI version made with `bubbletea`
    
@@ -65,10 +64,26 @@ All themes can be shown (both default and user-created via `~/.config/gowall/con
 - **Dracula**
 - **Tokyo-moon**
 - **Onedark**
+<details>
+  <summary><strong>Click to see more themes</strong></summary>
+  <ul>
+    <li><strong>Material</strong></li>
+    <li><strong>Atom One Light</strong></li>
+    <li><strong>Sweet</strong></li>
+    <li><strong>Synthwave 84</strong></li>
+    <li><strong>Atom Dark</strong></li>
+    <li><strong>Oceanic Next</strong></li>
+    <li><strong>Shades of Purple</strong></li>
+    <li><strong>Arc Dark</strong></li>
+    <li><strong>Sunset Aurant</strong></li>
+    <li><strong>Sunset Saffron</strong></li>
+    <li><strong>Sunset Tangerine</strong></li>
+  </ul>
+</details>
 
-  <br>
+<br>
 
-### Community Themes 🌐
+#### Community Themes 🌐
 
 Themes that were requested by the community and added to `gowall`
 
@@ -160,17 +175,29 @@ Notes 🗒️ :
    ```bash
     gowall list
    ```
-   
+
 <br> 
 
-# Installation ⬇️
+# Installation :package:
 
-## Arch linux - AUR
+#### Arch linux - AUR
 
 ```
-yay -Sy gowall
+yay -S gowall
 ```
-## Build from source
+
+#### Void Linux - XBPS-SRC
+
+Assuming you have [void-packages](https://github.com/void-linux/void-packages)
+
+```bash
+git clone https://github.com/elbachir-one/void-templates
+cd void-templates/ && cp -r gowall/ void-packages/srcpkgs/
+cd void-packages/
+./xbps-src pkg gowall
+sudo xbps-install -R hostdir/binpkgs gowall
+```
+#### Build from source
 
 🔨 Clone the repo, build the project and move it inside your `$PATH`
 
@@ -189,8 +216,11 @@ export GOPATH=$(go env GOPATH)
 export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GOBIN
 ```
+```bash
+go install github.com/Achno/gowall@latest
+```
 
-# Contributions 🤝
+# Contributions :handshake:
 
 If you wish to contribute by adding a new theme please open an `issue`
 

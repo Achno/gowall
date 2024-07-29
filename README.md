@@ -181,24 +181,15 @@ Notes 🗒️ :
 
 # Installation :package:
 
-#### Arch linux - AUR
+### Arch linux - AUR
 
 ```
 yay -S gowall
 ```
 
-#### Void Linux - XBPS-SRC
 
-Assuming you have [void-packages](https://github.com/void-linux/void-packages)
 
-```bash
-git clone https://github.com/elbachir-one/void-templates
-cd void-templates/ && cp -r gowall/ void-packages/srcpkgs/
-cd void-packages/
-./xbps-src pkg gowall
-sudo xbps-install -R hostdir/binpkgs gowall
-```
-#### Build from source
+### Build from source
 
 🔨 Clone the repo, build the project and move it inside your `$PATH`
 
@@ -217,6 +208,7 @@ export GOPATH=$(go env GOPATH)
 export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GOBIN
 ```
+And simply use `go install`
 ```bash
 go install github.com/Achno/gowall@latest
 ```

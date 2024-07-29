@@ -18,8 +18,8 @@ type Theme struct {
 }
 
 type themeWrapper struct {
-	Name   string   `yaml:"Name"`
-	Colors []string `yaml:"Colors"`
+	Name   string   `yaml:"name"`
+	Colors []string `yaml:"colors"`
 }
 
 // Available themes
@@ -72,6 +72,10 @@ func loadCustomThemes() {
 	}
 	for _, tw := range rawConfig.Themes {
 		valid := true
+		if tw.Name == "" || len(tw.Colors) == 0 {
+			// skip invalid color
+			continue
+		}
 		theme := Theme{
 			Name:   tw.Name,
 			Colors: make([]color.Color, len(tw.Colors)),

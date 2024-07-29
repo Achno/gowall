@@ -42,7 +42,12 @@ func loadCustomThemes() {
 	// if you ever standardize config files change this
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		configDir = filepath.Join(os.Getenv("HOME"), ".config")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			// cant find home or config just give up
+			return
+		}
+		configDir = filepath.Join(homeDir, ".config")
 	}
 	configPath := filepath.Join(configDir, "gowall", "config.yml")
 

@@ -21,3 +21,5 @@ gowall
 # Go workspace file
 go.work
 go.work.sum
+
+dist/

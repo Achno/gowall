@@ -26,6 +26,7 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 
 - It supports `single` and `batch` conversion of images to any of the available themes below.
 - It also has the ability to `invert` the colors of the image and convert them later
+- Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
 
 ### Supported formats
 

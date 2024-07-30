@@ -79,6 +79,9 @@ All themes can be shown (both default and user-created via `~/.config/gowall/con
     <li><strong>Sunset Aurant</strong></li>
     <li><strong>Sunset Saffron</strong></li>
     <li><strong>Sunset Tangerine</strong></li>
+    <li><strong>Cyber punk</strong></li>
+    <li><strong>Night Owl</strong></li>
+    <li><strong>GitHub Light</strong></li>
   </ul>
 </details>
 

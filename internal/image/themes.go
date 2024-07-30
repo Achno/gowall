@@ -44,6 +44,10 @@ var themes = map[string]Theme{
     "sunset-aurant":    SunsetAurant,
     "sunset-saffron":   SunsetSaffron,
     "sunset-tangerine": SunsetTangerine,
+    "dark-tooth":       Darktooth,
+    "forest-night":      ForestNight,
+    "night-owl":         NightOwl,
+    "cyber-punk":        Cyberpunk,
 }
 
 func init() {
@@ -628,6 +632,58 @@ var (
     		color.RGBA{R: 255, G: 217, B: 51, A: 255},
     		color.RGBA{R: 0, G: 0, B: 0, A: 255},
     		color.RGBA{R: 255, G: 255, B: 255, A: 255},
+    	},
+    }
+
+    Darktooth = Theme{
+	    Name: "Darktooth",
+	    Colors: []color.Color{
+		    color.RGBA{R: 29, G: 32, B: 33, A: 255},  // #1d2021
+		    color.RGBA{R: 251, G: 241, B: 199, A: 255}, // #fbf1c7
+		    color.RGBA{R: 254, G: 128, B: 25, A: 255},  // #fe8019
+		    color.RGBA{R: 142, G: 192, B: 124, A: 255}, // #8ec07c
+		    color.RGBA{R: 211, G: 134, B: 155, A: 255}, // #d3869b
+		    color.RGBA{R: 250, G: 189, B: 47, A: 255},  // #fabd2f
+		    color.RGBA{R: 131, G: 165, B: 152, A: 255}, // #83a598
+	    },
+    }
+
+    ForestNight = Theme{
+    	Name: "Forest Night",
+    	Colors: []color.Color{
+    		color.RGBA{R: 46, G: 52, B: 64, A: 255},   // #2e3440
+    		color.RGBA{R: 76, G: 86, B: 106, A: 255},  // #4c566a
+    		color.RGBA{R: 143, G: 188, B: 187, A: 255},// #8fbcbb
+    		color.RGBA{R: 136, G: 192, B: 208, A: 255},// #88c0d0
+    		color.RGBA{R: 129, G: 161, B: 193, A: 255},// #81a1c1
+    		color.RGBA{R: 94, G: 129, B: 172, A: 255}, // #5e81ac
+    		color.RGBA{R: 180, G: 142, B: 173, A: 255},// #b48ead
+    	},
+    }
+
+    NightOwl = Theme{
+    	Name: "Night Owl",
+    	Colors: []color.Color{
+    		color.RGBA{R: 1, G: 22, B: 39, A: 255},    // #011627
+    		color.RGBA{R: 3, G: 218, B: 198, A: 255},  // #03dac6
+    		color.RGBA{R: 199, G: 146, B: 234, A: 255},// #c792ea
+    		color.RGBA{R: 130, G: 170, B: 255, A: 255},// #82aaff
+    		color.RGBA{R: 173, G: 219, B: 103, A: 255},// #addb67
+    		color.RGBA{R: 255, G: 203, B: 139, A: 255},// #ffcb8b
+    		color.RGBA{R: 255, G: 85, B: 114, A: 255}, // #ff5572
+    	},
+    }
+
+    Cyberpunk = Theme{
+    	Name: "Cyberpunk",
+    	Colors: []color.Color{
+    		color.RGBA{R: 255, G: 85, B: 255, A: 255}, // #ff55ff
+    		color.RGBA{R: 255, G: 255, B: 0, A: 255},  // #ffff00
+    		color.RGBA{R: 0, G: 255, B: 255, A: 255},  // #00ffff
+    		color.RGBA{R: 255, G: 0, B: 85, A: 255},   // #ff0055
+    		color.RGBA{R: 85, G: 0, B: 255, A: 255},   // #5500ff
+    		color.RGBA{R: 0, G: 255, B: 85, A: 255},   // #00ff55
+    		color.RGBA{R: 0, G: 85, B: 255, A: 255},   // #0055ff
     	},
     }
 )

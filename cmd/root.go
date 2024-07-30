@@ -4,17 +4,31 @@ Copyright © 2024 Achnologia <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/Achno/gowall/config"
 	"github.com/spf13/cobra"
 )
+
+var versionFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gowall",
 	Short: "A tool to convert an img's color shceme ",
 	Long: `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+
+		switch {
+
+			case versionFlag: fmt.Printf("gowall version: %s\n",config.Version)
+
+			default : cmd.Help()
+			
+		}
+
+	 },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -36,6 +50,7 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+    rootCmd.Flags().BoolVarP(&versionFlag,"version","v",false,"show gowall version")	
 }
 
 

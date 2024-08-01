@@ -63,7 +63,7 @@ All themes can be shown (both default and user-created via `~/.config/gowall/con
 - **Solarized**
 - **Gruvbox**
 - **Dracula**
-- **Tokyo-moon**
+- **Tokyo-dark/storm/moon**
 - **Onedark**
 <details>
   <summary><strong>Click to see more themes</strong></summary>

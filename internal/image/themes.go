@@ -46,6 +46,9 @@ var themes = map[string]Theme{
     "sunset-aurant":    SunsetAurant,
     "sunset-saffron":   SunsetSaffron,
     "sunset-tangerine": SunsetTangerine,
+	"cyberpunk":		Cyberpunk,
+	"night-owl":		NightOwl,
+	"github-light":		GitHubLight,
 }
 
 func init() {
@@ -702,6 +705,88 @@ var (
 			color.RGBA{R: 224, G: 175, B: 104, A: 255},
 		},
 	}
+
+	Cyberpunk = Theme{
+    	Name: "Cyber-punk",
+    	Colors: []color.Color{
+    		color.RGBA{R: 0, G: 0, B: 0, A: 255},
+    		color.RGBA{R: 255, G: 0, B: 255, A: 255},
+    		color.RGBA{R: 255, G: 255, B: 0, A: 255},
+    		color.RGBA{R: 0, G: 255, B: 255, A: 255},
+    		color.RGBA{R: 0, G: 255, B: 0, A: 255},
+    		color.RGBA{R: 255, G: 0, B: 0, A: 255},
+    		color.RGBA{R: 0, G: 0, B: 255, A: 255},
+    		color.RGBA{R: 255, G: 165, B: 0, A: 255},
+    		color.RGBA{R: 75, G: 0, B: 130, A: 255},
+    		color.RGBA{R: 238, G: 130, B: 238, A: 255},
+    		color.RGBA{R: 135, G: 206, B: 235, A: 255},
+    		color.RGBA{R: 255, G: 105, B: 180, A: 255},
+    		color.RGBA{R: 139, G: 0, B: 255, A: 255},
+    		color.RGBA{R: 255, G: 20, B: 147, A: 255},
+    		color.RGBA{R: 0, G: 128, B: 128, A: 255},
+    		color.RGBA{R: 255, G: 0, B: 255, A: 255},
+    		color.RGBA{R: 0, G: 0, B: 139, A: 255},
+    		color.RGBA{R: 255, G: 69, B: 0, A: 255},
+    		color.RGBA{R: 64, G: 224, B: 208, A: 255},
+    		color.RGBA{R: 186, G: 85, B: 211, A: 255},
+    		color.RGBA{R: 255, G: 182, B: 193, A: 255},
+    	},
+    }
+
+
+    NightOwl = Theme{
+    	Name: "Night-owl",
+    	Colors: []color.Color{
+    		color.RGBA{R: 0, G: 43, B: 54, A: 255},
+    		color.RGBA{R: 7, G: 54, B: 66, A: 255},
+    		color.RGBA{R: 88, G: 110, B: 117, A: 255},
+    		color.RGBA{R: 101, G: 123, B: 131, A: 255},
+    		color.RGBA{R: 147, G: 161, B: 161, A: 255},
+    		color.RGBA{R: 203, G: 75, B: 22, A: 255},
+    		color.RGBA{R: 88, G: 110, B: 117, A: 255},
+    		color.RGBA{R: 39, G: 150, B: 135, A: 255},
+    		color.RGBA{R: 0, G: 113, B: 133, A: 255},
+    		color.RGBA{R: 211, G: 54, B: 130, A: 255},
+    		color.RGBA{R: 131, G: 148, B: 150, A: 255},
+    		color.RGBA{R: 52, G: 101, B: 36, A: 255},
+    		color.RGBA{R: 229, G: 229, B: 229, A: 255},
+    		color.RGBA{R: 191, G: 97, B: 106, A: 255},
+    		color.RGBA{R: 236, G: 139, B: 67, A: 255},
+    		color.RGBA{R: 85, G: 139, B: 47, A: 255},
+    		color.RGBA{R: 102, G: 120, B: 105, A: 255},
+    		color.RGBA{R: 0, G: 128, B: 128, A: 255},
+    		color.RGBA{R: 240, G: 232, B: 196, A: 255},
+    		color.RGBA{R: 124, G: 45, B: 75, A: 255},
+    	},
+    }
+
+    GitHubLight = Theme{
+        Name: "GitHub-Light",
+        Colors: []color.Color{
+            color.RGBA{R: 255, G: 255, B: 255, A: 255},
+            color.RGBA{R: 243, G: 243, B: 243, A: 255},
+            color.RGBA{R: 235, G: 235, B: 235, A: 255},
+            color.RGBA{R: 189, G: 189, B: 189, A: 255},
+            color.RGBA{R: 102, G: 102, B: 102, A: 255},
+            color.RGBA{R: 81, G: 81, B: 81, A: 255},
+            color.RGBA{R: 0, G: 0, B: 0, A: 255},
+            color.RGBA{R: 69, G: 69, B: 69, A: 255},
+            color.RGBA{R: 238, G: 0, B: 0, A: 255},
+            color.RGBA{R: 255, G: 153, B: 51, A: 255},
+            color.RGBA{R: 34, G: 139, B: 34, A: 255},
+            color.RGBA{R: 0, G: 0, B: 255, A: 255},
+            color.RGBA{R: 148, G: 0, B: 211, A: 255},
+            color.RGBA{R: 75, G: 0, B: 130, A: 255},
+            color.RGBA{R: 102, G: 51, B: 153, A: 255},
+            color.RGBA{R: 204, G: 204, B: 204, A: 255},
+            color.RGBA{R: 170, G: 170, B: 170, A: 255},
+            color.RGBA{R: 120, G: 120, B: 120, A: 255},
+            color.RGBA{R: 170, G: 119, B: 204, A: 255},
+            color.RGBA{R: 255, G: 69, B: 0, A: 255},
+            color.RGBA{R: 255, G: 105, B: 180, A: 255},
+            color.RGBA{R: 153, G: 204, B: 255, A: 255},
+        },
+    }
 
 
 )

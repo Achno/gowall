@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Achno/gowall/internal/image"
 	"github.com/Achno/gowall/utils"
@@ -27,6 +28,19 @@ var invertCmd = &cobra.Command{
 			processor := &image.Inverter{}
 			expandedFiles := utils.ExpandHomeDirectory(batchFiles)
 			image.ProcessBatchImgs(expandedFiles,theme,processor)
+
+		case strings.HasSuffix(args[0],"#") :
+			fmt.Println("Processing directory...")
+			processor := &image.Inverter{}
+			path := utils.DiscardLastCharacter(args[0])
+			files ,err := utils.ExpandHashtag(path)
+
+			if err != nil {
+				fmt.Printf("Error ExpandingHashTag: %s\n",err)
+				return
+			}
+			image.ProcessBatchImgs(files,theme,processor)
+
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/Achno/gowall/utils"
 
@@ -128,6 +129,7 @@ func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
 
 	var wg sync.WaitGroup
+	var remaining int32 = int32(len(files))
 
 	for index, file := range files{
 		
@@ -141,8 +143,8 @@ func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
 			if ok != nil {
 				os.Exit(1)
 			}
-			// TODO fix the index / concurency issue
-			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,len(files) -index -1)
+			remainingCount := atomic.AddInt32(&remaining, -1)
+			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,remainingCount)
 		}(file,index)
 
 	}

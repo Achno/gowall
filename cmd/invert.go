@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Achnologia <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -12,44 +9,50 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// invertCmd represents the invert command
+// Declare variables specific to invert command
+var (
+	invertTheme      string
+	invertBatchFiles []string
+)
+
 var invertCmd = &cobra.Command{
 	Use:   "invert [image path]",
-	Short: "Inverts the color's of an image",
-	Long: `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
+	Short: "Inverts the colors of an image",
+	Long:  `Inverts the colors of an image. You can then convert the inverted image to your favorite color scheme.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		fmt.Println("invert called")
 
 		switch {
-
-		case len(batchFiles) > 0:
+		case len(invertBatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.Inverter{}
-			expandedFiles := utils.ExpandHomeDirectory(batchFiles)
-			image.ProcessBatchImgs(expandedFiles,theme,processor)
+			expandedFiles := utils.ExpandHomeDirectory(invertBatchFiles)
+			image.ProcessBatchImgs(expandedFiles, invertTheme, processor)
 
-		case strings.HasSuffix(args[0],"#") :
+		case len(args) > 0 && strings.HasSuffix(args[0], "#"):
 			fmt.Println("Processing directory...")
 			processor := &image.Inverter{}
 			path := utils.DiscardLastCharacter(args[0])
-			files ,err := utils.ExpandHashtag(path)
-
+			files, err := utils.ExpandHashtag(path)
 			if err != nil {
-				fmt.Printf("Error ExpandingHashTag: %s\n",err)
+				fmt.Printf("Error Expanding HashTag: %s\n", err)
 				return
 			}
-			image.ProcessBatchImgs(files,theme,processor)
-
+			image.ProcessBatchImgs(files, invertTheme, processor)
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.Inverter{}
-			expandFile := utils.ExpandHomeDirectory(args)
-			image.ProcessImg(expandFile[0], processor,theme)
-			
+			expandedFile := utils.ExpandHomeDirectory(args)
+			if len(expandedFile) > 0 {
+				image.ProcessImg(expandedFile[0], processor, invertTheme)
+			} else {
+				fmt.Println("Error: no valid file path provided")
+				_ = cmd.Usage()
+			}
+
 		default:
-			fmt.Println("Error: requires at least 1 arg(s), only received 0")
+			fmt.Println("Error: requires at least 1 argument, only received 0")
 			_ = cmd.Usage()
 		}
 	},
@@ -57,6 +60,6 @@ var invertCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(invertCmd)
-
-
+	invertCmd.Flags().StringVarP(&invertTheme, "theme", "t", "default", "Usage: --theme [ThemeName]")
+	invertCmd.Flags().StringSliceVarP(&invertBatchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
 }

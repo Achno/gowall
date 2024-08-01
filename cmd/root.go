@@ -16,41 +16,33 @@ var versionFlag bool
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gowall",
-	Short: "A tool to convert an img's color shceme ",
-	Long: `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
+	Short: "A tool to convert an image's color scheme",
+	Long:  `Convert an image's (e.g., wallpaper) color scheme to another (e.g., Catppuccin)`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		switch {
-
-			case versionFlag: fmt.Printf("gowall version: %s\n",config.Version)
-
-			default : cmd.Help()
-			
+		if versionFlag {
+			fmt.Printf("gowall version: %s\n", config.Version)
+		} else {
+			cmd.Help()
 		}
-
-	 },
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err) // Print the error to stderr
 		os.Exit(1)
 	}
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	// Define your flags and configuration settings here.
 
+	// Persistent flags are global for your application.
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gowall.yaml)")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
+	// Local flags only apply to this command.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-    rootCmd.Flags().BoolVarP(&versionFlag,"version","v",false,"show gowall version")	
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show gowall version")
 }
-
-

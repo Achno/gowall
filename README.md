@@ -25,6 +25,7 @@
 Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / pallete you like! 
 
 - It supports `single` and `batch` conversion of images to any of the available themes below.
+- It can convert whole `directories` with the `#` delimiter, check `Usage` section
 - It also has the ability to `invert` the colors of the image and convert them later
 - Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
 
@@ -79,6 +80,10 @@ All themes can be shown (both default and user-created via `~/.config/gowall/con
     <li><strong>Sunset Aurant</strong></li>
     <li><strong>Sunset Saffron</strong></li>
     <li><strong>Sunset Tangerine</strong></li>
+    <li><strong>Cyberpunk</strong></li>
+    <li><strong>Night Owl</strong></li>
+    <li><strong>Github Light (black & white)</strong></li>
+   
   </ul>
 </details>
 
@@ -170,8 +175,22 @@ Notes 🗒️ :
    ```bash
     gowall invert -b path/img.png,path/img2.png
    ```
+   <br>
 
-4. `List all theme names`
+4. `Convert a whole Directory`
+
+   Use the `#` delimiter to convert every image file under that directory
+   
+   ```bash
+    gowall convert ~/Pictures/# -t catppuccin
+
+    gowall invert ~/Pictures/test/# 
+   ```
+   Notes 🗒️ : Only `png` `jpeg` `jpg` `webp` images will be converted any other directory or other file will be ignored
+
+   <br>
+
+6. `List all theme names`
 
    ```bash
     gowall list
@@ -225,5 +244,7 @@ go install github.com/Achno/gowall@latest
 # Contributions :handshake:
 
 If you wish to contribute by adding a new theme please open an `issue`
-
 I would also be very happy if you can provide the `rgb values` of your theme as well :) but not required if it's popular
+
+Feel free to suggest any cool features that would improve gowall even further by opening an `issue` 
+

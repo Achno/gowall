@@ -139,7 +139,7 @@ func ListThemes() []string {
 }
 
 func SelectTheme(theme string) (Theme, error) {
-	selectedTheme, exists := themes[theme]
+	selectedTheme, exists := themes[strings.ToLower(theme)]
 
 	if !exists {
 		return Theme{}, errors.New("unknown theme")

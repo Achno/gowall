@@ -23,13 +23,13 @@ var invertCmd = &cobra.Command{
 
 		switch {
 
-		case len(batchFiles) > 0:
+		case len(shared.BatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.Inverter{}
-			expandedFiles := utils.ExpandHomeDirectory(batchFiles)
-			image.ProcessBatchImgs(expandedFiles,theme,processor)
+			expandedFiles := utils.ExpandHomeDirectory(shared.BatchFiles)
+			image.ProcessBatchImgs(expandedFiles,shared.Theme,processor)
 
-		case strings.HasSuffix(args[0],"#") :
+		case len(args) > 0 && strings.HasSuffix(args[0],"#") :
 			fmt.Println("Processing directory...")
 			processor := &image.Inverter{}
 			path := utils.DiscardLastCharacter(args[0])
@@ -39,14 +39,14 @@ var invertCmd = &cobra.Command{
 				fmt.Printf("Error ExpandingHashTag: %s\n",err)
 				return
 			}
-			image.ProcessBatchImgs(files,theme,processor)
+			image.ProcessBatchImgs(files,shared.Theme,processor)
 
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.Inverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			image.ProcessImg(expandFile[0], processor,theme)
+			image.ProcessImg(expandFile[0], processor,shared.Theme)
 			
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")

@@ -126,10 +126,13 @@ func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 
 }
 
-func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
+// Process images concurrently and return the first error if there was one
+func ProcessBatchImgs(files []string , theme string, processor ImageProcessor) error{
 
 	var wg sync.WaitGroup
 	var remaining int32 = int32(len(files))
+	errChan := make(chan error, len(files))
+	
 
 	for index, file := range files{
 		
@@ -138,10 +141,11 @@ func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
 		go func (file string, index int)  {
 			defer wg.Done()
 
-			ok :=ProcessImg(file,processor,theme)
+			err :=ProcessImg(file,processor,theme)
 
-			if ok != nil {
-				os.Exit(1)
+			if err != nil {
+				 errChan <- fmt.Errorf("file %s : %w",file,err)
+				 return				
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
 			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n",index,remainingCount)
@@ -150,4 +154,11 @@ func ProcessBatchImgs(files []string , theme string, processor ImageProcessor){
 	}
 
 	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		return <-errChan 
+	}
+
+	return nil
 }

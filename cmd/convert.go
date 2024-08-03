@@ -12,10 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	theme      string
-	batchFiles []string
-)
 
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
@@ -25,13 +21,13 @@ var convertCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {
 
-		case len(batchFiles) > 0:
+		case len(shared.BatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.ThemeConverter{}
-			expandedFiles := utils.ExpandHomeDirectory(batchFiles)
-			image.ProcessBatchImgs(expandedFiles, theme, processor)
+			expandedFiles := utils.ExpandHomeDirectory(shared.BatchFiles)
+			image.ProcessBatchImgs(expandedFiles, shared.Theme, processor)
 			
-		case strings.HasSuffix(args[0],"#") :
+		case len(args) > 0 && strings.HasSuffix(args[0],"#") :
 			fmt.Println("Processing directory...")
 			processor := &image.ThemeConverter{}
 			path := utils.DiscardLastCharacter(args[0])
@@ -41,13 +37,13 @@ var convertCmd = &cobra.Command{
 				fmt.Printf("Error ExpandingHashTag: %s\n",err)
 				return
 			}
-			image.ProcessBatchImgs(files,theme,processor)
+			image.ProcessBatchImgs(files,shared.Theme,processor)
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			image.ProcessImg(expandFile[0], processor, theme)
+			image.ProcessImg(expandFile[0], processor, shared.Theme)
 
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")
@@ -58,8 +54,8 @@ var convertCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(convertCmd)
-	convertCmd.Flags().StringVarP(&theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName-Lowercase]")
-	convertCmd.Flags().StringSliceVarP(&batchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
+	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName-Lowercase]")
+	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
 
 	// Here you will define your flags and configuration settings.
 }

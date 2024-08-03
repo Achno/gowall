@@ -3,6 +3,8 @@ package utils
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/Achno/gowall/config"
 )
 
 func CreateDirectory() (dirPath string , err error){
@@ -13,7 +15,7 @@ func CreateDirectory() (dirPath string , err error){
 		return "",err
 	}
 
-	folderName := "Pictures/gowall"
+	folderName := config.ConfigFolder
 
 	dirPath = filepath.Join(homeDir,folderName)
 

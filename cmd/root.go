@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var shared config.Shared
 var versionFlag bool
 
 // rootCmd represents the base command when called without any subcommands

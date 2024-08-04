@@ -31,24 +31,24 @@ var themes = map[string]Theme{
 	"gruvbox":          Gruvbox,
 	"dracula":          Dracula,
 	"tokyo-moon":       Tokyo_Moon,
-	"tokyo-storm":		Tokyo_Storm,
-	"tokyo-dark":		Tokyo_Dark,
+	"tokyo-storm":      Tokyo_Storm,
+	"tokyo-dark":       Tokyo_Dark,
 	"onedark":          Onedark,
-	"srcery" :          Srcery,
-    "monokai":          Monokai,
-    "material":         Material,
-    "atom-one-light":   AtomOneLight,
-    "synthwave-84":     Synthwave84,
-    "atomdark":         AtomDark,
-    "oceanic-next":     OceanicNext,
-    "shades-of-purple": ShadesOfPurple,
-    "arcdark":          ArcDark,
-    "sunset-aurant":    SunsetAurant,
-    "sunset-saffron":   SunsetSaffron,
-    "sunset-tangerine": SunsetTangerine,
-	"cyberpunk":		Cyberpunk,
-	"night-owl":		NightOwl,
-	"github-light":		GitHubLight,
+	"srcery":           Srcery,
+	"monokai":          Monokai,
+	"material":         Material,
+	"atom-one-light":   AtomOneLight,
+	"synthwave-84":     Synthwave84,
+	"atomdark":         AtomDark,
+	"oceanic-next":     OceanicNext,
+	"shades-of-purple": ShadesOfPurple,
+	"arcdark":          ArcDark,
+	"sunset-aurant":    SunsetAurant,
+	"sunset-saffron":   SunsetSaffron,
+	"sunset-tangerine": SunsetTangerine,
+	"cyberpunk":        Cyberpunk,
+	"night-owl":        NightOwl,
+	"github-light":     GitHubLight,
 }
 
 func init() {
@@ -56,14 +56,12 @@ func init() {
 }
 
 func loadCustomThemes() {
-
 	// look for $XDG_CONFIG_HOME/gowall/config.yml or $HOME/.config/gowall/config.yml
 	configDir, err := os.UserConfigDir()
-
 	if err != nil {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			// cant find home or config just give up
+			// can't find home or config just give up
 			return
 		}
 		configDir = filepath.Join(homeDir, ".config")
@@ -71,7 +69,7 @@ func loadCustomThemes() {
 	configPath := filepath.Join(configDir, "gowall", "config.yml")
 
 	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		// file doesnt exist skip custom themes
+		// file doesn't exist, skip custom themes
 		return
 	}
 
@@ -91,9 +89,8 @@ func loadCustomThemes() {
 	}
 
 	for _, tw := range rawConfig.Themes {
-		valid := true
 		if tw.Name == "" || len(tw.Colors) == 0 {
-			// skip invalid color
+			// skip invalid theme
 			continue
 		}
 
@@ -102,6 +99,7 @@ func loadCustomThemes() {
 			Colors: make([]color.Color, len(tw.Colors)),
 		}
 
+		valid := true
 		for i, hexColor := range tw.Colors {
 			col, err := hexToRGBA(hexColor)
 			if err != nil {
@@ -113,7 +111,6 @@ func loadCustomThemes() {
 		}
 
 		if valid && !themeExists(theme.Name) {
-
 			themes[strings.ToLower(theme.Name)] = theme
 		}
 	}
@@ -140,19 +137,14 @@ func ListThemes() []string {
 
 func SelectTheme(theme string) (Theme, error) {
 	selectedTheme, exists := themes[strings.ToLower(theme)]
-
 	if !exists {
 		return Theme{}, errors.New("unknown theme")
 	}
-
 	return selectedTheme, nil
 }
 
-func themeExists(theme string) bool{
-	
+func themeExists(theme string) bool {
 	_, exists := themes[theme]
-
-
 	return exists
 }
 

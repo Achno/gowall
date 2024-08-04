@@ -7,25 +7,19 @@ import (
 	"github.com/Achno/gowall/config"
 )
 
-func CreateDirectory() (dirPath string , err error){
-
+func CreateDirectory() (dirPath string, err error) {
 	homeDir, err := os.UserHomeDir()
-
-	if err != nil{
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
 	folderName := config.ConfigFolder
+	dirPath = filepath.Join(homeDir, folderName)
 
-	dirPath = filepath.Join(homeDir,folderName)
-
-	err = os.MkdirAll(dirPath,0777)
-
+	err = os.MkdirAll(dirPath, 0777)
 	if err != nil {
 		return "", err
-    }
+	}
 
-
-	return dirPath,err
-
+	return dirPath, err
 }

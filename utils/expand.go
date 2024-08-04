@@ -22,51 +22,42 @@ func ExpandHomeDirectory(paths []string) []string {
 	return expandedPaths
 }
 
-// Function to expand the delimeter '#' to every file under that directory
+// Function to expand the delimiter '#' to every file under that directory
 //  Example "~/Pictures/#" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
 func ExpandHashtag(pathWithHashtag string) ([]string, error) {
-
 	path := DiscardLastCharacter(pathWithHashtag)
 
 	ImgPaths, err := expandToImgFiles(path)
-
-	if err != nil{
-		return nil,fmt.Errorf("error expanding to image files: %w",err)
+	if err != nil {
+		return nil, fmt.Errorf("error expanding to image files: %w", err)
 	}
 
-	return ImgPaths,nil
-
+	return ImgPaths, nil
 }
 
 // Expands a directory to only image files of type .png .jpeg .jpg .webp
 //  Example "~/Pictures/" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
-func expandToImgFiles(path string) ( []string, error){
-
-	filePaths , err := os.ReadDir(path)
-
-	if err != nil{
-		return nil,err
+func expandToImgFiles(path string) ([]string, error) {
+	filePaths, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
 	}
 
-	images,err := filterImages(filePaths)
-
-	if err != nil{
-		return nil,err
+	images, err := filterImages(filePaths)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(images) == 0 {
-		return nil,fmt.Errorf("no image files in directory")
+		return nil, fmt.Errorf("no image files in directory")
 	}
 
-	contents := make([]string,len(images))
-
-	for i, img := range images{
-		fullPath := filepath.Join(path,img)
+	contents := make([]string, len(images))
+	for i, img := range images {
+		fullPath := filepath.Join(path, img)
 		contents[i] = fullPath
 		// fmt.Println(fullPath) debugging
 	}
 
-	return contents,nil
+	return contents, nil
 }
-
-

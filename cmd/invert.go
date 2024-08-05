@@ -19,15 +19,15 @@ var invertCmd = &cobra.Command{
 	Long: `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		fmt.Println("invert called")
-
 		switch {
 
 		case len(shared.BatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.Inverter{}
 			expandedFiles := utils.ExpandHomeDirectory(shared.BatchFiles)
-			image.ProcessBatchImgs(expandedFiles,shared.Theme,processor)
+			err := image.ProcessBatchImgs(expandedFiles,shared.Theme,processor)
+
+			utils.HandleError(err)
 
 		case len(args) > 0 && strings.HasSuffix(args[0],"#") :
 			fmt.Println("Processing directory...")
@@ -35,18 +35,19 @@ var invertCmd = &cobra.Command{
 			path := utils.DiscardLastCharacter(args[0])
 			files ,err := utils.ExpandHashtag(path)
 
-			if err != nil {
-				fmt.Printf("Error ExpandingHashTag: %s\n",err)
-				return
-			}
-			image.ProcessBatchImgs(files,shared.Theme,processor)
+			utils.HandleError(err,"Error ExpandingHashTag")
+
+			err = image.ProcessBatchImgs(files,shared.Theme,processor)
+			utils.HandleError(err)
 
 
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.Inverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			image.ProcessImg(expandFile[0], processor,shared.Theme)
+			err := image.ProcessImg(expandFile[0], processor,shared.Theme)
+			
+			utils.HandleError(err)
 			
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")

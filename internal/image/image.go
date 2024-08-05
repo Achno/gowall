@@ -1,6 +1,7 @@
 package image
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -80,23 +81,20 @@ func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 	img, err := LoadImage(imgPath)
 
 	if err != nil {
-		fmt.Println("Error loading image :", err)
-		return err
+		return fmt.Errorf("while loading image : %w", err)
 	}
 
 	newImg, err := processor.Process(img,theme)
 
 	if err != nil {
-		fmt.Println("Error processing image :", err)
-		return err
+		return fmt.Errorf("while processing image : %w", err)
 	}
 
 	//Extract file extension from imgPath
 	extension := strings.ToLower(filepath.Ext(imgPath))
 
 	if extension == "" {
-		fmt.Println("Error: Could not determine file extension.")
-		return err
+		return fmt.Errorf("error: Could not determine file extension")
 	}
 
 	// remove '.' from the extension
@@ -109,15 +107,13 @@ func ProcessImg(imgPath string, processor ImageProcessor,theme string ) error {
 
 
 	if err != nil{
-		fmt.Println("Error creating Directory or getting path")
-		return err
+		return fmt.Errorf("while creating Directory or getting path")
 	}
 
 	err = SaveImage(newImg, outputFilePath, extension)
 
 	if err != nil {
-		fmt.Println("Error saving image:", err, outputFilePath)
-		return err
+		return fmt.Errorf("while saving image: %w in %s ", err, outputFilePath)
 	}
 
 	fmt.Printf("Image processed and saved as %s\n", outputFilePath)
@@ -157,7 +153,14 @@ func ProcessBatchImgs(files []string , theme string, processor ImageProcessor) e
 	close(errChan)
 
 	if len(errChan) > 0 {
-		return <-errChan 
+		// return <-errChan 
+		var errs []error
+
+		for err := range errChan{
+			errs = append(errs,err)
+		}
+
+		return errors.New(utils.FormatErrors(errs))
 	}
 
 	return nil

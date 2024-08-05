@@ -17,15 +17,13 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 	selectedTheme, err := SelectTheme(theme)
 
 	if err != nil{
-		fmt.Println("Unknown theme:", theme)
-		return nil,err
+		return nil,	fmt.Errorf("%w %s",err,theme)
 	}
 
 	newImg, err := convertImage(img,selectedTheme)
 
 	if err != nil {
-		fmt.Println("Error Converting image:", err)
-		return nil,err
+		return nil,fmt.Errorf("while converting image: %w", err)
 	}
 
 	return newImg,nil

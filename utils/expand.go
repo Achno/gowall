@@ -23,7 +23,8 @@ func ExpandHomeDirectory(paths []string) []string {
 }
 
 // Function to expand the delimiter '#' to every file under that directory
-//  Example "~/Pictures/#" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
+//
+//	Example "~/Pictures/#" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
 func ExpandHashtag(pathWithHashtag string) ([]string, error) {
 	path := DiscardLastCharacter(pathWithHashtag)
 
@@ -36,7 +37,8 @@ func ExpandHashtag(pathWithHashtag string) ([]string, error) {
 }
 
 // Expands a directory to only image files of type .png .jpeg .jpg .webp
-//  Example "~/Pictures/" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
+//
+//	Example "~/Pictures/" -->["Pictures/img1.png","~/Pictures/img2.png","~/Pictures/img3.png"]
 func expandToImgFiles(path string) ([]string, error) {
 	filePaths, err := os.ReadDir(path)
 	if err != nil {

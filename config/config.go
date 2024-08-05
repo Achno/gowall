@@ -1,7 +1,6 @@
 package config
 
-type Shared struct{
+type Shared struct {
 	Theme      string
 	BatchFiles []string
 }
-

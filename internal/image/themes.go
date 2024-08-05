@@ -31,24 +31,24 @@ var themes = map[string]Theme{
 	"gruvbox":          Gruvbox,
 	"dracula":          Dracula,
 	"tokyo-moon":       Tokyo_Moon,
-	"tokyo-storm":		Tokyo_Storm,
-	"tokyo-dark":		Tokyo_Dark,
+	"tokyo-storm":      Tokyo_Storm,
+	"tokyo-dark":       Tokyo_Dark,
 	"onedark":          Onedark,
-	"srcery" :          Srcery,
-    "monokai":          Monokai,
-    "material":         Material,
-    "atom-one-light":   AtomOneLight,
-    "synthwave-84":     Synthwave84,
-    "atomdark":         AtomDark,
-    "oceanic-next":     OceanicNext,
-    "shades-of-purple": ShadesOfPurple,
-    "arcdark":          ArcDark,
-    "sunset-aurant":    SunsetAurant,
-    "sunset-saffron":   SunsetSaffron,
-    "sunset-tangerine": SunsetTangerine,
-	"cyberpunk":		Cyberpunk,
-	"night-owl":		NightOwl,
-	"github-light":		GitHubLight,
+	"srcery":           Srcery,
+	"monokai":          Monokai,
+	"material":         Material,
+	"atom-one-light":   AtomOneLight,
+	"synthwave-84":     Synthwave84,
+	"atomdark":         AtomDark,
+	"oceanic-next":     OceanicNext,
+	"shades-of-purple": ShadesOfPurple,
+	"arcdark":          ArcDark,
+	"sunset-aurant":    SunsetAurant,
+	"sunset-saffron":   SunsetSaffron,
+	"sunset-tangerine": SunsetTangerine,
+	"cyberpunk":        Cyberpunk,
+	"night-owl":        NightOwl,
+	"github-light":     GitHubLight,
 }
 
 func init() {
@@ -148,10 +148,9 @@ func SelectTheme(theme string) (Theme, error) {
 	return selectedTheme, nil
 }
 
-func themeExists(theme string) bool{
-	
-	_, exists := themes[theme]
+func themeExists(theme string) bool {
 
+	_, exists := themes[theme]
 
 	return exists
 }
@@ -373,26 +372,26 @@ var (
 	Srcery = Theme{
 		Name: "Srcery",
 		Colors: []color.Color{
-			color.RGBA{R: 28, G: 27, B: 25, A: 255}, // #1C1B19
-			color.RGBA{R: 239, G: 47, B: 39, A: 255}, // #EF2F27
-			color.RGBA{R: 81, G: 159, B: 80, A: 255}, // #519F50
-			color.RGBA{R: 251, G: 184, B: 41, A: 255}, // #FBB829
-			color.RGBA{R: 44, G: 120, B: 191, A: 255}, // #2C78BF
-			color.RGBA{R: 224, G: 44, B: 109, A: 255}, // #E02C6D
-			color.RGBA{R: 10, G: 174, B: 179, A: 255}, // #0AAEB3
+			color.RGBA{R: 28, G: 27, B: 25, A: 255},    // #1C1B19
+			color.RGBA{R: 239, G: 47, B: 39, A: 255},   // #EF2F27
+			color.RGBA{R: 81, G: 159, B: 80, A: 255},   // #519F50
+			color.RGBA{R: 251, G: 184, B: 41, A: 255},  // #FBB829
+			color.RGBA{R: 44, G: 120, B: 191, A: 255},  // #2C78BF
+			color.RGBA{R: 224, G: 44, B: 109, A: 255},  // #E02C6D
+			color.RGBA{R: 10, G: 174, B: 179, A: 255},  // #0AAEB3
 			color.RGBA{R: 186, G: 166, B: 127, A: 255}, // #BAA67F
 			color.RGBA{R: 145, G: 129, B: 117, A: 255}, // #918175
-			color.RGBA{R: 247, G: 83, B: 65, A: 255}, // #F75341
-			color.RGBA{R: 152, G: 188, B: 55, A: 255}, // #98BC37
+			color.RGBA{R: 247, G: 83, B: 65, A: 255},   // #F75341
+			color.RGBA{R: 152, G: 188, B: 55, A: 255},  // #98BC37
 			color.RGBA{R: 254, G: 208, B: 110, A: 255}, // #FED06E
 			color.RGBA{R: 104, G: 168, B: 228, A: 255}, // #68A8E4
-			color.RGBA{R: 255, G: 92, B: 143, A: 255}, // #FF5C8F
-			color.RGBA{R: 43, G: 228, B: 208, A: 255}, // #2BE4D0
+			color.RGBA{R: 255, G: 92, B: 143, A: 255},  // #FF5C8F
+			color.RGBA{R: 43, G: 228, B: 208, A: 255},  // #2BE4D0
 			color.RGBA{R: 252, G: 232, B: 195, A: 255}, // #FCE8C3
 		},
 	}
-	
-    Monokai = Theme{
+
+	Monokai = Theme{
 		Name: "Monokai",
 		Colors: []color.Color{
 			color.RGBA{R: 39, G: 40, B: 34, A: 255},
@@ -436,7 +435,7 @@ var (
 		},
 	}
 
-    AtomOneLight = Theme{
+	AtomOneLight = Theme{
 		Name: "AtomOneLight",
 		Colors: []color.Color{
 			color.RGBA{R: 245, G: 245, B: 245, A: 255},
@@ -458,7 +457,7 @@ var (
 		},
 	}
 
-    Synthwave84 = Theme{
+	Synthwave84 = Theme{
 		Name: "Synthwave84",
 		Colors: []color.Color{
 			color.RGBA{R: 24, G: 25, B: 31, A: 255},
@@ -502,7 +501,7 @@ var (
 		},
 	}
 
-    OceanicNext = Theme{
+	OceanicNext = Theme{
 		Name: "Oceanic Next",
 		Colors: []color.Color{
 			color.RGBA{R: 28, G: 34, B: 40, A: 255},
@@ -523,7 +522,7 @@ var (
 		},
 	}
 
-    ShadesOfPurple = Theme{
+	ShadesOfPurple = Theme{
 		Name: "Shades of Purple",
 		Colors: []color.Color{
 			color.RGBA{R: 25, G: 20, B: 30, A: 255},
@@ -544,7 +543,7 @@ var (
 		},
 	}
 
-    ArcDark = Theme{
+	ArcDark = Theme{
 		Name: "Arc Dark",
 		Colors: []color.Color{
 			color.RGBA{R: 33, G: 33, B: 33, A: 255},
@@ -565,76 +564,76 @@ var (
 		},
 	}
 
-    SunsetAurant = Theme{
-	    Name: "Sunset Aurant",
-	    Colors: []color.Color{
-		    color.RGBA{R: 0, G: 0, B: 0, A: 255},
-		    color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		    color.RGBA{R: 201, G: 144, B: 252, A: 255},
-		    color.RGBA{R: 214, G: 233, B: 187, A: 255},
-		    color.RGBA{R: 200, G: 160, B: 239, A: 255},
-		    color.RGBA{R: 198, G: 151, B: 242, A: 255},
-		    color.RGBA{R: 47, G: 176, B: 215, A: 255},
-		    color.RGBA{R: 211, G: 151, B: 88, A: 255},
-		    color.RGBA{R: 201, G: 144, B: 252, A: 255},
-		    color.RGBA{R: 247, G: 196, B: 215, A: 255},
-		    color.RGBA{R: 251, G: 165, B: 200, A: 255},
-		    color.RGBA{R: 224, G: 147, B: 30, A: 255},
-		    color.RGBA{R: 56, G: 62, B: 48, A: 255},
-		    color.RGBA{R: 86, G: 95, B: 74, A: 255},
-		    color.RGBA{R: 123, G: 134, B: 106, A: 255},
-		    color.RGBA{R: 165, G: 180, B: 144, A: 255},
-		    color.RGBA{R: 243, G: 136, B: 19, A: 255},
-	    },
-    }
+	SunsetAurant = Theme{
+		Name: "Sunset Aurant",
+		Colors: []color.Color{
+			color.RGBA{R: 0, G: 0, B: 0, A: 255},
+			color.RGBA{R: 255, G: 255, B: 255, A: 255},
+			color.RGBA{R: 201, G: 144, B: 252, A: 255},
+			color.RGBA{R: 214, G: 233, B: 187, A: 255},
+			color.RGBA{R: 200, G: 160, B: 239, A: 255},
+			color.RGBA{R: 198, G: 151, B: 242, A: 255},
+			color.RGBA{R: 47, G: 176, B: 215, A: 255},
+			color.RGBA{R: 211, G: 151, B: 88, A: 255},
+			color.RGBA{R: 201, G: 144, B: 252, A: 255},
+			color.RGBA{R: 247, G: 196, B: 215, A: 255},
+			color.RGBA{R: 251, G: 165, B: 200, A: 255},
+			color.RGBA{R: 224, G: 147, B: 30, A: 255},
+			color.RGBA{R: 56, G: 62, B: 48, A: 255},
+			color.RGBA{R: 86, G: 95, B: 74, A: 255},
+			color.RGBA{R: 123, G: 134, B: 106, A: 255},
+			color.RGBA{R: 165, G: 180, B: 144, A: 255},
+			color.RGBA{R: 243, G: 136, B: 19, A: 255},
+		},
+	}
 
-    SunsetSaffron = Theme{
-	    Name: "Sunset Saffron",
-	    Colors: []color.Color{
-		    color.RGBA{R: 29, G: 32, B: 33, A: 255},
-		    color.RGBA{R: 251, G: 241, B: 199, A: 255},
-		    color.RGBA{R: 254, G: 128, B: 25, A: 255},
-		    color.RGBA{R: 142, G: 192, B: 124, A: 255},
-		    color.RGBA{R: 211, G: 134, B: 155, A: 255},
-		    color.RGBA{R: 250, G: 189, B: 47, A: 255},
-		    color.RGBA{R: 131, G: 165, B: 152, A: 255},
-		    color.RGBA{R: 254, G: 128, B: 25, A: 255},
-		    color.RGBA{R: 29, G: 32, B: 33, A: 255},
-		    color.RGBA{R: 40, G: 40, B: 40, A: 255},
-		    color.RGBA{R: 60, G: 56, B: 54, A: 255},
-		    color.RGBA{R: 146, G: 131, B: 116, A: 255},
-		    color.RGBA{R: 80, G: 73, B: 69, A: 255},
-		    color.RGBA{R: 102, G: 92, B: 84, A: 255},
-		    color.RGBA{R: 124, G: 111, B: 100, A: 255},
-		    color.RGBA{R: 168, G: 153, B: 132, A: 255},
-		    color.RGBA{R: 0, G: 0, B: 0, A: 255},
-		    color.RGBA{R: 251, G: 241, B: 199, A: 255},
-	    },
-    }
+	SunsetSaffron = Theme{
+		Name: "Sunset Saffron",
+		Colors: []color.Color{
+			color.RGBA{R: 29, G: 32, B: 33, A: 255},
+			color.RGBA{R: 251, G: 241, B: 199, A: 255},
+			color.RGBA{R: 254, G: 128, B: 25, A: 255},
+			color.RGBA{R: 142, G: 192, B: 124, A: 255},
+			color.RGBA{R: 211, G: 134, B: 155, A: 255},
+			color.RGBA{R: 250, G: 189, B: 47, A: 255},
+			color.RGBA{R: 131, G: 165, B: 152, A: 255},
+			color.RGBA{R: 254, G: 128, B: 25, A: 255},
+			color.RGBA{R: 29, G: 32, B: 33, A: 255},
+			color.RGBA{R: 40, G: 40, B: 40, A: 255},
+			color.RGBA{R: 60, G: 56, B: 54, A: 255},
+			color.RGBA{R: 146, G: 131, B: 116, A: 255},
+			color.RGBA{R: 80, G: 73, B: 69, A: 255},
+			color.RGBA{R: 102, G: 92, B: 84, A: 255},
+			color.RGBA{R: 124, G: 111, B: 100, A: 255},
+			color.RGBA{R: 168, G: 153, B: 132, A: 255},
+			color.RGBA{R: 0, G: 0, B: 0, A: 255},
+			color.RGBA{R: 251, G: 241, B: 199, A: 255},
+		},
+	}
 
-    SunsetTangerine = Theme{
-    	Name: "Sunset Tangerine",
-    	Colors: []color.Color{
-    		color.RGBA{R: 255, G: 87, B: 51, A: 255},
-    		color.RGBA{R: 255, G: 218, B: 51, A: 255},
-    		color.RGBA{R: 51, G: 255, B: 87, A: 255},
-    		color.RGBA{R: 51, G: 138, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 51, B: 245, A: 255},
-    		color.RGBA{R: 51, G: 230, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 87, B: 51, A: 255},
-    		color.RGBA{R: 255, G: 133, B: 51, A: 255},
-    		color.RGBA{R: 255, G: 207, B: 51, A: 255},
-    		color.RGBA{R: 51, G: 255, B: 107, A: 255},
-    		color.RGBA{R: 51, G: 166, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 51, B: 181, A: 255},
-    		color.RGBA{R: 51, G: 247, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 87, B: 51, A: 255},
-    		color.RGBA{R: 255, G: 168, B: 51, A: 255},
-    		color.RGBA{R: 255, G: 217, B: 51, A: 255},
-    		color.RGBA{R: 0, G: 0, B: 0, A: 255},
-    		color.RGBA{R: 255, G: 255, B: 255, A: 255},
-    	},
-    }
+	SunsetTangerine = Theme{
+		Name: "Sunset Tangerine",
+		Colors: []color.Color{
+			color.RGBA{R: 255, G: 87, B: 51, A: 255},
+			color.RGBA{R: 255, G: 218, B: 51, A: 255},
+			color.RGBA{R: 51, G: 255, B: 87, A: 255},
+			color.RGBA{R: 51, G: 138, B: 255, A: 255},
+			color.RGBA{R: 255, G: 51, B: 245, A: 255},
+			color.RGBA{R: 51, G: 230, B: 255, A: 255},
+			color.RGBA{R: 255, G: 87, B: 51, A: 255},
+			color.RGBA{R: 255, G: 133, B: 51, A: 255},
+			color.RGBA{R: 255, G: 207, B: 51, A: 255},
+			color.RGBA{R: 51, G: 255, B: 107, A: 255},
+			color.RGBA{R: 51, G: 166, B: 255, A: 255},
+			color.RGBA{R: 255, G: 51, B: 181, A: 255},
+			color.RGBA{R: 51, G: 247, B: 255, A: 255},
+			color.RGBA{R: 255, G: 87, B: 51, A: 255},
+			color.RGBA{R: 255, G: 168, B: 51, A: 255},
+			color.RGBA{R: 255, G: 217, B: 51, A: 255},
+			color.RGBA{R: 0, G: 0, B: 0, A: 255},
+			color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		},
+	}
 
 	Tokyo_Storm = Theme{
 		Name: "Tokyo-storm",
@@ -707,86 +706,83 @@ var (
 	}
 
 	Cyberpunk = Theme{
-    	Name: "Cyber-punk",
-    	Colors: []color.Color{
-    		color.RGBA{R: 0, G: 0, B: 0, A: 255},
-    		color.RGBA{R: 255, G: 0, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 255, B: 0, A: 255},
-    		color.RGBA{R: 0, G: 255, B: 255, A: 255},
-    		color.RGBA{R: 0, G: 255, B: 0, A: 255},
-    		color.RGBA{R: 255, G: 0, B: 0, A: 255},
-    		color.RGBA{R: 0, G: 0, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 165, B: 0, A: 255},
-    		color.RGBA{R: 75, G: 0, B: 130, A: 255},
-    		color.RGBA{R: 238, G: 130, B: 238, A: 255},
-    		color.RGBA{R: 135, G: 206, B: 235, A: 255},
-    		color.RGBA{R: 255, G: 105, B: 180, A: 255},
-    		color.RGBA{R: 139, G: 0, B: 255, A: 255},
-    		color.RGBA{R: 255, G: 20, B: 147, A: 255},
-    		color.RGBA{R: 0, G: 128, B: 128, A: 255},
-    		color.RGBA{R: 255, G: 0, B: 255, A: 255},
-    		color.RGBA{R: 0, G: 0, B: 139, A: 255},
-    		color.RGBA{R: 255, G: 69, B: 0, A: 255},
-    		color.RGBA{R: 64, G: 224, B: 208, A: 255},
-    		color.RGBA{R: 186, G: 85, B: 211, A: 255},
-    		color.RGBA{R: 255, G: 182, B: 193, A: 255},
-    	},
-    }
+		Name: "Cyber-punk",
+		Colors: []color.Color{
+			color.RGBA{R: 0, G: 0, B: 0, A: 255},
+			color.RGBA{R: 255, G: 0, B: 255, A: 255},
+			color.RGBA{R: 255, G: 255, B: 0, A: 255},
+			color.RGBA{R: 0, G: 255, B: 255, A: 255},
+			color.RGBA{R: 0, G: 255, B: 0, A: 255},
+			color.RGBA{R: 255, G: 0, B: 0, A: 255},
+			color.RGBA{R: 0, G: 0, B: 255, A: 255},
+			color.RGBA{R: 255, G: 165, B: 0, A: 255},
+			color.RGBA{R: 75, G: 0, B: 130, A: 255},
+			color.RGBA{R: 238, G: 130, B: 238, A: 255},
+			color.RGBA{R: 135, G: 206, B: 235, A: 255},
+			color.RGBA{R: 255, G: 105, B: 180, A: 255},
+			color.RGBA{R: 139, G: 0, B: 255, A: 255},
+			color.RGBA{R: 255, G: 20, B: 147, A: 255},
+			color.RGBA{R: 0, G: 128, B: 128, A: 255},
+			color.RGBA{R: 255, G: 0, B: 255, A: 255},
+			color.RGBA{R: 0, G: 0, B: 139, A: 255},
+			color.RGBA{R: 255, G: 69, B: 0, A: 255},
+			color.RGBA{R: 64, G: 224, B: 208, A: 255},
+			color.RGBA{R: 186, G: 85, B: 211, A: 255},
+			color.RGBA{R: 255, G: 182, B: 193, A: 255},
+		},
+	}
 
+	NightOwl = Theme{
+		Name: "Night-owl",
+		Colors: []color.Color{
+			color.RGBA{R: 0, G: 43, B: 54, A: 255},
+			color.RGBA{R: 7, G: 54, B: 66, A: 255},
+			color.RGBA{R: 88, G: 110, B: 117, A: 255},
+			color.RGBA{R: 101, G: 123, B: 131, A: 255},
+			color.RGBA{R: 147, G: 161, B: 161, A: 255},
+			color.RGBA{R: 203, G: 75, B: 22, A: 255},
+			color.RGBA{R: 88, G: 110, B: 117, A: 255},
+			color.RGBA{R: 39, G: 150, B: 135, A: 255},
+			color.RGBA{R: 0, G: 113, B: 133, A: 255},
+			color.RGBA{R: 211, G: 54, B: 130, A: 255},
+			color.RGBA{R: 131, G: 148, B: 150, A: 255},
+			color.RGBA{R: 52, G: 101, B: 36, A: 255},
+			color.RGBA{R: 229, G: 229, B: 229, A: 255},
+			color.RGBA{R: 191, G: 97, B: 106, A: 255},
+			color.RGBA{R: 236, G: 139, B: 67, A: 255},
+			color.RGBA{R: 85, G: 139, B: 47, A: 255},
+			color.RGBA{R: 102, G: 120, B: 105, A: 255},
+			color.RGBA{R: 0, G: 128, B: 128, A: 255},
+			color.RGBA{R: 240, G: 232, B: 196, A: 255},
+			color.RGBA{R: 124, G: 45, B: 75, A: 255},
+		},
+	}
 
-    NightOwl = Theme{
-    	Name: "Night-owl",
-    	Colors: []color.Color{
-    		color.RGBA{R: 0, G: 43, B: 54, A: 255},
-    		color.RGBA{R: 7, G: 54, B: 66, A: 255},
-    		color.RGBA{R: 88, G: 110, B: 117, A: 255},
-    		color.RGBA{R: 101, G: 123, B: 131, A: 255},
-    		color.RGBA{R: 147, G: 161, B: 161, A: 255},
-    		color.RGBA{R: 203, G: 75, B: 22, A: 255},
-    		color.RGBA{R: 88, G: 110, B: 117, A: 255},
-    		color.RGBA{R: 39, G: 150, B: 135, A: 255},
-    		color.RGBA{R: 0, G: 113, B: 133, A: 255},
-    		color.RGBA{R: 211, G: 54, B: 130, A: 255},
-    		color.RGBA{R: 131, G: 148, B: 150, A: 255},
-    		color.RGBA{R: 52, G: 101, B: 36, A: 255},
-    		color.RGBA{R: 229, G: 229, B: 229, A: 255},
-    		color.RGBA{R: 191, G: 97, B: 106, A: 255},
-    		color.RGBA{R: 236, G: 139, B: 67, A: 255},
-    		color.RGBA{R: 85, G: 139, B: 47, A: 255},
-    		color.RGBA{R: 102, G: 120, B: 105, A: 255},
-    		color.RGBA{R: 0, G: 128, B: 128, A: 255},
-    		color.RGBA{R: 240, G: 232, B: 196, A: 255},
-    		color.RGBA{R: 124, G: 45, B: 75, A: 255},
-    	},
-    }
-
-    GitHubLight = Theme{
-        Name: "GitHub-Light",
-        Colors: []color.Color{
-            color.RGBA{R: 255, G: 255, B: 255, A: 255},
-            color.RGBA{R: 243, G: 243, B: 243, A: 255},
-            color.RGBA{R: 235, G: 235, B: 235, A: 255},
-            color.RGBA{R: 189, G: 189, B: 189, A: 255},
-            color.RGBA{R: 102, G: 102, B: 102, A: 255},
-            color.RGBA{R: 81, G: 81, B: 81, A: 255},
-            color.RGBA{R: 0, G: 0, B: 0, A: 255},
-            color.RGBA{R: 69, G: 69, B: 69, A: 255},
-            color.RGBA{R: 238, G: 0, B: 0, A: 255},
-            color.RGBA{R: 255, G: 153, B: 51, A: 255},
-            color.RGBA{R: 34, G: 139, B: 34, A: 255},
-            color.RGBA{R: 0, G: 0, B: 255, A: 255},
-            color.RGBA{R: 148, G: 0, B: 211, A: 255},
-            color.RGBA{R: 75, G: 0, B: 130, A: 255},
-            color.RGBA{R: 102, G: 51, B: 153, A: 255},
-            color.RGBA{R: 204, G: 204, B: 204, A: 255},
-            color.RGBA{R: 170, G: 170, B: 170, A: 255},
-            color.RGBA{R: 120, G: 120, B: 120, A: 255},
-            color.RGBA{R: 170, G: 119, B: 204, A: 255},
-            color.RGBA{R: 255, G: 69, B: 0, A: 255},
-            color.RGBA{R: 255, G: 105, B: 180, A: 255},
-            color.RGBA{R: 153, G: 204, B: 255, A: 255},
-        },
-    }
-
-
+	GitHubLight = Theme{
+		Name: "GitHub-Light",
+		Colors: []color.Color{
+			color.RGBA{R: 255, G: 255, B: 255, A: 255},
+			color.RGBA{R: 243, G: 243, B: 243, A: 255},
+			color.RGBA{R: 235, G: 235, B: 235, A: 255},
+			color.RGBA{R: 189, G: 189, B: 189, A: 255},
+			color.RGBA{R: 102, G: 102, B: 102, A: 255},
+			color.RGBA{R: 81, G: 81, B: 81, A: 255},
+			color.RGBA{R: 0, G: 0, B: 0, A: 255},
+			color.RGBA{R: 69, G: 69, B: 69, A: 255},
+			color.RGBA{R: 238, G: 0, B: 0, A: 255},
+			color.RGBA{R: 255, G: 153, B: 51, A: 255},
+			color.RGBA{R: 34, G: 139, B: 34, A: 255},
+			color.RGBA{R: 0, G: 0, B: 255, A: 255},
+			color.RGBA{R: 148, G: 0, B: 211, A: 255},
+			color.RGBA{R: 75, G: 0, B: 130, A: 255},
+			color.RGBA{R: 102, G: 51, B: 153, A: 255},
+			color.RGBA{R: 204, G: 204, B: 204, A: 255},
+			color.RGBA{R: 170, G: 170, B: 170, A: 255},
+			color.RGBA{R: 120, G: 120, B: 120, A: 255},
+			color.RGBA{R: 170, G: 119, B: 204, A: 255},
+			color.RGBA{R: 255, G: 69, B: 0, A: 255},
+			color.RGBA{R: 255, G: 105, B: 180, A: 255},
+			color.RGBA{R: 153, G: 204, B: 255, A: 255},
+		},
+	}
 )

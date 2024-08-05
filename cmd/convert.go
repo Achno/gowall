@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
 	Short: "Convert an img's color scheme",
@@ -28,16 +27,16 @@ var convertCmd = &cobra.Command{
 			err := image.ProcessBatchImgs(expandedFiles, shared.Theme, processor)
 
 			utils.HandleError(err)
-			
-		case len(args) > 0 && strings.HasSuffix(args[0],"#") :
+
+		case len(args) > 0 && strings.HasSuffix(args[0], "#"):
 			fmt.Println("Processing directory...")
 			processor := &image.ThemeConverter{}
 			path := utils.DiscardLastCharacter(args[0])
-			files ,err := utils.ExpandHashtag(path)
+			files, err := utils.ExpandHashtag(path)
 
-			utils.HandleError(err,"Error ExpandingHashTag")
+			utils.HandleError(err, "Error ExpandingHashTag")
 
-			err =image.ProcessBatchImgs(files,shared.Theme,processor)
+			err = image.ProcessBatchImgs(files, shared.Theme, processor)
 
 			utils.HandleError(err)
 
@@ -47,7 +46,7 @@ var convertCmd = &cobra.Command{
 			expandFile := utils.ExpandHomeDirectory(args)
 			err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 
-			utils.HandleError(err,"Error Processing Image")
+			utils.HandleError(err, "Error Processing Image")
 
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")

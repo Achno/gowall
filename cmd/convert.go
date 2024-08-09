@@ -44,9 +44,12 @@ var convertCmd = &cobra.Command{
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 
 			utils.HandleError(err, "Error Processing Image")
+			err = image.OpenImage(path)
+
+			utils.HandleError(err, "Error opening image")
 
 		default:
 			fmt.Println("Error: requires at least 1 arg(s), only received 0")

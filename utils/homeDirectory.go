@@ -13,7 +13,7 @@ func CreateDirectory() (dirPath string, err error) {
 		return "", err
 	}
 
-	folderName := config.ConfigFolder
+	folderName := config.OutputFolder
 	dirPath = filepath.Join(homeDir, folderName)
 
 	err = os.MkdirAll(dirPath, 0777)

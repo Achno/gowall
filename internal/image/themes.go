@@ -5,21 +5,14 @@ import (
 	"errors"
 	"image/color"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/Achno/gowall/config"
 )
 
 type Theme struct {
 	Name   string
 	Colors []color.Color
-}
-
-type themeWrapper struct {
-	Name   string   `yaml:"name"`
-	Colors []string `yaml:"colors"`
 }
 
 // Available themes
@@ -57,40 +50,7 @@ func init() {
 
 func loadCustomThemes() {
 
-	// look for $XDG_CONFIG_HOME/gowall/config.yml or $HOME/.config/gowall/config.yml
-	configDir, err := os.UserConfigDir()
-
-	if err != nil {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			// cant find home or config just give up
-			return
-		}
-		configDir = filepath.Join(homeDir, ".config")
-	}
-	configPath := filepath.Join(configDir, "gowall", "config.yml")
-
-	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		// file doesnt exist skip custom themes
-		return
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		log.Printf("error reading config file: %v", err)
-		return
-	}
-
-	var rawConfig struct {
-		Themes []themeWrapper `yaml:"themes"`
-	}
-	err = yaml.Unmarshal(data, &rawConfig)
-	if err != nil {
-		log.Printf("error unmarshalling config file: %v", err)
-		return
-	}
-
-	for _, tw := range rawConfig.Themes {
+	for _, tw := range config.GowallConfig.Themes {
 		valid := true
 		if tw.Name == "" || len(tw.Colors) == 0 {
 			// skip invalid color

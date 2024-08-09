@@ -7,11 +7,14 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/utils"
 
 	"github.com/chai2010/webp"
@@ -73,27 +76,64 @@ func SaveImage(img image.Image, filePath string, format string) error {
 
 }
 
+// Opens the image on the default viewing application of every operating system.
+//
+//	If the terminal emulator "kitty" is running --> it will print the image on the terminal
+func OpenImage(filePath string) error {
+
+	if !config.GowallConfig.EnableImagePreviewing {
+		return nil
+	}
+
+	var cmd *exec.Cmd
+
+	// 50ms
+	if utils.IsKittyTerminalRunning() {
+		cmd = exec.Command("kitty", "icat", filePath)
+		cmd.Stdout = os.Stdout
+
+		return cmd.Run()
+	}
+
+	// 300ms for gwen
+	switch runtime.GOOS {
+
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", filePath)
+	case "darwin":
+		cmd = exec.Command("open", filePath)
+	case "linux":
+		cmd = exec.Command("xdg-open", filePath)
+
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
+
+	return cmd.Start()
+
+}
+
 // 1. Loads the img, 2. Processes it depending on the type of Processor you put which impliments
 // the 'ImageProcessor' interface, 3. Creates the necessary directories ,4. Saves the image there
-func ProcessImg(imgPath string, processor ImageProcessor, theme string) error {
+func ProcessImg(imgPath string, processor ImageProcessor, theme string) (string, error) {
 
 	img, err := LoadImage(imgPath)
 
 	if err != nil {
-		return fmt.Errorf("while loading image : %w", err)
+		return "", fmt.Errorf("while loading image : %w", err)
 	}
 
 	newImg, err := processor.Process(img, theme)
 
 	if err != nil {
-		return fmt.Errorf("while processing image : %w", err)
+		return "", fmt.Errorf("while processing image : %w", err)
 	}
 
 	//Extract file extension from imgPath
 	extension := strings.ToLower(filepath.Ext(imgPath))
 
 	if extension == "" {
-		return fmt.Errorf("error: Could not determine file extension")
+		return "", fmt.Errorf("error: Could not determine file extension")
 	}
 
 	// remove '.' from the extension
@@ -105,18 +145,18 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string) error {
 	outputFilePath := filepath.Join(dirPath, nameOfFile)
 
 	if err != nil {
-		return fmt.Errorf("while creating Directory or getting path")
+		return "", fmt.Errorf("while creating Directory or getting path")
 	}
 
 	err = SaveImage(newImg, outputFilePath, extension)
 
 	if err != nil {
-		return fmt.Errorf("while saving image: %w in %s ", err, outputFilePath)
+		return "", fmt.Errorf("while saving image: %w in %s ", err, outputFilePath)
 	}
 
-	fmt.Printf("Image processed and saved as %s\n", outputFilePath)
+	fmt.Printf("Image processed and saved as %s\n\n", outputFilePath)
 
-	return nil
+	return outputFilePath, nil
 
 }
 
@@ -134,7 +174,7 @@ func ProcessBatchImgs(files []string, theme string, processor ImageProcessor) er
 		go func(file string, index int) {
 			defer wg.Done()
 
-			err := ProcessImg(file, processor, theme)
+			_, err := ProcessImg(file, processor, theme)
 
 			if err != nil {
 				errChan <- fmt.Errorf("file %s : %w", file, err)

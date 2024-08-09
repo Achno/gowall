@@ -24,10 +24,13 @@
 
 Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / pallete you like! 
 
+## Features 
 - It supports `single` and `batch` conversion of images to any of the available themes below.
 - It can convert whole `directories` with the `#` delimiter, check `Usage` section
 - It also has the ability to `invert` the colors of the image and convert them later
 - Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
+- It supports  `image preview` ❗ by printing the image on the terminal on `kitty`. If you are running on an terminal emulator other than kitty it will just open your default image viewing
+  application no matter the operating system. ( You can disable this, check `Usage` section ) 
 
 ### Supported formats
 
@@ -195,8 +198,23 @@ Notes 🗒️ :
    ```bash
     gowall list
    ```
-
 <br> 
+
+7. `Image previewing`
+   
+   Image previewing is available for single image processing and is `ON` by default
+
+   Examples : `gowall convert ~/Pictures/img.png` and `gowall invert ~/Pictures/img.png`
+
+   You can disable it by adding the following inside your `~/.config/gowall/config.yml`
+
+   ```yml
+   EnableImagePreviewing: false
+   ```
+
+   <div align = center><img src="assets/preview.png"><br><br>
+
+   
 
 # Installation :package:
 

@@ -234,7 +234,18 @@ Notes 🗒️ :
     gowall extract /path/to/img.png -pc 6
     ```
     That will open a hex code previwer in your default web browser
-   
+
+<br>
+
+9. `Wallpaper of the Day`
+
+   View beautiful wallpapers that reset daily
+
+   ```bash
+   gowall -w
+   ```
+
+You can see an example [here](https://freeimage.host/i/dGuKtBp)
 
    
 

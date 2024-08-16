@@ -30,7 +30,8 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 - It also has the ability to `invert` the colors of the image and convert them later
 - Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
 - It supports  `image preview` ❗ by printing the image on the terminal on `kitty`. If you are running on an terminal emulator other than kitty it will just open your default image viewing
-  application no matter the operating system. ( You can disable this, check `Usage` section ) 
+  application no matter the operating system. ( You can disable this, check `Usage` section )
+- It supports `color pallete extraction` from an image (like pywal, Check `Usage` section for more information )  
 
 ### Supported formats
 
@@ -38,18 +39,11 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 
 ### Planned features
 
-1. `Random mode`: This mode applies a series of transformations to your image in a random order.
-For example, it might first invert the colors, then apply the Nord theme, and then switch to the Catppuccin theme, among other possibilities.
-The final result will be a unique wallpaper that differs from standard conversions.
-Use this mode if you want to explore new color schemes or if you're looking for something beyond typical image conversions.
-
-2. `Extract command`: Using this command on an image will extract the color-scheme and give you a pallete of 5 hex color codes ( aka. pywall )
-
-3. `TUI` : Will also have a pretty TUI version made with `bubbletea`
+1. `TUI` : Will also have a pretty TUI version made with `bubbletea`
    
 <div align = center><img src="assets/catppuccin.png"><br><br>
 
-<div align = center><img src="assets/everforest.png"><br><br>
+<div align = center><img src="assets/custom_theme.png"><br><br>
 
 <div align = center><img src="assets/invert.png"><br><br> <div>
 
@@ -150,12 +144,12 @@ Notes 🗒️ :
 1.  `Singe conversion`
 
   ```bash
-    gowall convert path/to/img.png -t <theme-name-lowercase>
+    gowall convert path/to/img.png -t <theme-name>
   ```
 
 Notes 🗒️ : 
 - `path/to/img.png` does not have to be an absolute path. You can use a relative path with the `~` ex. `~/Pictures/img.png` 
-- `<theme-name-lowercase>` is one of the above theme names but in `lowercase` ex. `catppuccin`
+- you can find the list of all the themes via `gowall list` check number 6. as well
 
 <br>
 
@@ -198,6 +192,14 @@ Notes 🗒️ :
    ```bash
     gowall list
    ```
+   Notes 🗒️: You can view the colors of a theme by using the `-t` flag
+    Example:
+   ```bash
+    gowall list -t catppuccin
+   ```
+   You can also open up a hex preview app in your default browser via the `-p` flag
+   Example : `gowall list -pt catppuccin`
+   
 <br> 
 
 7. `Image previewing`
@@ -213,6 +215,26 @@ Notes 🗒️ :
    ```
 
    <div align = center><img src="assets/preview.png"><br><br>
+
+   <br>
+
+
+8.  `Pallete extraction` ( Like pywal )
+
+    You can extract the color pallete of an image as shown below : 
+
+    ```bash
+    gowall extract /path/to/img.png -c 6
+    ``` 
+
+    The `-c` flag specifies how many hex color codes to return ( Personally i recommend between 6-16 with 6-7 being my go to).
+    This will print the color codes to the terminal. In order for you to view all the colors of the hex codes at once you can use the `-p` flag.
+
+    ```bash
+    gowall extract /path/to/img.png -pc 6
+    ```
+    That will open a hex code previwer in your default web browser
+   
 
    
 

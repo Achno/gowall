@@ -1,9 +1,11 @@
 package config
 
 const (
-	Version      = "v0.1.6"
-	OutputFolder = "Pictures/gowall"
-	configFile   = "config.yml"
+	Version          = "v0.1.7"
+	OutputFolder     = "Pictures/gowall"
+	configFile       = "config.yml"
+	WallOfTheDayUrl  = "https://www.reddit.com/r/wallpaper/top/"
+	HexCodeVisualUrl = "https://lawlesscreation.github.io/hex-color-visualiser/"
 )
 
 var (

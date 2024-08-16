@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"io/fs"
+	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 	"unicode/utf8"
@@ -43,4 +45,25 @@ func DiscardLastCharacter(s string) string {
 
 	// Exclude the last character
 	return s[:len(s)-size]
+}
+
+func GetFileExtensionFromURL(rawurl string) (string, error) {
+	parsedURL, err := url.Parse(rawurl)
+	if err != nil {
+		return "", fmt.Errorf("could not parse URL: %w", err)
+	}
+
+	filePath := parsedURL.Path
+
+	// Extract filename
+	fileName := path.Base(filePath)
+
+	// Remove query parameters, if any
+	if idx := strings.Index(fileName, "?"); idx != -1 {
+		fileName = fileName[:idx]
+	}
+
+	// Get the file extension
+	extension := filepath.Ext(fileName)
+	return extension, nil
 }

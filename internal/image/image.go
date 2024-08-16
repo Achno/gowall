@@ -6,6 +6,8 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/utils"
@@ -74,6 +77,49 @@ func SaveImage(img image.Image, filePath string, format string) error {
 
 	return encoder(file, img)
 
+}
+
+func SaveUrlAsImg(url string) (string, error) {
+
+	extension, err := utils.GetFileExtensionFromURL(url)
+
+	if err != nil {
+		return "", err
+	}
+
+	dirFolder, err := utils.CreateDirectory()
+
+	if err != nil {
+		return "", fmt.Errorf("while creating Directory or getting path")
+	}
+
+	timestamp := time.Now().Format("20060102-150405")
+	fileName := fmt.Sprintf("wall-%s%s", timestamp, extension)
+
+	path := filepath.Join(dirFolder, fileName)
+
+	file, err := os.Create(path)
+	if err != nil {
+		return "", fmt.Errorf("could not create file: %w", err)
+	}
+	defer file.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("could not fetch the URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch image: status code %d", resp.StatusCode)
+	}
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("could not write to file: %w", err)
+	}
+
+	return path, nil
 }
 
 // Opens the image on the default viewing application of every operating system.

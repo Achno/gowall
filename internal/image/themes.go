@@ -3,6 +3,7 @@ package image
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"image/color"
 	"log"
 	"strings"
@@ -30,7 +31,6 @@ var themes = map[string]Theme{
 	"srcery":           Srcery,
 	"monokai":          Monokai,
 	"material":         Material,
-	"atom-one-light":   AtomOneLight,
 	"synthwave-84":     Synthwave84,
 	"atomdark":         AtomDark,
 	"oceanic-next":     OceanicNext,
@@ -90,6 +90,10 @@ func hexToRGBA(hexStr string) (color.RGBA, error) {
 	return color.RGBA{R: bytes[0], G: bytes[1], B: bytes[2], A: 255}, nil
 }
 
+func RGBtoHex(c color.RGBA) string {
+	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
+}
+
 func ListThemes() []string {
 	allThemes := make([]string, 0, len(themes))
 	for theme := range themes {
@@ -113,6 +117,30 @@ func themeExists(theme string) bool {
 	_, exists := themes[theme]
 
 	return exists
+}
+
+// returns the colors of the theme in hex code format
+func GetThemeColors(theme string) ([]string, error) {
+	var colors []string
+
+	selectedTheme, err := SelectTheme(theme)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, clr := range selectedTheme.Colors {
+		rgba, ok := clr.(color.RGBA)
+
+		if !ok {
+			return nil, fmt.Errorf("color is not of type color.RGBA")
+		}
+		hexCode := RGBtoHex(rgba)
+		colors = append(colors, hexCode)
+	}
+
+	return colors, nil
+
 }
 
 var (
@@ -392,28 +420,6 @@ var (
 			color.RGBA{R: 255, G: 152, B: 0, A: 255},
 			color.RGBA{R: 255, G: 87, B: 34, A: 255},
 			color.RGBA{R: 121, G: 85, B: 72, A: 255},
-		},
-	}
-
-	AtomOneLight = Theme{
-		Name: "AtomOneLight",
-		Colors: []color.Color{
-			color.RGBA{R: 245, G: 245, B: 245, A: 255},
-			color.RGBA{R: 250, G: 250, B: 250, A: 255},
-			color.RGBA{R: 248, G: 248, B: 248, A: 255},
-			color.RGBA{R: 245, G: 245, B: 245, A: 255},
-			color.RGBA{R: 238, G: 238, B: 238, A: 255},
-			color.RGBA{R: 231, G: 231, B: 231, A: 255},
-			color.RGBA{R: 219, G: 219, B: 219, A: 255},
-			color.RGBA{R: 203, G: 203, B: 203, A: 255},
-			color.RGBA{R: 198, G: 198, B: 198, A: 255},
-			color.RGBA{R: 121, G: 112, B: 116, A: 255},
-			color.RGBA{R: 183, G: 182, B: 168, A: 255},
-			color.RGBA{R: 241, G: 241, B: 240, A: 255},
-			color.RGBA{R: 170, G: 182, B: 194, A: 255},
-			color.RGBA{R: 206, G: 208, B: 213, A: 255},
-			color.RGBA{R: 142, G: 170, B: 198, A: 255},
-			color.RGBA{R: 170, G: 189, B: 216, A: 255},
 		},
 	}
 

@@ -256,7 +256,7 @@ You can see an example [here](https://freeimage.host/i/dGuKtBp)
 ```
 yay -S gowall
 ```
-### Void Linux - XBPS-SRC ( Maintainer : elbachir-one ) 
+### Void Linux - XBPS-SRC ( Maintainer: [elbachir-one](https://github.com/elbachir-one/) ) 
 
 Assuming you have [void-packages](https://github.com/void-linux/void-packages)
 
@@ -272,12 +272,21 @@ sudo xbps-install -R hostdir/binpkgs gowall
 
 🔨 Clone the repo, build the project and move it inside your `$PATH`
 
-```
+```bash
 git clone https://github.com/Achno/gowall
-cd gowall
+cd gowall/
 go build
 sudo cp gowall /usr/local/bin/
+sudo cp gowall.1 /usr/local/share/man/man1/ # To copy the man page.
 gowall
+```
+Using the Makefile
+
+```bash
+git clone https://github.com/Achno/gowall
+cd gowall/
+make
+sudo make install
 ```
 
 Notes 🗒️ : You dont have to use `sudo cp gowall /usr/local/bin/` if you have `$GOPATH` setup correctly

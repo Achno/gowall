@@ -1,0 +1,94 @@
+GOWALL(1)                      General Commands Manual
+
+NAME
+       gowall
+
+SYNOPSIS
+       gowall convert [options] path/to/img.png -t <theme-name>
+       gowall convert -b [options] path/to/img1.png,path/to/img2.png -t <theme-name>
+       gowall invert [options] path/to/img.png
+       gowall invert -b [options] path/to/img1.png,path/to/img2.png
+       gowall convert [options] ~/Pictures/# -t <theme-name>
+       gowall list [options]
+       gowall extract [options] /path/to/img.png -c <number>
+       gowall -w
+
+DESCRIPTION
+       gowall is a tool to convert an image (specifically a wallpaper) to any color
+       scheme or palette you like. It supports single and batch conversions, custom
+       themes, color inversion, image previewing, and color palette extraction.
+
+FEATURES
+       - Convert single or multiple images to any supported theme.
+       - Convert entire directories using the `#` delimiter.
+       - Invert image colors before converting them.
+       - Supports custom themes via `~/.config/gowall/config.yml`.
+       - Preview images on terminal emulators like `kitty`.
+       - Extract color palettes from images similar to `pywal`.
+
+SUPPORTED FORMATS
+       The following image formats are supported:
+
+       png, jpeg, jpg, webp
+
+USAGE
+       1. Single conversion:
+              gowall convert path/to/img.png -t <theme-name>
+
+       2. Batch conversion:
+              gowall convert -b path/img1.png,path/img2.png -t <theme-name>
+
+       3. Invert colors:
+              gowall invert path/to/img.png
+
+       4. Convert a whole directory:
+              gowall convert ~/Pictures/# -t <theme-name>
+
+       5. List all theme names:
+              gowall list
+
+       6. Image previewing:
+              Image previewing is on by default. Disable it in `~/.config/gowall/config.yml` by setting `EnableImagePreviewing` to `false`.
+
+       7. Palette extraction:
+              gowall extract /path/to/img.png -c <number>
+
+       8. Wallpaper of the Day:
+              gowall -w
+
+THEMES
+       The following themes are supported:
+
+       - Catppuccin Mocha
+       - Nord
+       - Everforest
+       - Solarized
+       - Gruvbox
+       - Dracula
+       - Tokyo-dark/storm/moon
+       - Onedark
+       - Material
+       - Atom One Light
+       - Sweet
+       - Synthwave 84
+       - Atom Dark
+       - Oceanic Next
+       - Shades of Purple
+       - Arc Dark
+       - Sunset Aurant
+       - Sunset Saffron
+       - Sunset Tangerine
+       - Cyberpunk
+       - Night Owl
+       - Github Light (black & white)
+       - Srcery (community theme)
+
+       Create your own theme by editing `~/.config/gowall/config.yml`.
+
+SEE ALSO
+       pywal(1), kitty(1)
+
+AUTHOR
+       elbachir-one.
+
+GOWALL(1)

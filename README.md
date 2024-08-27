@@ -266,7 +266,7 @@ Notes 🗒️ :
 ```
 yay -S gowall
 ```
-### Void Linux - XBPS-SRC ( Maintainer : elbachir-one ) 
+### Void Linux - XBPS-SRC ( Maintainer : [elbachir-one](https://github.com/elbachir-one/)  ) 
 
 Assuming you have [void-packages](https://github.com/void-linux/void-packages)
 

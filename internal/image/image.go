@@ -44,6 +44,18 @@ type ImageProcessor interface {
 	Process(image.Image, string) (image.Image, error)
 }
 
+// NoOpImageProcessor  implements ImageProcessor but does nothing.
+// Its used to just to convert images from one format to another without altering them.
+//
+//	Example from "img.webp" --> "img.png"
+type NoOpImageProcessor struct{}
+
+// Implement the Process method
+func (p *NoOpImageProcessor) Process(img image.Image, options string) (image.Image, error) {
+	// Simply return the image without any modifications
+	return img, nil
+}
+
 func LoadImage(filePath string) (image.Image, error) {
 
 	file, err := os.Open(filePath)
@@ -161,7 +173,9 @@ func OpenImage(filePath string) error {
 
 // 1. Loads the img, 2. Processes it depending on the type of Processor you put which impliments
 // the 'ImageProcessor' interface, 3. Creates the necessary directories ,4. Saves the image there
-func ProcessImg(imgPath string, processor ImageProcessor, theme string) (string, error) {
+//
+//	You can optionally provide an extension to be formated into, otherwise it uses the image's extension
+func ProcessImg(imgPath string, processor ImageProcessor, theme string, ext ...string) (string, error) {
 
 	img, err := LoadImage(imgPath)
 
@@ -185,8 +199,17 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string) (string,
 	// remove '.' from the extension
 	extension = extension[1:]
 
+	// Optionally change the format of the image if the user specifies it ex. from webp to png
+	if len(ext) > 0 && ext[0] != "" {
+		extension = ext[0]
+	}
+
 	dirPath, err := utils.CreateDirectory()
+
+	// Extract fileName and replace it with the given extension
 	nameOfFile := filepath.Base(imgPath)
+	nameOfFile = strings.TrimSuffix(nameOfFile, filepath.Ext(nameOfFile))
+	nameOfFile = nameOfFile + "." + extension
 
 	outputFilePath := filepath.Join(dirPath, nameOfFile)
 

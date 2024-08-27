@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var formatFlag string
+
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
 	Short: "Convert an img's color scheme",
@@ -40,6 +42,17 @@ var convertCmd = &cobra.Command{
 
 			utils.HandleError(err)
 
+		case len(args) > 0 && formatFlag != "":
+			fmt.Println("Processing single image...")
+			processor := &image.NoOpImageProcessor{}
+			expandFile := utils.ExpandHomeDirectory(args)
+
+			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme, formatFlag)
+			utils.HandleError(err, "Error Processing Image")
+
+			err = image.OpenImage(path)
+			utils.HandleError(err, "Error opening image")
+
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
@@ -62,6 +75,7 @@ func init() {
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName-Lowercase]")
 	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
+	convertCmd.Flags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
 
 	// Here you will define your flags and configuration settings.
 }

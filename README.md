@@ -31,7 +31,8 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 - Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
 - It supports  `image preview` ❗ by printing the image on the terminal on `kitty`. If you are running on an terminal emulator other than kitty it will just open your default image viewing
   application no matter the operating system. ( You can disable this, check `Usage` section )
-- It supports `color pallete extraction` from an image (like pywal, Check `Usage` section for more information )  
+- It supports `color pallete extraction` from an image (like pywal, Check `Usage` section for more information )
+- It supports `changing image format` fast for example from `.webp` --> `.png`  
 
 ### Supported formats
 
@@ -244,9 +245,18 @@ Notes 🗒️ :
    ```bash
    gowall -w
    ```
+   You can see an example [here](https://freeimage.host/i/dGuKtBp)
+   
+   <br>
 
-You can see an example [here](https://freeimage.host/i/dGuKtBp)
+11. `Changing formats`
 
+     Change the format of an image, the available formats are `png` `jpeg` `jpg` `webp`
+
+    ```bash
+     gowall convert ~/Pictures/img.webp -f png
+    ```
+     
    
 
 # Installation :package:

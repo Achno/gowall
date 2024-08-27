@@ -44,7 +44,7 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
    
 <div align = center><img src="assets/catppuccin.png"><br><br>
 
-<div align = center><img src="assets/custom_theme.png"><br><br>
+<div align = center><img src="assets/custom.png"><br><br>
 
 <div align = center><img src="assets/invert.png"><br><br> <div>
 

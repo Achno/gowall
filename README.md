@@ -32,7 +32,8 @@ Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-s
 - It supports  `image preview` ❗ by printing the image on the terminal on `kitty`. If you are running on an terminal emulator other than kitty it will just open your default image viewing
   application no matter the operating system. ( You can disable this, check `Usage` section )
 - It supports `color pallete extraction` from an image (like pywal, Check `Usage` section for more information )
-- It supports `changing image format` fast for example from `.webp` --> `.png`  
+- It supports `changing image format` fast for example from `.webp` --> `.png`
+- You can add a beautiful `border` with options to an image
 
 ### Supported formats
 
@@ -256,6 +257,18 @@ Notes 🗒️ :
     ```bash
      gowall convert ~/Pictures/img.webp -f png
     ```
+<br>
+
+12. `Adding a border`
+    
+    Using the `draw` command you can draw a border and specify the color, thickness etc...
+    The below draws a border 5px thick with the color #5D3FD3
+
+    ```bash
+      gowall draw ~/Pictures/img.png -c #5D3FD3 -b 5
+    ```
+    ![border](https://github.com/user-attachments/assets/1dc36ada-9c61-40fe-956b-a25d6817ce3d)
+
      
    
 

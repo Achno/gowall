@@ -259,7 +259,7 @@ Notes 🗒️ :
     ```
 <br>
 
-12. `Adding a border`
+11. `Adding a border`
     
     Using the `draw` command you can draw a border and specify the color, thickness etc...
     The below draws a border 5px thick with the color #5D3FD3
@@ -279,6 +279,15 @@ Notes 🗒️ :
 ```
 yay -S gowall
 ```
+### NixOS - ( Maintainer : [Emily Trau](https://github.com/emilytrau) )
+
+```
+  environment.systemPackages = [
+    pkgs.gowall
+  ];
+```
+More installation options : [here](https://search.nixos.org/packages?channel=24.05&from=0&size=50&sort=relevance&type=packages&query=gowall)
+
 ### Void Linux - XBPS-SRC ( Maintainer : [elbachir-one](https://github.com/elbachir-one/)  ) 
 
 Assuming you have [void-packages](https://github.com/void-linux/void-packages)

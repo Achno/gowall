@@ -63,7 +63,7 @@ func loadCustomThemes() {
 		}
 
 		for i, hexColor := range tw.Colors {
-			col, err := hexToRGBA(hexColor)
+			col, err := HexToRGBA(hexColor)
 			if err != nil {
 				log.Printf("invalid color %s in theme %s: %v", hexColor, tw.Name, err)
 				valid = false
@@ -79,7 +79,7 @@ func loadCustomThemes() {
 	}
 }
 
-func hexToRGBA(hexStr string) (color.RGBA, error) {
+func HexToRGBA(hexStr string) (color.RGBA, error) {
 	if len(hexStr) != 7 || hexStr[0] != '#' {
 		return color.RGBA{}, errors.New("invalid hex color format")
 	}

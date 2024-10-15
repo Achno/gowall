@@ -13,6 +13,7 @@ import (
 )
 
 var formatFlag string
+var colorPair []string
 
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
@@ -53,6 +54,27 @@ var convertCmd = &cobra.Command{
 			err = image.OpenImage(path)
 			utils.HandleError(err, "Error opening image")
 
+		case len(args) > 0 && len(colorPair) > 0:
+			fmt.Println("Replacing color...")
+			expandFile := utils.ExpandHomeDirectory(args)
+			processor := &image.ReplaceProcessor{}
+
+			pairSlice, err := cmd.Flags().GetStringSlice("replace")
+			utils.HandleError(err)
+
+			if len(pairSlice) < 2 {
+				utils.HandleError(fmt.Errorf("specify both the color to be replaced and the replacement color"), "Error")
+			}
+
+			processor.FromColor = pairSlice[0]
+			processor.ToColor = pairSlice[1]
+
+			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			utils.HandleError(err, "Error Processing Image")
+
+			err = image.OpenImage(path)
+			utils.HandleError(err, "Error opening image")
+
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
@@ -73,9 +95,8 @@ var convertCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(convertCmd)
-	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName-Lowercase]")
-	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch [file1.png,file2.png ...]")
+	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName]")
+	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png ...")
 	convertCmd.Flags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
-
-	// Here you will define your flags and configuration settings.
+	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
 }

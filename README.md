@@ -149,6 +149,12 @@ Notes 🗒️ :
     gowall convert path/to/img.png -t <theme-name>
   ```
 
+- `Replace a single color with another`
+
+  ```bash
+   gowall convert /path/to/img.png -r #312424,#1D1C2D
+  ```
+
 Notes 🗒️ : 
 - `path/to/img.png` does not have to be an absolute path. You can use a relative path with the `~` ex. `~/Pictures/img.png` 
 - you can find the list of all the themes via `gowall list` check number 6. as well

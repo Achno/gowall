@@ -162,6 +162,8 @@ func OpenImage(filePath string) error {
 		cmd = exec.Command("open", filePath)
 	case "linux":
 		cmd = exec.Command("xdg-open", filePath)
+	case "freebsd":
+		cmd = exec.Command("xdg-open", filePath)
 
 	default:
 		return fmt.Errorf("unsupported platform")

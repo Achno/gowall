@@ -17,9 +17,7 @@ func OpenURL(url string) error {
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
 	case "darwin":
 		cmd = exec.Command("open", url)
-	case "linux":
-		cmd = exec.Command("xdg-open", url)
-	case "freebsd":
+	case "linux", "freebsd", "openbsd":
 		cmd = exec.Command("xdg-open", url)
 
 	default:

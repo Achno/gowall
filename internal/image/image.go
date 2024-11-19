@@ -160,9 +160,7 @@ func OpenImage(filePath string) error {
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", filePath)
 	case "darwin":
 		cmd = exec.Command("open", filePath)
-	case "linux":
-		cmd = exec.Command("xdg-open", filePath)
-	case "freebsd":
+	case "linux", "freebsd", "openbsd":
 		cmd = exec.Command("xdg-open", filePath)
 
 	default:

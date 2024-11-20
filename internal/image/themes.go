@@ -31,10 +31,10 @@ var themes = map[string]Theme{
 	"srcery":           Srcery,
 	"monokai":          Monokai,
 	"material":         Material,
-	"rose-pine"	    Rose Pine,
-	"rose-pine-moon"    Rose Pine Moon,
-	"rose-pine-dawn"    Rose Pine Dawn,
-	"rose-pine-all"	    Rose Pine All,
+	"rose-pine":        RosePine,
+  "rose-pine-moon":   RosePine_Moon,
+	"rose-pine-dawn":   RosePine_Dawn,
+	"rose-pine-all":    RosePine_All,
 	"synthwave-84":     Synthwave84,
 	"atomdark":         AtomDark,
 	"oceanic-next":     OceanicNext,
@@ -427,8 +427,8 @@ var (
 		},
 	}
 			
-	Material = Theme{
-		Name: "Rose Pine",
+	RosePine = Theme{
+		Name: "RosePine",
 		Colors: []color.Color{
 			color.RGBA{R: 25, G: 23, B: 36, A: 255},
 			color.RGBA{R: 31, G: 29, B: 46, A: 255},
@@ -448,8 +448,8 @@ var (
 		},
 	}	
 	
-	Material = Theme{
-		Name: "Rose Pine Moon",
+	RosePine_Moon = Theme{
+		Name: "RosePine_Moon",
 		Colors: []color.Color{
 			color.RGBA{R: 35, G: 33, B: 54, A: 255},
 			color.RGBA{R: 42, G: 39, B: 63, A: 255},
@@ -469,8 +469,8 @@ var (
 		},
 	}	
 	
-	Material = Theme{
-		Name: "Rose Pine Dawn",
+	RosePine_Dawn = Theme{
+		Name: "RosePine_Dawn",
 		Colors: []color.Color{
 			color.RGBA{R: 250, G: 244, B: 237, A: 255},
 			color.RGBA{R: 255, G: 250, B: 243, A: 255},
@@ -490,8 +490,8 @@ var (
 		},
 	}
 	
-	Material = Theme{
-		Name: "Rose Pine All",
+  RosePine_All = Theme{
+		Name: "RosePine_All",
 		Colors: []color.Color{
 			color.RGBA{R: 25, G: 23, B: 36, A: 255},
 			color.RGBA{R: 31, G: 29, B: 46, A: 255},

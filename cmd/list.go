@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
@@ -35,6 +36,7 @@ var listCmd = &cobra.Command{
 
 		default:
 			allThemes := image.ListThemes()
+			sort.Strings(allThemes)
 			for _, theme := range allThemes {
 				fmt.Println(theme)
 			}

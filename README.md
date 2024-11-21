@@ -1,11 +1,11 @@
 ###### *<div align = right><sub>Design By Achno</sub></div>*
 <div align = center><img src="assets/go-sticker-overlay-small.png"><br><br>
 
-&ensp;[<kbd> <br> Overview <br> </kbd>](#overview)&ensp;
-&ensp;[<kbd> <br> Themes <br> </kbd>](#themes)&ensp;
-&ensp;[<kbd> <br> Usage <br> </kbd>](#usage)&ensp;
-&ensp;[<kbd> <br> Installation <br> </kbd>](#installation)&ensp;
-&ensp;[<kbd> <br> Contributions <br> </kbd>](#contributions)&ensp;
+&ensp;[<kbd> <br> Overview <br> </kbd>](#overview-framed_picture)&ensp;
+&ensp;[<kbd> <br> Themes <br> </kbd>](#themes-art)&ensp;
+&ensp;[<kbd> <br> Usage <br> </kbd>](#usage-gear)&ensp;
+&ensp;[<kbd> <br> Installation <br> </kbd>](#installation-package)&ensp;
+&ensp;[<kbd> <br> Contributions <br> </kbd>](#contributions-handshake)&ensp;
 <br><br><br><br></div>
 
 

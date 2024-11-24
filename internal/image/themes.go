@@ -42,6 +42,7 @@ var themes = map[string]Theme{
 	"cyberpunk":        Cyberpunk,
 	"night-owl":        NightOwl,
 	"github-light":     GitHubLight,
+	"rose-pine":        RosePine,
 }
 
 func init() {
@@ -749,6 +750,27 @@ var (
 			color.RGBA{R: 255, G: 69, B: 0, A: 255},
 			color.RGBA{R: 255, G: 105, B: 180, A: 255},
 			color.RGBA{R: 153, G: 204, B: 255, A: 255},
+		},
+	}
+
+	RosePine = Theme{
+		Name: "RosePine",
+		Colors: []color.Color{
+			color.RGBA{R: 25, G: 23, B: 36, A: 255},
+			color.RGBA{R: 31, G: 29, B: 46, A: 255},
+			color.RGBA{R: 38, G: 35, B: 58, A: 255},
+			color.RGBA{R: 110, G: 106, B: 134, A: 255},
+			color.RGBA{R: 144, G: 140, B: 170, A: 255},
+			color.RGBA{R: 224, G: 222, B: 244, A: 255},
+			color.RGBA{R: 235, G: 111, B: 146, A: 255},
+			color.RGBA{R: 246, G: 193, B: 119, A: 255},
+			color.RGBA{R: 235, G: 188, B: 186, A: 255},
+			color.RGBA{R: 49, G: 116, B: 143, A: 255},
+			color.RGBA{R: 156, G: 207, B: 216, A: 255},
+			color.RGBA{R: 196, G: 167, B: 231, A: 255},
+			color.RGBA{R: 33, G: 32, B: 46, A: 255},
+			color.RGBA{R: 64, G: 61, B: 82, A: 255},
+			color.RGBA{R: 82, G: 79, B: 103, A: 255},
 		},
 	}
 )

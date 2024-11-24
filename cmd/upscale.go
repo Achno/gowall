@@ -11,35 +11,57 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var upscaleCmd = &cobra.Command{
-	Use:   "upscale [PATH]",
-	Short: "[TODO]",
-	Long:  `[TODO]`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("upscale called")
-		switch {
+func UpscaleCmd() *cobra.Command {
 
-		case len(args) > 0:
-			fmt.Println("Upscaling image...")
-			processor := &image.UpscaleProcessor{}
-			expandFile := utils.ExpandHomeDirectory(args)
+	var (
+		scale     int
+		modelName string
+	)
 
-			opts := image.ProcessOptions{
-				SaveToFile: false,
+	upscaleCmd := &cobra.Command{
+		Use:   "upscale [PATH]",
+		Short: "Upscale (or Deblur) images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan",
+		Long:  `Upscale images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan,if you sea black image after a lot of time then that means that you GPU does not support Vulkan. You can give options that specify thescale and Modelname`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			switch {
+			case len(args) > 0:
+				fmt.Println("Upscaling image...")
+
+				processor := &image.UpscaleProcessor{
+					Scale:     scale,
+					ModelName: modelName,
+				}
+
+				expandFile := utils.ExpandHomeDirectory(args)
+				processor.InputFile = expandFile[0]
+
+				opts := image.ProcessOptions{
+					SaveToFile: false,
+				}
+
+				_, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
+				utils.HandleError(err, "Error Processing Image")
+
+			default:
+				fmt.Println("Error: requires at least 1 arg(s), only received 0")
+				_ = cmd.Usage()
 			}
-			_, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
-			utils.HandleError(err, "Error Processing Image")
+			return nil
+		},
+	}
 
-		// err = image.OpenImage(path)
-		// utils.HandleError(err, "Error opening image")
+	upscaleCmd.Flags().IntVarP(&scale, "scale", "s", 2, "Scale factor for upscaling (2, 3, or 4)")
+	upscaleCmd.Flags().StringVarP(&modelName, "model", "m", "realesrgan-x4plus",
+		`Model to use for upscaling. Available models:
+        realesrgan-x4plus (standard),
+        realesrgan-x4plus-anime (optimized for anime small),
+        realesrnet-x4plus (sharper but may have artifacts)
+		realesr-animevideov3 (animation video)`)
 
-		default:
-			fmt.Println("Error: requires at least 1 arg(s), only received 0")
-			_ = cmd.Usage()
-		}
-	},
+	return upscaleCmd
 }
 
 func init() {
-	rootCmd.AddCommand(upscaleCmd)
+	rootCmd.AddCommand(UpscaleCmd())
 }

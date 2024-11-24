@@ -24,15 +24,13 @@ func SetupUpscaler() error {
 		return fmt.Errorf("while getting home directory : %w", err)
 	}
 	zipPath := filepath.Join(homeDir, "tmp.zip")
-	// zipPath := "/home/achno/Downloads/tmp.zip"
-	// destFolder := "/home/achno/Pictures/gowall/upscaler"
 	destFolder := filepath.Join(dirFolder, "upscaler")
 
 	// urls of the ESRGAN portable model depending on the operating system
 	urls := map[string]string{
-		"linux":   "https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-ubuntu.zip",
-		"windows": "https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-windows.zip",
-		"darwin":  "https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-macos.zip",
+		"linux":   "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip",
+		"windows": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip",
+		"darwin":  "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-macos.zip",
 	}
 
 	url, exists := urls[runtime.GOOS]

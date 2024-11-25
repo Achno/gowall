@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO add do you want to setup the upscaler, say downloading models....
 func UpscaleCmd() *cobra.Command {
 
 	var (
@@ -43,6 +44,9 @@ func UpscaleCmd() *cobra.Command {
 				_, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 				utils.HandleError(err, "Error Processing Image")
 
+				err = image.OpenImage(processor.OutputFile)
+				utils.HandleError(err, "Error opening image")
+
 			default:
 				fmt.Println("Error: requires at least 1 arg(s), only received 0")
 				_ = cmd.Usage()
@@ -52,12 +56,11 @@ func UpscaleCmd() *cobra.Command {
 	}
 
 	upscaleCmd.Flags().IntVarP(&scale, "scale", "s", 2, "Scale factor for upscaling (2, 3, or 4)")
-	upscaleCmd.Flags().StringVarP(&modelName, "model", "m", "realesrgan-x4plus",
+	upscaleCmd.Flags().StringVarP(&modelName, "model", "m", "realesr-animevideov3",
 		`Model to use for upscaling. Available models:
-        realesrgan-x4plus (standard),
+        realesrgan-x4plus (Slower,Better quality,forces -s 4),
         realesrgan-x4plus-anime (optimized for anime small),
-        realesrnet-x4plus (sharper but may have artifacts)
-		realesr-animevideov3 (animation video)`)
+		realesr-animevideov3 (Fast model ,animation video (default))`)
 
 	return upscaleCmd
 }

@@ -12,10 +12,10 @@ func HandleError(err error, msg ...string) {
 		switch {
 
 		case len(msg) > 0:
-			fmt.Printf("%s %s: %s %s\n", redColor, msg[0], err, resetColor)
+			fmt.Printf("%s %s: %s %s\n", redColor, msg[0], err, ResetColor)
 
 		default:
-			fmt.Printf("%s %s %s\n", redColor, err, resetColor)
+			fmt.Printf("%s %s %s\n", redColor, err, ResetColor)
 
 		}
 

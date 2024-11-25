@@ -39,6 +39,7 @@ func SetupUpscaler() error {
 		return fmt.Errorf("Unsupported OS: %s\n Only available for linux,mac,windows", runtime.GOOS)
 	}
 
+	fmt.Println(utils.BlueColor + "➜ Downloading models sit back and relax,might take a bit" + utils.ResetColor)
 	// download model
 	err = utils.DownloadUrl(url, zipPath)
 	if err != nil {
@@ -50,7 +51,7 @@ func SetupUpscaler() error {
 	if err != nil {
 		return fmt.Errorf("failed to create folder: %v", err)
 	}
-	fmt.Println("Folder created:", destFolder)
+	fmt.Println(utils.BlueColor + "➜ Folder created" + utils.ResetColor)
 
 	// Extract  zip
 	err = extractZip(zipPath, destFolder)
@@ -63,16 +64,15 @@ func SetupUpscaler() error {
 	if err != nil {
 		return fmt.Errorf("while cleaning up : %v", err)
 	}
-	fmt.Println("cleaning up")
+	fmt.Println(utils.BlueColor + "➜ Cleaning up" + utils.ResetColor)
 
-	fmt.Println("Process complete. Files extracted to:", destFolder)
+	fmt.Println(utils.BlueColor + "➜ Process complete. Upscaler setup" + utils.ResetColor)
 	return nil
 
 }
 
 // extractZip extracts the zip files containing the model to a specified destination and gives it permissions.
 func extractZip(src, dest string) error {
-	fmt.Println("Extracting zip to:", dest)
 	reader, err := zip.OpenReader(src)
 	if err != nil {
 		return fmt.Errorf("failed to open zip file: %v", err)
@@ -132,6 +132,5 @@ func extractZip(src, dest string) error {
 		}
 	}
 
-	fmt.Println("Extraction complete.")
 	return nil
 }

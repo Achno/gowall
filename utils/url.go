@@ -34,7 +34,6 @@ func OpenURL(url string) error {
 // downloads a file from a url and places it in a specified destination
 func DownloadUrl(url, dest string) error {
 
-	fmt.Println("Downloading zip from:", url)
 	res, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to download file: %v", err)

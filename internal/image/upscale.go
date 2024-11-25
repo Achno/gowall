@@ -13,9 +13,10 @@ import (
 )
 
 type UpscaleProcessor struct {
-	InputFile string
-	Scale     int
-	ModelName string
+	InputFile  string
+	OutputFile string
+	Scale      int
+	ModelName  string
 }
 
 func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, error) {
@@ -29,6 +30,11 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 
 	// setup upscaler if it has not been already
 	if _, err := os.Stat(destFolder); os.IsNotExist(err) {
+
+		ok := utils.Confirm(utils.BlueColor + "◈ It seems that the upscaler is not setup yet, would you like for gowall to set it up" + utils.ResetColor)
+		if !ok {
+			return nil, fmt.Errorf("the upscaler has not been setup")
+		}
 		upscaler.SetupUpscaler()
 	}
 
@@ -38,11 +44,17 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 	}
 
 	// validate params
-	p.validateParams()
+	err = p.validateParams()
+	if err != nil {
+		return nil, fmt.Errorf("while validating parameters: %w", err)
+	}
 
 	// construct outputFile
 	name := filepath.Base(p.InputFile)
 	outputFile := filepath.Join(dirFolder, name)
+	p.OutputFile = outputFile
+
+	// construct model path
 
 	cmd := exec.Command(binary, "-i", p.InputFile, "-o", outputFile, "-s", fmt.Sprintf("%d", p.Scale))
 	cmd.Stdout = os.Stdout

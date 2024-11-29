@@ -55,6 +55,5 @@ func DownloadUrl(url, dest string) error {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
 
-	fmt.Println("Downloaded zip to:", dest)
 	return nil
 }

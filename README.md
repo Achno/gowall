@@ -1,11 +1,11 @@
 ###### *<div align = right><sub>Design By Achno</sub></div>*
 <div align = center><img src="assets/go-sticker-overlay-small.png"><br><br>
 
-&ensp;[<kbd> <br> Overview <br> </kbd>](#overview)&ensp;
-&ensp;[<kbd> <br> Themes <br> </kbd>](#themes)&ensp;
-&ensp;[<kbd> <br> Usage <br> </kbd>](#usage)&ensp;
-&ensp;[<kbd> <br> Installation <br> </kbd>](#installation)&ensp;
-&ensp;[<kbd> <br> Contributions <br> </kbd>](#contributions)&ensp;
+&ensp;[<kbd> <br> Overview <br> </kbd>](#overview-framed_picture)&ensp;
+&ensp;[<kbd> <br> Themes <br> </kbd>](#themes-art)&ensp;
+&ensp;[<kbd> <br> Usage <br> </kbd>](#usage-gear)&ensp;
+&ensp;[<kbd> <br> Installation <br> </kbd>](#installation-package)&ensp;
+&ensp;[<kbd> <br> Contributions <br> </kbd>](#contributions-handshake)&ensp;
 <br><br><br><br></div>
 
 
@@ -22,26 +22,28 @@
 
 # Overview :framed_picture:
 
-Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / pallete you like! 
+Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / pallete you like!
+It also offers a bunch of image processing features (image to pixel art, Image upscaling, color palette extraction and more below)
+
+## Docs 
+Gowall is really well documented with **visual examples**: https://achno.github.io/gowall-docs/ 🠔 
 
 ## Features 
-- It supports `single` and `batch` conversion of images to any of the available themes below.
-- It can convert whole `directories` with the `#` delimiter, check `Usage` section
-- It also has the ability to `invert` the colors of the image and convert them later
-- Supports `Custom themes` Create your own theme by creating `~/.config/gowall/config.yml` more details at the `Theme` section!
-- It supports  `image preview` ❗ by printing the image on the terminal on `kitty`. If you are running on an terminal emulator other than kitty it will just open your default image viewing
-  application no matter the operating system. ( You can disable this, check `Usage` section )
-- It supports `color pallete extraction` from an image (like pywal, Check `Usage` section for more information )
-- It supports `changing image format` fast for example from `.webp` --> `.png`
-- You can add a beautiful `border` with options to an image
 
-### Supported formats
+❗ Gowall although a CLI, has an `Image preview` feature so it can print the image in the terminal
 
-`png` `jpeg` `jpg` `webp`
+| Feature                            | Explanation                                                                                                                | Documentation (Visual examples)               |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------------------|----------------------------|
+| Convert a Wallpaper's theme        | Transforms the color scheme of the image to your favorite theme (catppuccin, everforest, tokyo...) to match your system's theme | [here](https://achno.github.io/gowall-docs/conversions/convertToTheme)  |
+| Convert an image to pixel art      | Transforms your image to the typical blocky appearance of pixel art                                                        | [here](https://achno.github.io/gowall-docs/conversions/imgToPixel)       |
+| Change Image format                | Change format from `.webp` to `.png`, for example                                                                          | [here](https://achno.github.io/gowall-docs/conversions/format)         |
+| Invert image colors                | Flips the colors of an image (a very underrated feature)                                                                   | [here](https://achno.github.io/gowall-docs/conversions/invert)        |
+| Replace a specific color in an image | Changes a specific color in the image to another                                                                          | [here](https://achno.github.io/gowall-docs/conversions/replaceColor) |
+| Extract the color palette          | Finds the dominant or all colors in an image (similar to pywal)                                                            | [here](https://achno.github.io/gowall-docs/more_Image_processing/extractColorPalette)|
+| Draw on the Image                  | Draw borders, shapes, and effects                                                                                          | [here](https://achno.github.io/gowall-docs/more_Image_processing/draw) |
+| Remove the background of the image | Removes the background from an image                                                                                       | [here](https://achno.github.io/gowall-docs/more_Image_processing/removeBackground)     |
+| Daily wallpapers                   | Explore community-voted wallpapers that reset daily                                                                        | [here](https://achno.github.io/gowall-docs/dailyWallpaper)  |
 
-### Planned features
-
-1. `TUI` : Will also have a pretty TUI version made with `bubbletea`
    
 <div align = center><img src="assets/catppuccin.png"><br><br>
 

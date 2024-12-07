@@ -48,7 +48,12 @@ var convertCmd = &cobra.Command{
 			processor := &image.NoOpImageProcessor{}
 			expandFile := utils.ExpandHomeDirectory(args)
 
-			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme, formatFlag)
+			opts := image.ProcessOptions{
+				SaveToFile: true,
+				OutputExt:  formatFlag,
+			}
+
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 			utils.HandleError(err, "Error Processing Image")
 
 			err = image.OpenImage(path)
@@ -69,7 +74,7 @@ var convertCmd = &cobra.Command{
 			processor.FromColor = pairSlice[0]
 			processor.ToColor = pairSlice[1]
 
-			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 			utils.HandleError(err, "Error Processing Image")
 
 			err = image.OpenImage(path)
@@ -79,7 +84,7 @@ var convertCmd = &cobra.Command{
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 
 			utils.HandleError(err, "Error Processing Image")
 			err = image.OpenImage(path)

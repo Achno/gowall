@@ -44,7 +44,7 @@ var invertCmd = &cobra.Command{
 			fmt.Println("Processing single image...")
 			processor := &image.Inverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			path, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 
 			utils.HandleError(err)
 			err = image.OpenImage(path)

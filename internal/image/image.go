@@ -171,62 +171,80 @@ func OpenImage(filePath string) error {
 
 }
 
-// 1. Loads the img, 2. Processes it depending on the type of Processor you put which impliments
-// the 'ImageProcessor' interface, 3. Creates the necessary directories ,4. Saves the image there
-//
-//	You can optionally provide an extension to be formated into, otherwise it uses the image's extension
-func ProcessImg(imgPath string, processor ImageProcessor, theme string, ext ...string) (string, error) {
+type ProcessOptions struct {
+	SaveToFile bool   // Whether to save the processed image to file
+	OutputExt  string // Optional output extension to override the original
+}
 
+func DefaultProcessOptions() ProcessOptions {
+	return ProcessOptions{
+		SaveToFile: true,
+	}
+}
+
+// Processes the image depending on a processor that impliments the "ImageProcessor" interface.
+// You can pass an optional  "ProcessOptions" struct with extra options.
+func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...ProcessOptions) (string, *image.Image, error) {
+	// Use default options if none provided
+	options := DefaultProcessOptions()
+	if len(opts) > 0 {
+		options = opts[0]
+	}
+
+	// Load the image
 	img, err := LoadImage(imgPath)
-
 	if err != nil {
-		return "", fmt.Errorf("while loading image : %w", err)
+		return "", nil, fmt.Errorf("while loading image: %w", err)
 	}
 
+	// Process the image
 	newImg, err := processor.Process(img, theme)
-
 	if err != nil {
-		return "", fmt.Errorf("while processing image : %w", err)
+		return "", nil, fmt.Errorf("while processing image: %w", err)
 	}
 
-	//Extract file extension from imgPath
+	// If we don't need to save, return early with the processed image
+	if !options.SaveToFile {
+		return "", &newImg, nil
+	}
+
+	// Handle file extension
 	extension := strings.ToLower(filepath.Ext(imgPath))
-
 	if extension == "" {
-		return "", fmt.Errorf("error: Could not determine file extension")
+		return "", nil, fmt.Errorf("error: Could not determine file extension")
+	}
+	extension = extension[1:] // remove '.'
+
+	// Override extension if specified
+	if options.OutputExt != "" {
+		_, exists := encoders[strings.ToLower(options.OutputExt)]
+
+		if !exists {
+			return "", nil, fmt.Errorf("unsupported format: %s", options.OutputExt)
+		}
+		extension = options.OutputExt
 	}
 
-	// remove '.' from the extension
-	extension = extension[1:]
-
-	// Optionally change the format of the image if the user specifies it ex. from webp to png
-	if len(ext) > 0 && ext[0] != "" {
-		extension = ext[0]
-	}
-
+	// Handle directory creation
 	dirPath, err := utils.CreateDirectory()
+	if err != nil {
+		return "", nil, fmt.Errorf("while creating directory: %w", err)
+	}
 
-	// Extract fileName and replace it with the given extension
+	// Create output filename
 	nameOfFile := filepath.Base(imgPath)
 	nameOfFile = strings.TrimSuffix(nameOfFile, filepath.Ext(nameOfFile))
 	nameOfFile = nameOfFile + "." + extension
-
 	outputFilePath := filepath.Join(dirPath, nameOfFile)
 
-	if err != nil {
-		return "", fmt.Errorf("while creating Directory or getting path")
-	}
-
+	// Save the image
 	err = SaveImage(newImg, outputFilePath, extension)
-
 	if err != nil {
-		return "", fmt.Errorf("while saving image: %w in %s ", err, outputFilePath)
+		return "", nil, fmt.Errorf("while saving image: %w in %s", err, outputFilePath)
 	}
 
 	fmt.Printf("Image processed and saved as %s\n\n", outputFilePath)
-
-	return outputFilePath, nil
-
+	return outputFilePath, &newImg, nil
 }
 
 // Process images concurrently and return the first error if there was one
@@ -243,7 +261,7 @@ func ProcessBatchImgs(files []string, theme string, processor ImageProcessor) er
 		go func(file string, index int) {
 			defer wg.Done()
 
-			_, err := ProcessImg(file, processor, theme)
+			_, _, err := ProcessImg(file, processor, theme)
 
 			if err != nil {
 				errChan <- fmt.Errorf("file %s : %w", file, err)

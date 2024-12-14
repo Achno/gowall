@@ -14,6 +14,7 @@ import (
 
 var formatFlag string
 var colorPair []string
+var outputName string
 
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
@@ -51,6 +52,7 @@ var convertCmd = &cobra.Command{
 			opts := image.ProcessOptions{
 				SaveToFile: true,
 				OutputExt:  formatFlag,
+				OutputName: outputName,
 			}
 
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
@@ -74,7 +76,12 @@ var convertCmd = &cobra.Command{
 			processor.FromColor = pairSlice[0]
 			processor.ToColor = pairSlice[1]
 
-			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+			opts := image.ProcessOptions{
+				OutputName: outputName,
+				SaveToFile: true,
+			}
+
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 			utils.HandleError(err, "Error Processing Image")
 
 			err = image.OpenImage(path)
@@ -84,7 +91,12 @@ var convertCmd = &cobra.Command{
 			fmt.Println("Processing single image...")
 			processor := &image.ThemeConverter{}
 			expandFile := utils.ExpandHomeDirectory(args)
-			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
+
+			opts := image.ProcessOptions{
+				OutputName: outputName,
+				SaveToFile: true,
+			}
+			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 
 			utils.HandleError(err, "Error Processing Image")
 			err = image.OpenImage(path)
@@ -104,4 +116,5 @@ func init() {
 	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png ...")
 	convertCmd.Flags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
+	convertCmd.Flags().StringVarP(&outputName, "output", "o", "", "Usage: --output imageName (no extension) Can only be used alongside with -t,-r,-f flags")
 }

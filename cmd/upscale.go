@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO add do you want to setup the upscaler, say downloading models....
 func UpscaleCmd() *cobra.Command {
 
 	var (

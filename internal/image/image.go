@@ -174,6 +174,7 @@ func OpenImage(filePath string) error {
 type ProcessOptions struct {
 	SaveToFile bool   // Whether to save the processed image to file
 	OutputExt  string // Optional output extension to override the original
+	OutputName string // Optional outputName
 }
 
 func DefaultProcessOptions() ProcessOptions {
@@ -234,6 +235,11 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 	// Create output filename
 	nameOfFile := filepath.Base(imgPath)
 	nameOfFile = strings.TrimSuffix(nameOfFile, filepath.Ext(nameOfFile))
+
+	if options.OutputName != "" {
+		nameOfFile = options.OutputName
+	}
+
 	nameOfFile = nameOfFile + "." + extension
 	outputFilePath := filepath.Join(dirPath, nameOfFile)
 

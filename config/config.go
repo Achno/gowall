@@ -20,8 +20,9 @@ type themeWrapper struct {
 }
 
 type Options struct {
-	EnableImagePreviewing bool           `yaml:"EnableImagePreviewing"`
-	Themes                []themeWrapper `yaml:"themes"`
+	EnableImagePreviewing  bool           `yaml:"EnableImagePreviewing"`
+	ColorCorrectionBackend string         `yaml:"ColorCorrectionBackend"`
+	Themes                 []themeWrapper `yaml:"themes"`
 }
 
 // global config object, used when config is needed

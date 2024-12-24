@@ -26,6 +26,9 @@ import (
 // Available formats to Encode an image in
 var encoders = map[string]func(file *os.File, img image.Image) error{
 	"png": func(file *os.File, img image.Image) error {
+		png := &png.Encoder{
+			CompressionLevel: png.BestSpeed,
+		}
 		return png.Encode(file, img)
 	},
 	"jpg": func(file *os.File, img image.Image) error {
@@ -192,6 +195,12 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 		options = opts[0]
 	}
 
+	// Handle directory creation
+	dirPath, err := utils.CreateDirectory()
+	if err != nil {
+		return "", nil, fmt.Errorf("while creating directory: %w", err)
+	}
+
 	// Load the image
 	img, err := LoadImage(imgPath)
 	if err != nil {
@@ -224,12 +233,6 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 			return "", nil, fmt.Errorf("unsupported format: %s", options.OutputExt)
 		}
 		extension = options.OutputExt
-	}
-
-	// Handle directory creation
-	dirPath, err := utils.CreateDirectory()
-	if err != nil {
-		return "", nil, fmt.Errorf("while creating directory: %w", err)
 	}
 
 	// Create output filename

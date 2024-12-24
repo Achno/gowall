@@ -20,7 +20,6 @@ import (
 type ThemeConverter struct {
 }
 
-// TODO make multiple backends available like nearest neigh
 func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.Image, error) {
 	level := 8
 

@@ -23,7 +23,6 @@ import (
 	"github.com/chai2010/webp"
 )
 
-// TODO MAYBE MAKE IT OPTIONAL IF THE USER WANTS NO COMPRESSION
 // Available formats to Encode an image in
 var encoders = map[string]func(file *os.File, img image.Image) error{
 	"png": func(file *os.File, img image.Image) error {

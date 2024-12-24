@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// Interface for all the possible interpolation algorithms
+// Interface for all the possible interpolation and mapping algorithms
 type Mapperfunc interface {
 	Map(color.RGBA, []color.RGBA) color.RGBA
 }

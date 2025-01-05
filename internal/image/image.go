@@ -156,6 +156,13 @@ func OpenImage(filePath string) error {
 		return cmd.Run()
 	}
 
+	if utils.IsKonsoleTerminalRunning() {
+		cmd = exec.Command("kitten", "icat", filePath)
+		cmd.Stdout = os.Stdout
+
+		return cmd.Run()
+	}
+
 	// 300ms for gwen
 	switch runtime.GOOS {
 

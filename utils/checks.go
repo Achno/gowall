@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -13,6 +14,24 @@ func IsKittyTerminalRunning() bool {
 	kittyInstanceId := os.Getenv("KITTY_WINDOW_ID")
 
 	return strings.Contains(terminal, "kitty") || kittyInstanceId != ""
+}
+
+// Checks if the terminal running is Konsole and has
+func IsKonsoleTerminalRunning() bool {
+
+	terminal := os.Getenv("TERM")
+
+	if terminal == "xterm-256color" && os.Getenv("KONSOLE_VERSION") != "" {
+
+		path, err := exec.LookPath("kitten")
+		if err != nil {
+			return false
+		}
+
+		return path != ""
+
+	}
+	return false
 }
 
 func Confirm(msg string) bool {

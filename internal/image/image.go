@@ -1,6 +1,7 @@
 package image
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -205,6 +206,35 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 	img, err := LoadImage(imgPath)
 	if err != nil {
 		return "", nil, fmt.Errorf("while loading image: %w", err)
+	}
+
+	// optionally specify a temporary theme via json file in runtime
+	if strings.HasSuffix(theme, ".json") {
+		expandFile := utils.ExpandHomeDirectory([]string{theme})
+		data, err := os.ReadFile(expandFile[0])
+		if err != nil {
+			return "", nil, fmt.Errorf("while reading the json file")
+		}
+		var tm struct {
+			Name   string   `json:"name"`
+			Colors []string `json:"colors"`
+		}
+
+		if err := json.Unmarshal(data, &tm); err != nil {
+			return "", nil, fmt.Errorf("while parsing json theme file")
+		}
+		if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
+			return "", nil, fmt.Errorf("json file does not contain a name or colors")
+		}
+		clrs, err := HexToRGBASlice(tm.Colors)
+		if err != nil {
+			return "", nil, err
+		}
+		themes[strings.ToLower(tm.Name)] = Theme{
+			Name:   tm.Name,
+			Colors: clrs,
+		}
+		theme = tm.Name
 	}
 
 	// Process the image

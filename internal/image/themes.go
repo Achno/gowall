@@ -91,6 +91,18 @@ func HexToRGBA(hexStr string) (color.RGBA, error) {
 	return color.RGBA{R: bytes[0], G: bytes[1], B: bytes[2], A: 255}, nil
 }
 
+func HexToRGBASlice(hexColors []string) ([]color.Color, error) {
+	var rgbaColors []color.Color
+	for _, hex := range hexColors {
+		rgba, err := HexToRGBA(hex)
+		if err != nil {
+			return nil, err
+		}
+		rgbaColors = append(rgbaColors, rgba)
+	}
+	return rgbaColors, nil
+}
+
 func RGBtoHex(c color.RGBA) string {
 	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
 }

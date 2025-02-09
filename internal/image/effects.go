@@ -76,8 +76,8 @@ type BrightnessProcessor struct {
 
 func (p *BrightnessProcessor) Process(img image.Image, theme string) (image.Image, error) {
 
-	if p.Factor <= 0.0 && p.Factor > 5 {
-		return nil, fmt.Errorf("Enter a valid factor : from (0.0,5.0] ")
+	if p.Factor <= 0.0 || p.Factor > 10 {
+		return nil, fmt.Errorf("Enter a valid factor : from (0.0,10.0] ")
 	}
 
 	bounds := img.Bounds()

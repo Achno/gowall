@@ -49,6 +49,6 @@ func init() {
 	rootCmd.AddCommand(gifCmd)
 	gifCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png ...")
 	gifCmd.Flags().IntVarP(&delay, "delay", "d", 200, "Frame delay (ms)")
-	gifCmd.Flags().IntVarP(&loop, "loop", "l", 0, "Loop=0 (loops forever), Loop=1 shows frames only 1 time, Loop=n (shows frames n+1)")
+	gifCmd.Flags().IntVarP(&loop, "loop", "l", 0, "Loop=0 (loops forever), Loop=-1 shows frames only 1 time, Loop=n (shows frames n+1)")
 	gifCmd.Flags().StringVarP(&outputName, "output", "o", "", "Output filename")
 }

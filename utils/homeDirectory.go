@@ -30,5 +30,10 @@ func CreateDirectory() (dirPath string, err error) {
 		return "", fmt.Errorf("while creating ~/OutputFolder/cluts: %w", err)
 	}
 
+	err = os.MkdirAll(filepath.Join(dirPath, "gifs"), 0755)
+	if err != nil {
+		return "", fmt.Errorf("while creating ~/OutputFolder/gifs: %w", err)
+	}
+
 	return dirPath, err
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -93,6 +94,27 @@ func SaveImage(img image.Image, filePath string, format string) error {
 
 	return encoder(file, img)
 
+}
+
+func SaveGif(gifData gif.GIF, fileName string) error {
+	dirFolder, err := utils.CreateDirectory()
+	if err != nil {
+		return err
+	}
+
+	outFile, err := os.Create(filepath.Join(dirFolder, "gifs", fileName+".gif"))
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer outFile.Close()
+
+	err = gif.EncodeAll(outFile, &gifData)
+	if err != nil {
+		return fmt.Errorf("while Encoding gif : %w", err)
+	}
+
+	fmt.Printf("Gif processed and saved as %s\n\n", outFile.Name())
+	return nil
 }
 
 func SaveUrlAsImg(url string) (string, error) {

@@ -110,6 +110,10 @@ var convertCmd = &cobra.Command{
 	},
 }
 
+func themeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return image.ListThemes(), cobra.ShellCompDirectiveNoFileComp
+}
+
 func init() {
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName]")
@@ -117,4 +121,6 @@ func init() {
 	convertCmd.Flags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
 	convertCmd.Flags().StringVarP(&outputName, "output", "o", "", "Usage: --output imageName (no extension) Can only be used alongside with -t,-r,-f flags")
+
+	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
 }

@@ -171,9 +171,15 @@ func OpenImage(filePath string) error {
 
 	var cmd *exec.Cmd
 
-	// 50ms
 	if utils.IsKittyTerminalRunning() || utils.IsKonsoleTerminalRunning() || utils.IsGhosttyTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)
+		cmd.Stdout = os.Stdout
+
+		return cmd.Run()
+	}
+
+	if utils.IsWeztermTerminalRunning() {
+		cmd = exec.Command("wezterm", "imgcat", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()

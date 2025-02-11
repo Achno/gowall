@@ -52,6 +52,16 @@ func IsGhosttyTerminalRunning() bool {
 	return false
 }
 
+func IsWeztermTerminalRunning() bool {
+
+	terminal := os.Getenv("TERM")
+
+	if terminal == "xterm-256color" && os.Getenv("TERM_PROGRAM") == "WezTerm" {
+		return true
+	}
+	return false
+}
+
 func Confirm(msg string) bool {
 
 	var input string

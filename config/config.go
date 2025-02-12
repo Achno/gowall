@@ -36,7 +36,7 @@ func init() {
 	if err != nil {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			// cant find home or config just give up
+			// can't find home or config just give up
 			return
 		}
 		configDir = filepath.Join(homeDir, ".config")
@@ -44,7 +44,7 @@ func init() {
 	configPath := filepath.Join(configDir, "gowall", configFile)
 
 	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		// file doesnt exist skip custom themes
+		// file doesn't exist skip custom themes
 		return
 	}
 

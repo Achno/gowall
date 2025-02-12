@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// impliments the ImageProcessor interface
+// implements the ImageProcessor interface
 type BackgroundProcessor struct {
 	options BgOptions
 }
@@ -163,7 +163,7 @@ func removeBackground(config *BgOptions, img image.Image) (error, image.Image) {
 			clusters[i].Centroid = newCentroid
 		}
 
-		// Convergence should be met when the colors stabalized
+		// Convergence should be met when the colors stabilized
 		if maxChange < config.Convergence {
 			break
 		}

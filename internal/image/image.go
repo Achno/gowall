@@ -215,7 +215,7 @@ func DefaultProcessOptions() ProcessOptions {
 	}
 }
 
-// Processes the image depending on a processor that impliments the "ImageProcessor" interface.
+// Processes the image depending on a processor that implements the "ImageProcessor" interface.
 // You can pass an optional  "ProcessOptions" struct with extra options.
 func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...ProcessOptions) (string, *image.Image, error) {
 	// Use default options if none provided

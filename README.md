@@ -328,3 +328,6 @@ I would also be very happy if you can provide the `rgb values` of your theme as 
 
 Feel free to suggest any cool features that would improve gowall even further by opening an `issue` 
 
+# Special Thanks
+
+Special thanks to [lutgen](https://github.com/ozwaldorf/lutgen-rs) for the original implementation of the color correction algorithm which i adapted for this project.

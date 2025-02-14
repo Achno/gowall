@@ -11,11 +11,14 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/Achno/gowall/config"
 	haldclut "github.com/Achno/gowall/internal/backends/colorthief/haldClut"
 	"github.com/Achno/gowall/utils"
 )
+
+var clutMutex sync.Mutex
 
 type ThemeConverter struct {
 }
@@ -51,23 +54,32 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 	hash := hashPalette(clrs)
 	clutPath := fmt.Sprintf("%s_%s.png", theme, hash)
 
+	clutMutex.Lock()
 	// if clut exists skip to save time
 	_, err = os.Stat(filepath.Join(dirFolder, "cluts", clutPath))
 	if os.IsNotExist(err) {
 
 		identityClut, err := haldclut.GenerateIdentityCLUT(level)
 		if err != nil {
+			clutMutex.Unlock()
 			return nil, fmt.Errorf("could not generate Identity CLUT")
 		}
 		mapper := &haldclut.RBFMapper{}
 		palette, err := toRGBA(selectedTheme.Colors)
 
 		if err != nil {
+			clutMutex.Unlock()
 			return nil, fmt.Errorf("could not parse colors to RGBA")
 		}
 		modifiedClut := haldclut.InterpolateCLUT(identityClut, palette, level, mapper)
-		haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(dirFolder, "cluts", clutPath))
+		err = haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(dirFolder, "cluts", clutPath))
+		if err != nil {
+			clutMutex.Unlock()
+			return nil, fmt.Errorf("while saving the CLUT: %w", err)
+		}
+
 	}
+	clutMutex.Unlock()
 
 	clut, err := haldclut.LoadHaldCLUT(filepath.Join(dirFolder, "cluts", clutPath))
 	if err != nil {

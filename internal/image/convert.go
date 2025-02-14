@@ -69,7 +69,13 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 		haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(dirFolder, "cluts", clutPath))
 	}
 
-	clut, _ := haldclut.LoadHaldCLUT(filepath.Join(dirFolder, "cluts", clutPath))
+	clut, err := haldclut.LoadHaldCLUT(filepath.Join(dirFolder, "cluts", clutPath))
+	if err != nil {
+		return nil, fmt.Errorf("while loading CLUT: %w", err)
+	}
+	if clut == nil {
+		return nil, fmt.Errorf("CLUT is nil even though is was loaded")
+	}
 	bounds := img.Bounds()
 	rgba := image.NewRGBA(bounds)
 	draw.Draw(rgba, bounds, img, bounds.Min, draw.Src)

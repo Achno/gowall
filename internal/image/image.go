@@ -22,7 +22,8 @@ import (
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/utils"
 
-	webp "github.com/HugoSmits86/nativewebp"
+	// webp "github.com/HugoSmits86/nativewebp"
+	"github.com/chai2010/webp"
 )
 
 // Available formats to Encode an image in

@@ -20,6 +20,12 @@ func CreateDirectory() (dirPath string, err error) {
 	}
 	dirPath = filepath.Join(homeDir, folderName)
 
+	// take XDG_PICTURES_DIR into account for non english file structures
+	env := os.Getenv("XDG_PICTURES_DIR")
+	if env != "" {
+		dirPath = filepath.Join(env, "gowall")
+	}
+
 	err = os.MkdirAll(dirPath, 0777)
 	if err != nil {
 		return "", fmt.Errorf("while creating ~/OutputFolder: %w", err)

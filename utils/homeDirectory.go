@@ -22,7 +22,7 @@ func CreateDirectory() (dirPath string, err error) {
 
 	// take XDG_PICTURES_DIR into account for non english file structures
 	env := os.Getenv("XDG_PICTURES_DIR")
-	if env != "" {
+	if env != "" && config.GowallConfig.OutputFolder == "" {
 		dirPath = filepath.Join(env, "gowall")
 	}
 

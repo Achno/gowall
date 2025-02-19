@@ -23,7 +23,7 @@ func HandleError(err error, msg ...string) {
 	}
 }
 
-// Formats a slice of errors to a single error, each seperated by a new line
+// Formats a slice of errors to a single error, each separated by a new line
 func FormatErrors(errs []error) string {
 	var result string
 	for _, err := range errs {

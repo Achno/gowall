@@ -22,8 +22,9 @@ import (
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/utils"
 
-	// webp "github.com/HugoSmits86/nativewebp"
-	"github.com/chai2010/webp"
+	webp "github.com/HugoSmits86/nativewebp"
+	_ "golang.org/x/image/webp"
+	// "github.com/chai2010/webp"
 )
 
 // Available formats to Encode an image in
@@ -79,6 +80,12 @@ func LoadImage(filePath string) (image.Image, error) {
 
 func SaveImage(img image.Image, filePath string, format string) error {
 
+	encoder, ok := encoders[strings.ToLower(format)]
+
+	if !ok {
+		return fmt.Errorf("unsupported format: %s", format)
+	}
+
 	file, err := os.Create(filePath)
 
 	if err != nil {
@@ -86,13 +93,6 @@ func SaveImage(img image.Image, filePath string, format string) error {
 	}
 
 	defer file.Close()
-
-	encoder, ok := encoders[strings.ToLower(format)]
-
-	if !ok {
-		return fmt.Errorf("unsupported format: %s", format)
-	}
-
 	return encoder(file, img)
 
 }
@@ -239,31 +239,10 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 
 	// optionally specify a temporary theme via json file in runtime
 	if strings.HasSuffix(theme, ".json") {
-		expandFile := utils.ExpandHomeDirectory([]string{theme})
-		data, err := os.ReadFile(expandFile[0])
-		if err != nil {
-			return "", nil, fmt.Errorf("while reading the json file")
-		}
-		var tm struct {
-			Name   string   `json:"name"`
-			Colors []string `json:"colors"`
-		}
-
-		if err := json.Unmarshal(data, &tm); err != nil {
-			return "", nil, fmt.Errorf("while parsing json theme file")
-		}
-		if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
-			return "", nil, fmt.Errorf("json file does not contain a name or colors")
-		}
-		clrs, err := HexToRGBASlice(tm.Colors)
+		theme, err = loadThemeFromJson(theme)
 		if err != nil {
 			return "", nil, err
 		}
-		themes[strings.ToLower(tm.Name)] = Theme{
-			Name:   tm.Name,
-			Colors: clrs,
-		}
-		theme = tm.Name
 	}
 
 	// Process the image
@@ -277,42 +256,82 @@ func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...
 		return "", &newImg, nil
 	}
 
-	// Handle file extension
-	extension := strings.ToLower(filepath.Ext(imgPath))
-	if extension == "" {
-		return "", nil, fmt.Errorf("error: Could not determine file extension")
-	}
-	extension = extension[1:] // remove '.'
-
-	// Override extension if specified
-	if options.OutputExt != "" {
-		_, exists := encoders[strings.ToLower(options.OutputExt)]
-
-		if !exists {
-			return "", nil, fmt.Errorf("unsupported format: %s", options.OutputExt)
-		}
-		extension = options.OutputExt
+	outputFilePath, err := buildOutputPath(imgPath, options, dirPath)
+	if err != nil {
+		return "", nil, err
 	}
 
-	// Create output filename
-	nameOfFile := filepath.Base(imgPath)
-	nameOfFile = strings.TrimSuffix(nameOfFile, filepath.Ext(nameOfFile))
-
-	if options.OutputName != "" {
-		nameOfFile = options.OutputName
-	}
-
-	nameOfFile = nameOfFile + "." + extension
-	outputFilePath := filepath.Join(dirPath, nameOfFile)
-
+	ext := strings.ToLower(filepath.Ext(outputFilePath))[1:]
 	// Save the image
-	err = SaveImage(newImg, outputFilePath, extension)
+	err = SaveImage(newImg, outputFilePath, ext)
 	if err != nil {
 		return "", nil, fmt.Errorf("while saving image: %w in %s", err, outputFilePath)
 	}
 
 	fmt.Printf("Image processed and saved as %s\n\n", outputFilePath)
 	return outputFilePath, &newImg, nil
+}
+
+// returns themeName that was inserted to the theme map
+func loadThemeFromJson(jsonTheme string) (string, error) {
+	expandFile := utils.ExpandHomeDirectory([]string{jsonTheme})
+	data, err := os.ReadFile(expandFile[0])
+	if err != nil {
+		return "", fmt.Errorf("while reading the json file")
+	}
+	var tm struct {
+		Name   string   `json:"name"`
+		Colors []string `json:"colors"`
+	}
+
+	if err := json.Unmarshal(data, &tm); err != nil {
+		return "", fmt.Errorf("while parsing json theme file, ensure your .json is written correctly")
+	}
+	if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
+		return "", fmt.Errorf("json file does not contain a name or colors field(s)")
+	}
+	clrs, err := HexToRGBASlice(tm.Colors)
+	if err != nil {
+		return "", err
+	}
+	themes[strings.ToLower(tm.Name)] = Theme{
+		Name:   tm.Name,
+		Colors: clrs,
+	}
+
+	return tm.Name, nil
+}
+
+// returns the outputFilePath where the image should be saved, taking into account the ProcessOptions.
+// If options.OutputName has no extension, its inferred and is saved to the default Dir.
+// otherwise options.OutputName is treated like an absolute path, so you can save the image outside the default directory
+func buildOutputPath(imgPath string, options ProcessOptions, dirPath string) (string, error) {
+	originalExt := strings.ToLower(filepath.Ext(imgPath))
+	if originalExt == "" {
+		return "", fmt.Errorf("error: Could not determine file extension")
+	}
+	originalExt = originalExt[1:] // remove '.'
+
+	finalExt := originalExt
+	if options.OutputExt != "" {
+		if _, exists := encoders[strings.ToLower(options.OutputExt)]; !exists {
+			return "", fmt.Errorf("unsupported format: %s", options.OutputExt)
+		}
+		finalExt = options.OutputExt
+	}
+
+	// If OutputName contains extension (e.g., "output.png"), use it as absolute path
+	if options.OutputName != "" && filepath.Ext(options.OutputName) != "" {
+		return options.OutputName, nil
+	}
+
+	// Build filename without extension
+	baseName := strings.TrimSuffix(filepath.Base(imgPath), filepath.Ext(imgPath))
+	if options.OutputName != "" {
+		baseName = options.OutputName
+	}
+
+	return filepath.Join(dirPath, baseName+"."+finalExt), nil
 }
 
 // Process images concurrently and return the first error if there was one

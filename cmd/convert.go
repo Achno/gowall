@@ -40,6 +40,10 @@ var convertCmd = &cobra.Command{
 
 			utils.HandleError(err, "Error ExpandingHashTag")
 
+			if outputName != "" {
+				utils.HandleError(fmt.Errorf("You cannot use the '-o' flag and Batch conversion together"), "Error")
+			}
+
 			err = image.ProcessBatchImgs(files, shared.Theme, processor)
 
 			utils.HandleError(err)

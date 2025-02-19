@@ -3,9 +3,10 @@ module github.com/Achno/gowall
 go 1.22.5
 
 require (
+	github.com/HugoSmits86/nativewebp v0.9.3
 	github.com/PuerkitoBio/goquery v1.9.2
-	github.com/chai2010/webp v1.1.1
 	github.com/spf13/cobra v1.8.1
+	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 	gopkg.in/yaml.v3 v3.0.1
 )
 

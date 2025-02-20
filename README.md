@@ -296,10 +296,10 @@ cd void-packages/
 ./xbps-src pkg gowall
 sudo xbps-install -R hostdir/binpkgs gowall
 ```
-### Homebrew - (Maintainer : [MillerApps](https://github.com/millerapps/))
+### Homebrew - (Maintainer : [Homebrew-Core](https://github.com/Homebrew/homebrew-core/blob/b86ea8e19ae7bf087fab8e2d56cd623eec1e1cf9/Formula/g/gowall.rb))
 
 ```
-brew install millerapps/tap/gowall
+brew install gowall
 ```
 
 ### Build from source

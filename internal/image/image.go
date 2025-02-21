@@ -157,7 +157,7 @@ func SaveUrlAsImg(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not write to file: %w", err)
 	}
-
+	fmt.Printf("path: %v", path)
 	return path, nil
 }
 
@@ -173,14 +173,14 @@ func OpenImage(filePath string) error {
 
 	var cmd *exec.Cmd
 
-	if utils.IsKittyTerminalRunning() || utils.IsKonsoleTerminalRunning() {
+	if utils.IsKittyTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()
 	}
 
-	 if utils.IsGhosttyTerminalRunning() {
+	if utils.IsGhosttyTerminalRunning() || utils.IsKonsoleTerminalRunning() {
 		return utils.SendKittyImg(filePath)
 	}
 

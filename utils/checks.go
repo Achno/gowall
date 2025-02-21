@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -22,14 +21,7 @@ func IsKonsoleTerminalRunning() bool {
 	terminal := os.Getenv("TERM")
 
 	if terminal == "xterm-256color" && os.Getenv("KONSOLE_VERSION") != "" {
-
-		path, err := exec.LookPath("kitten")
-		if err != nil {
-			return false
-		}
-
-		return path != ""
-
+		return true
 	}
 	return false
 }
@@ -38,7 +30,7 @@ func IsKonsoleTerminalRunning() bool {
 func IsGhosttyTerminalRunning() bool {
 
 	terminal := os.Getenv("TERM")
-	
+
 	if strings.Contains(terminal, "ghostty") {
 		return true
 	}

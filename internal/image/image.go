@@ -157,7 +157,6 @@ func SaveUrlAsImg(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not write to file: %w", err)
 	}
-	fmt.Printf("path: %v", path)
 	return path, nil
 }
 

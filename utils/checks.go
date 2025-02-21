@@ -34,21 +34,15 @@ func IsKonsoleTerminalRunning() bool {
 	return false
 }
 
-// Checks if the terminal running is Konsole and has
+// Checks if the terminal running is Ghostty and has
 func IsGhosttyTerminalRunning() bool {
 
 	terminal := os.Getenv("TERM")
-
-	if terminal == "xterm-ghostty" && os.Getenv("TERM_PROGRAM") == "ghostty" {
-
-		path, err := exec.LookPath("kitten")
-		if err != nil {
-			return false
-		}
-
-		return path != ""
-
+	
+	if strings.Contains(terminal, "ghostty") {
+		return true
 	}
+
 	return false
 }
 

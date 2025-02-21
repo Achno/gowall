@@ -165,6 +165,7 @@ func SaveUrlAsImg(url string) (string, error) {
 //
 //	If the terminal emulator "kitty" is running --> it will print the image on the terminal
 func OpenImage(filePath string) error {
+	fmt.Println("Open image")
 
 	if !config.GowallConfig.EnableImagePreviewing {
 		return nil
@@ -172,11 +173,15 @@ func OpenImage(filePath string) error {
 
 	var cmd *exec.Cmd
 
-	if utils.IsKittyTerminalRunning() || utils.IsKonsoleTerminalRunning() || utils.IsGhosttyTerminalRunning() {
+	if utils.IsKittyTerminalRunning() || utils.IsKonsoleTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()
+	}
+
+	 if utils.IsGhosttyTerminalRunning() {
+		return utils.SendKittyImg(filePath)
 	}
 
 	if utils.IsWeztermTerminalRunning() {

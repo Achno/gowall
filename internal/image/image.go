@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"github.com/Achno/gowall/config"
+	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
 
 	webp "github.com/HugoSmits86/nativewebp"
 	_ "golang.org/x/image/webp"
-	// "github.com/chai2010/webp"
 )
 
 // Available formats to Encode an image in
@@ -162,8 +162,7 @@ func SaveUrlAsImg(url string) (string, error) {
 }
 
 // Opens the image on the default viewing application of every operating system.
-//
-//	If the terminal emulator "kitty" is running --> it will print the image on the terminal
+// or in the terminal for kitty,wezterm,ghostty and konsole
 func OpenImage(filePath string) error {
 
 	if !config.GowallConfig.EnableImagePreviewing {
@@ -172,21 +171,33 @@ func OpenImage(filePath string) error {
 
 	var cmd *exec.Cmd
 
-	if utils.IsKittyTerminalRunning() || utils.IsKonsoleTerminalRunning() || utils.IsGhosttyTerminalRunning() {
+	if terminal.IsKittyTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()
 	}
 
-	if utils.IsWeztermTerminalRunning() {
+	isKonsoleOrGhostty := terminal.IsKonsoleTerminalRunning() || terminal.IsGhosttyTerminalRunning()
+
+	if isKonsoleOrGhostty && terminal.HasIcat() && !config.GowallConfig.InlineImagePreview {
+		cmd = exec.Command("kitty", "icat", filePath)
+		cmd.Stdout = os.Stdout
+
+		return cmd.Run()
+	}
+
+	if isKonsoleOrGhostty && config.GowallConfig.InlineImagePreview {
+		return terminal.RenderKittyImg(filePath)
+	}
+
+	if terminal.IsWeztermTerminalRunning() {
 		cmd = exec.Command("wezterm", "imgcat", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()
 	}
 
-	// 300ms for gwen
 	switch runtime.GOOS {
 
 	case "windows":

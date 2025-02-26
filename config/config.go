@@ -21,6 +21,7 @@ type themeWrapper struct {
 
 type Options struct {
 	EnableImagePreviewing  bool           `yaml:"EnableImagePreviewing"`
+	InlineImagePreview     bool           `yaml:"InlineImagePreview"`
 	ColorCorrectionBackend string         `yaml:"ColorCorrectionBackend"`
 	OutputFolder           string         `yaml:"OutputFolder"`
 	Themes                 []themeWrapper `yaml:"themes"`

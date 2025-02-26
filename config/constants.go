@@ -11,6 +11,7 @@ const (
 
 var (
 	EnableImagePreviewingDefault = true
+	InlineImagePreviewDefault    = false
 	ThemesDefault                = []themeWrapper{}
 )
 
@@ -18,5 +19,6 @@ func defaultConfig() Options {
 	return Options{
 		EnableImagePreviewing: EnableImagePreviewingDefault,
 		Themes:                ThemesDefault,
+		InlineImagePreview:    InlineImagePreviewDefault,
 	}
 }

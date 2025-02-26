@@ -31,21 +31,16 @@ type Options struct {
 var GowallConfig = defaultConfig()
 
 func init() {
-	// look for $XDG_CONFIG_HOME/gowall/config.yml or $HOME/.config/gowall/config.yml
-	configDir, err := os.UserConfigDir()
+	// look for $HOME/.config/gowall/config.yml
+	configDir, err := os.UserHomeDir()
 
 	if err != nil {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			// cant find home or config just give up
-			return
-		}
-		configDir = filepath.Join(homeDir, ".config")
+		log.Fatalf("Error could not get Home directory")
 	}
-	configPath := filepath.Join(configDir, "gowall", configFile)
+	configPath := filepath.Join(configDir, ".config", "gowall", configFile)
 
 	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		// file doesnt exist skip custom themes
+		// file doesnt exist skip config file
 		return
 	}
 

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Achno/gowall/internal/image"
@@ -79,6 +80,11 @@ var convertCmd = &cobra.Command{
 
 			processor.FromColor = pairSlice[0]
 			processor.ToColor = pairSlice[1]
+			processor.Threshold = 8.5
+			if len(pairSlice) > 2 {
+				processor.Threshold, err = strconv.ParseFloat(pairSlice[2], 64)
+				utils.HandleError(err, "Error: either specify the threshold or remove the comma")
+			}
 
 			opts := image.ProcessOptions{
 				OutputName: outputName,

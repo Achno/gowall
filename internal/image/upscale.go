@@ -66,7 +66,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 		if ok && exitError.ExitCode() == 255 {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("command failed: %w\n", err)
+		return nil, fmt.Errorf("command failed: %w", err)
 	}
 
 	return nil, nil
@@ -75,11 +75,11 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 func (p *UpscaleProcessor) validateParams() error {
 
 	if _, err := os.Stat(p.InputFile); os.IsNotExist(err) {
-		return fmt.Errorf("This path does not exist")
+		return fmt.Errorf("this path does not exist")
 	}
 
 	if p.Scale < 2 || p.Scale > 4 {
-		return fmt.Errorf("The upscale ratio is invalid")
+		return fmt.Errorf("the upscale ratio is invalid")
 	}
 
 	modelNames := map[string]bool{
@@ -91,7 +91,7 @@ func (p *UpscaleProcessor) validateParams() error {
 
 	_, exists := modelNames[p.ModelName]
 	if !exists {
-		return fmt.Errorf("Invalid Model name")
+		return fmt.Errorf("invalid Model name")
 	}
 
 	return nil

@@ -158,7 +158,7 @@ func toRGBA(clrs []color.Color) ([]color.RGBA, error) {
 		if rgba, ok := c.(color.RGBA); ok {
 			rgbaColors[i] = rgba
 		} else {
-			return nil, fmt.Errorf("while converting theme color at index %d is not color.RGBA: %T\n", i, c)
+			return nil, fmt.Errorf("while converting theme color at index %d is not color.RGBA: %T", i, c)
 		}
 	}
 

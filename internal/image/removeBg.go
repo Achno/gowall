@@ -68,10 +68,10 @@ func (p *BackgroundProcessor) Process(img image.Image, theme string) (image.Imag
 		p.SetOptions()
 	}
 
-	err, newImg := removeBackground(&p.options, img)
+	newImg, err := removeBackground(&p.options, img)
 
 	if err != nil {
-		return nil, fmt.Errorf("while removing background", err)
+		return nil, fmt.Errorf("while removing background: %w", err)
 	}
 
 	return newImg, nil
@@ -86,7 +86,7 @@ type Cluster struct {
 	Points   []Point
 }
 
-func removeBackground(config *BgOptions, img image.Image) (error, image.Image) {
+func removeBackground(config *BgOptions, img image.Image) (image.Image, error) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
@@ -210,7 +210,7 @@ func removeBackground(config *BgOptions, img image.Image) (error, image.Image) {
 		}
 	}
 
-	return nil, output
+	return output, nil
 }
 
 func initializeClusters(points []Point) []Cluster {

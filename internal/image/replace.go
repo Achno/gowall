@@ -10,6 +10,7 @@ import (
 type ReplaceProcessor struct {
 	FromColor string
 	ToColor   string
+	Threshold float64
 }
 
 func (r *ReplaceProcessor) Process(img image.Image, theme string) (image.Image, error) {
@@ -25,8 +26,7 @@ func (r *ReplaceProcessor) Process(img image.Image, theme string) (image.Image, 
 	if err != nil {
 		return nil, err
 	}
-
-	newimage, err := replaceColor(img, from, to)
+	newimage, err := replaceColor(img, from, to, r.Threshold)
 
 	if err != nil {
 		return nil, fmt.Errorf("replacing color failed : %w", err)
@@ -36,21 +36,16 @@ func (r *ReplaceProcessor) Process(img image.Image, theme string) (image.Image, 
 }
 
 // replaces every pixel from the "from" color over to the "to" color in the image
-func replaceColor(img image.Image, from, to color.Color) (image.Image, error) {
+func replaceColor(img image.Image, from, to color.Color, threshold float64) (image.Image, error) {
 	bounds := img.Bounds()
 	newImg := image.NewRGBA(bounds)
-
-	// threshold for color matching.
-	// This is a must because of discrepancies, a color eg. #171717 after being loaded becomes #171719 and when
-	//checking for the exact #171717 color it cannot be found This results to 'not Found errors',so we need a threshold to relax the constraints.
-	const colorThreshold = 0.000000001
 
 	replacementMade := false
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			originalColor := img.At(x, y)
-			if colorsAreSimilar(originalColor, from, colorThreshold) {
+			if colorsAreSimilar(originalColor, from, threshold) {
 				newImg.Set(x, y, to)
 				replacementMade = true
 			} else {

@@ -6,47 +6,46 @@ package cmd
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
 
-var formatFlag string
 var colorPair []string
-var outputName string
 
 var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
 	Short: "Convert an img's color scheme",
 	Long:  `Convert an img's color scheme`,
-	// Args: cobra.MinimumNArgs(1),
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		validateFlagsCompatibility(cmd, args)
+		setOutputSource(args)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {
 
 		case len(shared.BatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.ThemeConverter{}
+			opts := image.ProcessOptions{
+				SaveToFile: true,
+				OutputExt:  formatFlag,
+				OutputName: "",
+				OutputDir:  config.GowallConfig.OutputFolder,
+			}
 			expandedFiles := utils.ExpandHomeDirectory(shared.BatchFiles)
-			err := image.ProcessBatchImgs(expandedFiles, shared.Theme, processor)
+			err := image.ProcessBatchImgs(expandedFiles, shared.Theme, processor, &opts)
 
 			utils.HandleError(err)
 
-		case len(args) > 0 && strings.HasSuffix(args[0], "#"):
+		case len(dirInput) > 0:
 			fmt.Println("Processing directory...")
 			processor := &image.ThemeConverter{}
-			path := utils.DiscardLastCharacter(args[0])
-			files, err := utils.ExpandHashtag(path)
-
-			utils.HandleError(err, "Error ExpandingHashTag")
-
-			if outputName != "" {
-				utils.HandleError(fmt.Errorf("You cannot use the '-o' flag and Batch conversion together"), "Error")
-			}
-
+			files, err := utils.ExpandDirectory(dirInput)
+			utils.HandleError(err, "Error expanding directory")
 			err = image.ProcessBatchImgs(files, shared.Theme, processor)
-
 			utils.HandleError(err)
 
 		case len(args) > 0 && formatFlag != "":
@@ -114,7 +113,7 @@ var convertCmd = &cobra.Command{
 			utils.HandleError(err, "Error opening image")
 
 		default:
-			fmt.Println("Error: requires at least 1 arg(s), only received 0")
+			fmt.Println("Error: requires at least 1 arg(s) or at least --batch or --dir flags set correctly, received none")
 			_ = cmd.Usage()
 		}
 	},
@@ -127,10 +126,8 @@ func themeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 func init() {
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName]")
-	convertCmd.Flags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png ...")
-	convertCmd.Flags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
-	convertCmd.Flags().StringVarP(&outputName, "output", "o", "", "Usage: --output imageName (no extension) Can only be used alongside with -t,-r,-f flags")
-
 	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
+	addGlobalFlags(convertCmd)
+	addBatchProccesingFlags(convertCmd)
 }

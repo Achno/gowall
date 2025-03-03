@@ -12,6 +12,7 @@ import (
 type Shared struct {
 	Theme      string
 	BatchFiles []string
+	UseSTDOUT  bool
 }
 
 type themeWrapper struct {
@@ -33,7 +34,6 @@ var GowallConfig = defaultConfig()
 func init() {
 	// look for $HOME/.config/gowall/config.yml
 	configDir, err := os.UserHomeDir()
-
 	if err != nil {
 		log.Fatalf("Error could not get Home directory")
 	}
@@ -55,5 +55,4 @@ func init() {
 		log.Printf("error unmarshalling config file: %v", err)
 		return
 	}
-
 }

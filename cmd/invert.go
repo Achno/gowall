@@ -18,7 +18,6 @@ var invertCmd = &cobra.Command{
 	Short: "Inverts the color's of an image",
 	Long:  `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		switch {
 
 		case len(shared.BatchFiles) > 0:
@@ -33,7 +32,7 @@ var invertCmd = &cobra.Command{
 			fmt.Println("Processing directory...")
 			processor := &image.Inverter{}
 			path := utils.DiscardLastCharacter(args[0])
-			files, err := utils.ExpandHashtag(path)
+			files, err := utils.ExpandDirectory(path)
 
 			utils.HandleError(err, "Error ExpandingHashTag")
 
@@ -59,5 +58,4 @@ var invertCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(invertCmd)
-
 }

@@ -14,9 +14,57 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shared config.Shared
-var versionFlag bool
-var wallOfTheDayFlag bool
+var (
+	shared           config.Shared
+	versionFlag      bool
+	wallOfTheDayFlag bool
+	formatFlag       string
+	outputName       string
+	dirInput         string
+)
+
+// Exits cli early if conflicting flags are present
+func validateFlagsCompatibility(_ *cobra.Command, _ []string) {
+	if len(shared.BatchFiles) > 0 && len(dirInput) > 0 {
+		utils.HandleError(fmt.Errorf("cannot use --batch and --dir flags together, use one or the other"))
+	}
+	if (len(shared.BatchFiles) > 0 || len(dirInput) > 0) && len(outputName) > 0 {
+		utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
+	}
+}
+
+// Checks whether we should output to stdout
+func setOutputSource(args []string) {
+	shared.UseSTDOUT = false
+
+	// If there's batch processing do not use stdout
+	if len(shared.BatchFiles) > 0 || len(dirInput) > 0 {
+		return
+	}
+
+	// --output has the highest priority
+	if len(outputName) > 0 {
+		shared.UseSTDOUT = (outputName == "-")
+		return
+	}
+
+	// Second argument has next priority
+	if len(args) > 1 && args[1] == "-" {
+		shared.UseSTDOUT = true
+	}
+}
+
+// Add batch proccessing flags to command
+func addBatchProccesingFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringSliceVarP(&shared.BatchFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png... Batch proccess individual files")
+	cmd.PersistentFlags().StringVarP(&dirInput, "dir", "d", "", "Usage --dir [/path/to/dir] Batch proccess entire directory")
+}
+
+// Add common global flags to command
+func addGlobalFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVarP(&formatFlag, "format", "f", "", "Usage: --format [Extension]")
+	cmd.PersistentFlags().StringVarP(&outputName, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -24,7 +72,6 @@ var rootCmd = &cobra.Command{
 	Short: "A tool to convert an img's color shceme ",
 	Long:  `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		switch {
 
 		case versionFlag:
@@ -57,7 +104,6 @@ var rootCmd = &cobra.Command{
 			cmd.Help()
 
 		}
-
 	},
 }
 

@@ -29,12 +29,14 @@ var convertCmd = &cobra.Command{
 		case len(shared.BatchFiles) > 0:
 			fmt.Println("Processing batch files...")
 			processor := &image.ThemeConverter{}
+
 			opts := image.ProcessOptions{
 				SaveToFile: true,
 				OutputExt:  formatFlag,
 				OutputName: "",
 				OutputDir:  config.GowallConfig.OutputFolder,
 			}
+
 			expandedFiles := utils.ExpandHomeDirectory(shared.BatchFiles)
 			err := image.ProcessBatchImgs(expandedFiles, shared.Theme, processor, &opts)
 

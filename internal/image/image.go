@@ -331,19 +331,31 @@ func determineFinalFormatExt(imgSrc utils.ImageSource, opts ProcessOptions) (str
 	return ext, nil
 }
 
-func buildOutputPath(options ProcessOptions,ext string) (string, error) {
-  if options.OutputDir
-	ext := path.Ext(options.OutputName)
-	if ext == "" {
-		return filepath.Join(options.OutputDir, options.OutputName), nil
-	}
-  if 
+// buildOutputPath(options,ext)
+// opts.OutputName == --output
+// --output path or bare name
+// --output=bareName.ext <- this replaces the original name of the file, and saves
+// it in configDefaultDir()
+// --output=./path <- this saves the thing in a path
+// gowall convert ./image.png --output=./another.png -> pth final ./another.ext
+// gowall convert ./image.png -> path final configDefaultDir()/image.ext
+// gowall convert ./image.png ./another.webp -> ./another.webp is the final path
+// gowall convert -d ./path/to/Pictures -> configDefaultDir()/originalName.ext
+
+func buildOutputPath(options ProcessOptions, ext string) (string, error) {
+	// TODO
+	// if options.OutputDir
+	// ext := path.Ext(options.OutputName)
+	// if ext == "" {
+	// 	return filepath.Join(options.OutputDir, options.OutputName), nil
+	// }
+	//  if
 
 	return "", nil
 }
 
 // Process images concurrently and return the first error if there was one
-func ProcessBatchImgs(fileSources []utils.FileSource, theme string, processor ImageProcessor, opts *ProcessOptions) error {
+func ProcessBatchImgs(fileSources []utils.FileSource, theme string, processor ImageProcessor, opts ProcessOptions) error {
 	var wg sync.WaitGroup
 	var remaining int32 = int32(len(fileSources))
 	errChan := make(chan error, len(fileSources))
@@ -354,8 +366,14 @@ func ProcessBatchImgs(fileSources []utils.FileSource, theme string, processor Im
 
 		go func(fileSrc utils.FileSource, index int) {
 			defer wg.Done()
-			opts.OutputName = file.Path
-			_, _, err := ProcessImg(file, processor, theme, *opts)
+			baseName := path.Base(fileSrc.Path)
+			newOpts := ProcessOptions{
+				SaveToFile: true,
+				OutputExt:  opts.OutputExt,
+				OutputName: baseName,
+				OutputDir:  opts.OutputDir,
+			}
+			_, _, err := ProcessImg(file, processor, theme, newOpts)
 			if err != nil {
 				errChan <- fmt.Errorf("file %s : %w", file, err)
 				return

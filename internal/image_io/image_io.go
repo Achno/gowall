@@ -127,12 +127,14 @@ type ImageIO struct {
 
 // Input image abstraction
 type ImageReader interface {
-	Open() (io.Reader, error)
+	Open() (*os.File, error)
+	String() string
 }
 
 // Ouput image abstraction
 type ImageWriter interface {
-	Create() (io.Writer, error)
+	Create() (*os.File, error)
+	String() string
 }
 
 type FileReader struct {
@@ -148,15 +150,20 @@ type (
 	Stdout struct{}
 )
 
-func (fs FileReader) Open() (io.Reader, error) {
-	f, err := os.Open(fs.Path)
+func (fr FileReader) Open() (*os.File, error) {
+	f, err := os.Open(fr.Path)
+	f.Close()
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
 }
 
-func (fw FileWriter) Create() (io.Writer, error) {
+func (fs FileReader) String() string {
+	return fs.Path
+}
+
+func (fw FileWriter) Create() (*os.File, error) {
 	f, err := os.Create(fw.Path)
 	if err != nil {
 		return nil, err
@@ -164,12 +171,24 @@ func (fw FileWriter) Create() (io.Writer, error) {
 	return f, nil
 }
 
-func (ss Stdin) Open() (io.Reader, error) {
+func (fw FileWriter) String() string {
+	return fw.Path
+}
+
+func (ss Stdin) Open() (*os.File, error) {
 	return os.Stdin, nil
 }
 
-func (so Stdout) Create() (io.Writer, error) {
+func (ss Stdin) String() string {
+	return "/dev/stdin"
+}
+
+func (so Stdout) Create() (*os.File, error) {
 	return os.Stdout, nil
+}
+
+func (so Stdout) String() string {
+	return "/dev/stdout"
 }
 
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.

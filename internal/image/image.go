@@ -115,7 +115,7 @@ func SaveGif(gifData gif.GIF, fileName string) error {
 		return fmt.Errorf("while Encoding gif : %w", err)
 	}
 
-	fmt.Printf("Gif processed and saved as %s\n\n", outFile.Name())
+	logger.Printf("Gif processed and saved as %s\n\n", outFile.Name())
 	return nil
 }
 
@@ -161,7 +161,7 @@ func SaveUrlAsImg(url string) (string, error) {
 
 // Opens the image on the default viewing application of every operating system.
 // or in the terminal for kitty,wezterm,ghostty and konsole
-func OpenImage(filePath string) error {
+func OpenImageInViewer(filePath string) error {
 	if !config.GowallConfig.EnableImagePreviewing {
 		return nil
 	}
@@ -218,40 +218,40 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) error {
 	errChan := make(chan error, len(imageOps))
 
 	// Load the image
-	for index, imageIO := range imageOps {
+	for index, imageOp := range imageOps {
 		wg.Add(1)
-		go func(index int, processor ImageProcessor, opts imageio.ImageIO) {
+		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
-			theme := imageIO.Theme
-			img, err := LoadImage(imageIO.ImageInput)
+			theme := currentImgOp.Theme
+			img, err := LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
 				return
 			}
 			// optionally specify a temporary theme via json file in runtime
-			if strings.HasSuffix(imageIO.Theme, ".json") {
-				theme, err = loadThemeFromJson(imageIO.Theme)
+			if strings.HasSuffix(currentImgOp.Theme, ".json") {
+				theme, err = loadThemeFromJson(currentImgOp.Theme)
 				if err != nil {
-					errChan <- fmt.Errorf("file %s : %w", opts.ImageInput, err)
+					errChan <- fmt.Errorf("file %s : %w", currentImgOp.ImageInput, err)
 					return
 				}
 			}
 			// Process the image
-			newImg, err := processor.Process(img, theme)
+			newImg, err := imgProcessor.Process(img, theme)
 			if err != nil {
 				errChan <- fmt.Errorf("while processing image: %w", err)
 				return
 			}
 
 			// Save the image
-			err = SaveImage(newImg, imageIO.ImageOutput, imageIO.Format)
+			err = SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format)
 			if err != nil {
-				errChan <- fmt.Errorf("while saving image: %w in %s", err, imageIO.ImageOutput)
+				errChan <- fmt.Errorf("while saving image: %w in %s", err, currentImgOp.ImageOutput)
 				return
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
-			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", index, remainingCount)
-		}(index, processor, imageIO)
+			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", i, remainingCount)
+		}(index, processor, imageOp)
 	}
 	wg.Wait()
 	close(errChan)
@@ -275,6 +275,7 @@ func loadThemeFromJson(jsonTheme string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error opening image file")
 	}
+	defer reader.Close()
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return "", fmt.Errorf("while reading the json file")

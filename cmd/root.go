@@ -52,12 +52,15 @@ func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
 }
 
-// Runs before all other commands, parses config file, and initializes the
-// default directory and supress logger if stdout is the output destination
+// Configure logger and validates flags
 func initCli(cmd *cobra.Command, args []string) {
 	logger.SetQuiet(imageio.IsStdoutOutput(shared, args))
-	utils.CreateDirectory()
 	validateFlagsCompatibility(cmd, args)
+}
+
+// Initialize default configuration and creates default directories
+func initConfig() {
+	config.LoadConfig()
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -112,6 +115,7 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "show gowall version")
 	rootCmd.Flags().BoolVarP(&wallOfTheDayFlag, "wall", "w", false, "fetches the wallpaper of the day!")

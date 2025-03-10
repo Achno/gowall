@@ -212,10 +212,11 @@ func OpenImageInViewer(filePath string) error {
 }
 
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
-func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) error {
+func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) ([]string, error) {
 	var wg sync.WaitGroup
 	var remaining int32 = int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
+	var processedImagesFilePaths []string
 
 	// Load the image
 	for index, imageOp := range imageOps {
@@ -251,6 +252,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) error {
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
 			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", i, remainingCount)
+			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
 		}(index, processor, imageOp)
 	}
 	wg.Wait()
@@ -264,9 +266,9 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) error {
 			errs = append(errs, err)
 		}
 
-		return errors.New(utils.FormatErrors(errs))
+		return processedImagesFilePaths, errors.New(utils.FormatErrors(errs))
 	}
-	return nil
+	return processedImagesFilePaths, nil
 }
 
 // returns themeName that was inserted to the theme map

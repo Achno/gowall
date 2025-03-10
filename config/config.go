@@ -37,31 +37,40 @@ type Options struct {
 	Themes                 []themeWrapper `yaml:"themes"`
 }
 
-// global config object, used when config is needed
 var GowallConfig = defaultConfig()
 
-func init() {
-	// look for $HOME/.config/gowall/config.yml
+func LoadConfig() {
 	configDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalf("Error could not get Home directory")
+		log.Fatalf("Error: Could not get home directory")
 	}
-	configPath := filepath.Join(configDir, ".config", "gowall", configFile)
 
-	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		// file doesnt exist skip config file
+	configPath := filepath.Join(configDir, ".config", "gowall", configFile)
+	configFolder := filepath.Dir(configPath)
+
+	err = os.MkdirAll(configFolder, 0755)
+	if err != nil {
+		log.Fatalf("Error: Could not create config directory: %v", err)
+	}
+
+	_, err = CreateDirectory()
+	if err != nil {
+		log.Fatalf("Error: Could not create output directories: %v", err)
+	}
+
+	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		return
 	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		log.Printf("error reading config file: %v", err)
+		log.Printf("Error reading config file: %v", err)
 		return
 	}
 
 	err = yaml.Unmarshal(data, &GowallConfig)
 	if err != nil {
-		log.Printf("error unmarshalling config file: %v", err)
+		log.Printf("Error unmarshalling config file: %v", err)
 		return
 	}
 }

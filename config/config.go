@@ -9,10 +9,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Shared struct {
-	Theme      string
-	BatchFiles []string
-	UseSTDOUT  bool
+var SupportedExtensions = map[string]bool{
+	".png":  true,
+	".jpeg": true,
+	".jpg":  true,
+	".webp": true,
+}
+
+type GlobalSubCommandFlags struct {
+	OutputDestination string
+	InputDir          string
+	InputFiles        []string
+	Theme             string
+	Format            string
 }
 
 type themeWrapper struct {

@@ -105,26 +105,32 @@ func (l *Logger) Fatalf(format string, v ...any) {
 
 // Global functions using the default logger
 
+// Logs message to stdout if setQuiet was called with false
 func Print(v ...any) {
 	defaultLogger.Print(v...)
 }
 
+// Logs format message to stdout if setQuiet was called with false
 func Printf(format string, v ...any) {
 	defaultLogger.Printf(format, v...)
 }
 
+// Logs message to sderr
 func Error(v ...any) {
 	defaultLogger.Error(v...)
 }
 
+// Logs format message to stderr
 func Errorf(format string, v ...any) {
 	defaultLogger.Errorf(format, v...)
 }
 
+// Logs messages to stderr and exits with code 1
 func Fatal(v ...any) {
 	defaultLogger.Fatal(v...)
 }
 
+// Logs formated message to stderr and exits with code 1
 func Fatalf(format string, v ...any) {
 	defaultLogger.Fatalf(format, v...)
 }

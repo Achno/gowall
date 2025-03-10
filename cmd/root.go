@@ -53,9 +53,8 @@ func addGlobalFlags(cmd *cobra.Command) {
 }
 
 // Runs before all other commands, parses config file, and initializes the
-// default directory
+// default directory and supress logger if stdout is the output destination
 func initCli(cmd *cobra.Command, args []string) {
-	// Sets quiet mode if stdout is the output destination
 	logger.SetQuiet(imageio.IsStdoutOutput(shared, args))
 	utils.CreateDirectory()
 	validateFlagsCompatibility(cmd, args)

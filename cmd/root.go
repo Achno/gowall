@@ -10,6 +10,8 @@ import (
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/api"
 	"github.com/Achno/gowall/internal/image"
+	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -50,12 +52,21 @@ func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
 }
 
+// Runs before all other commands, parses config file, and initializes the
+// default directory
+func initCli(cmd *cobra.Command, args []string) {
+	// Sets quiet mode if stdout is the output destination
+	logger.SetQuiet(imageio.IsStdoutOutput(shared, args))
+	utils.CreateDirectory()
+	validateFlagsCompatibility(cmd, args)
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:              "gowall",
 	Short:            "A tool to convert an img's color shceme ",
 	Long:             `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
-	PersistentPreRun: validateFlagsCompatibility,
+	PersistentPreRun: initCli,
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {
 

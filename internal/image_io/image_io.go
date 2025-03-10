@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -92,27 +90,6 @@ func filterImages(entries []fs.DirEntry) ([]string, error) {
 	}
 
 	return imageFiles, nil
-}
-
-func GetFileExtensionFromURL(rawurl string) (string, error) {
-	parsedURL, err := url.Parse(rawurl)
-	if err != nil {
-		return "", fmt.Errorf("could not parse URL: %w", err)
-	}
-
-	filePath := parsedURL.Path
-
-	// Extract filename
-	fileName := path.Base(filePath)
-
-	// Remove query parameters, if any
-	if idx := strings.Index(fileName, "?"); idx != -1 {
-		fileName = fileName[:idx]
-	}
-
-	// Get the file extension
-	extension := filepath.Ext(fileName)
-	return extension, nil
 }
 
 func GetImagesFromDirectoryRecursively(path string) ([]FileReader, error) {
@@ -238,7 +215,7 @@ func determineInput(args []string) ImageReader {
 // determineOutput resolves the output destination and format
 func determineOutput(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (ImageWriter, string) {
 	// Check if output should be stdout
-	if isStdoutOutput(flags, args) {
+	if IsStdoutOutput(flags, args) {
 		ext, err := determineFileExt(flags, input, Stdout{})
 		utils.HandleError(err, "could not determine file extension")
 		return Stdout{}, ext
@@ -308,8 +285,8 @@ func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input
 	return filepath.Join(config.GowallConfig.OutputFolder, replaceExt(baseName, ext))
 }
 
-// isStdoutOutput checks if the output destination indicates stdout
-func isStdoutOutput(flags config.GlobalSubCommandFlags, args []string) bool {
+// IsStdoutOutput checks if the output destination indicates stdout
+func IsStdoutOutput(flags config.GlobalSubCommandFlags, args []string) bool {
 	return flags.OutputDestination == "-" ||
 		flags.OutputDestination == "/dev/stdout" ||
 		(len(args) > 1 && args[1] == "-")

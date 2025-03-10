@@ -46,7 +46,7 @@ var invertCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 
 			utils.HandleError(err)
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err)
 
 		default:

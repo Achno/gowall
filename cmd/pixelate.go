@@ -20,7 +20,6 @@ var pixelateCmd = &cobra.Command{
 		   The lower the number the more pixel effect is prevalent. 
 		   In really large images with huge resolution you may need to set the scale really low [3-8] `,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		switch {
 
 		case len(args) > 0:
@@ -33,7 +32,7 @@ var pixelateCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 			utils.HandleError(err, "Error Processing Image")
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err, "Error opening image")
 
 		default:
@@ -46,5 +45,4 @@ var pixelateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(pixelateCmd)
 	pixelateCmd.Flags().Float64VarP(&ScaleFactor, "scale", "s", 15, "Usage: --scale [1-25] (The lower the number == more pixelation)")
-
 }

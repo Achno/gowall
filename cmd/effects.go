@@ -34,7 +34,7 @@ var flipCmd = &cobra.Command{
 		expandFile := utils.ExpandHomeDirectory(args)
 		path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 		utils.HandleError(err)
-		err = image.OpenImage(path)
+		err = image.OpenImageInViewer(path)
 		utils.HandleError(err)
 	},
 }
@@ -49,7 +49,7 @@ var mirrorCmd = &cobra.Command{
 		expandFile := utils.ExpandHomeDirectory(args)
 		path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 		utils.HandleError(err)
-		err = image.OpenImage(path)
+		err = image.OpenImageInViewer(path)
 		utils.HandleError(err)
 	},
 }
@@ -64,7 +64,7 @@ var grayscaleCmd = &cobra.Command{
 		expandFile := utils.ExpandHomeDirectory(args)
 		path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 		utils.HandleError(err)
-		err = image.OpenImage(path)
+		err = image.OpenImageInViewer(path)
 		utils.HandleError(err)
 	},
 }
@@ -79,7 +79,7 @@ var brightnessCmd = &cobra.Command{
 		expandFile := utils.ExpandHomeDirectory(args)
 		path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 		utils.HandleError(err)
-		err = image.OpenImage(path)
+		err = image.OpenImageInViewer(path)
 		utils.HandleError(err)
 	},
 }

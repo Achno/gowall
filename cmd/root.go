@@ -83,7 +83,7 @@ var rootCmd = &cobra.Command{
 			path, err := image.SaveUrlAsImg(url)
 			utils.HandleError(err)
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err)
 
 			ok := utils.Confirm("Do you want to download this image?")

@@ -12,7 +12,6 @@ import (
 )
 
 func UpscaleCmd() *cobra.Command {
-
 	var (
 		scale     int
 		modelName string
@@ -23,7 +22,6 @@ func UpscaleCmd() *cobra.Command {
 		Short: "Upscale (or Deblur) images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan",
 		Long:  `Upscale images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan,if you sea black image after a lot of time then that means that you GPU does not support Vulkan. You can give options that specify thescale and Modelname`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			switch {
 			case len(args) > 0:
 				fmt.Println("Upscaling image...")
@@ -43,7 +41,7 @@ func UpscaleCmd() *cobra.Command {
 				_, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 				utils.HandleError(err, "Error Processing Image")
 
-				err = image.OpenImage(processor.OutputFile)
+				err = image.OpenImageInViewer(processor.OutputFile)
 				utils.HandleError(err, "Error opening image")
 
 			default:

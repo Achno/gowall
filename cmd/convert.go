@@ -9,6 +9,8 @@ import (
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
+	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -19,15 +21,12 @@ var convertCmd = &cobra.Command{
 	Use:   "convert [image path / batch flag]",
 	Short: "Convert an img's color scheme",
 	Long:  `Convert an img's color scheme`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		validateFlagsCompatibility(cmd, args)
-		setOutputSource(args)
-	},
+	// In a persistent prerun hook we could validate local command logic
 	Run: func(cmd *cobra.Command, args []string) {
+		ops := imageio.DetermineImageOperations(shared, args)
 		switch {
-
-		case len(shared.BatchFiles) > 0:
-			fmt.Println("Processing batch files...")
+		case len(shared.InputDir) > 0:
+			logger.Print("Processing batch files...")
 			processor := &image.ThemeConverter{}
 
 			opts := image.ProcessOptions{
@@ -64,7 +63,7 @@ var convertCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 			utils.HandleError(err, "Error Processing Image")
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err, "Error opening image")
 
 		case len(args) > 0 && len(colorPair) > 0:
@@ -95,7 +94,7 @@ var convertCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 			utils.HandleError(err, "Error Processing Image")
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err, "Error opening image")
 
 		case len(args) > 0:
@@ -110,7 +109,7 @@ var convertCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme, opts)
 
 			utils.HandleError(err, "Error Processing Image")
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 
 			utils.HandleError(err, "Error opening image")
 
@@ -128,8 +127,8 @@ func themeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 func init() {
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "catppuccin", "Usage : --theme [ThemeName]")
+	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "png", "Usage : --format [image format] format to encode the image")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
 	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
 	addGlobalFlags(convertCmd)
-	addBatchProccesingFlags(convertCmd)
 }

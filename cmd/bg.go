@@ -41,7 +41,7 @@ var bgCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 			utils.HandleError(err, "Error Processing Image")
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err, "Error opening image")
 
 		default:
@@ -57,5 +57,4 @@ func init() {
 	bgCmd.Flags().IntVarP(&numRoutines, "routines", "r", 4, "")
 	bgCmd.Flags().Float64VarP(&convergence, "conv", "c", 0.001, "")
 	bgCmd.Flags().Float64VarP(&sampleRate, "sRate", "s", 0.5, "")
-
 }

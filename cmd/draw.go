@@ -21,7 +21,6 @@ var drawCmd = &cobra.Command{
 	Short: "draw a border with a color and thickness (currently)",
 	Long:  `The draw command allows you to draw a plethora of effects. Currently only drawing a border is supported with more to come`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		switch {
 		case len(args) > 0:
 			fmt.Println("Processing single image...")
@@ -41,7 +40,7 @@ var drawCmd = &cobra.Command{
 			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
 			utils.HandleError(err)
 
-			err = image.OpenImage(path)
+			err = image.OpenImageInViewer(path)
 			utils.HandleError(err)
 
 		default:
@@ -55,5 +54,4 @@ func init() {
 	rootCmd.AddCommand(drawCmd)
 	drawCmd.Flags().StringVarP(&colorB, "color", "c", "#5D3FD3", "--color #5D3FD3")
 	drawCmd.Flags().IntVarP(&BorderThickness, "borderThickness", "b", 5, "-b 5")
-
 }

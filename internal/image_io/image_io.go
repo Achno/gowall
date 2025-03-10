@@ -160,7 +160,8 @@ func (fr FileReader) Open() (*os.File, error) {
 }
 
 func (fs FileReader) String() string {
-	return fs.Path
+	filePath, _ := filepath.Abs(fs.Path)
+	return filePath
 }
 
 func (fw FileWriter) Create() (*os.File, error) {
@@ -172,7 +173,8 @@ func (fw FileWriter) Create() (*os.File, error) {
 }
 
 func (fw FileWriter) String() string {
-	return fw.Path
+	filePath, _ := filepath.Abs(fw.Path)
+	return filePath
 }
 
 func (ss Stdin) Open() (*os.File, error) {

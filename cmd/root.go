@@ -27,12 +27,15 @@ func isInputBatch() bool {
 }
 
 // Exit cli early if conflicting flags are present
-func validateFlagsCompatibility(_ *cobra.Command, args []string) {
+func validateFlagsCompatibility(cmd *cobra.Command, args []string) {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use --batch and --dir flags together, use one or the other"))
 	}
 	if isInputBatch() && len(shared.OutputDestination) > 0 {
-		utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
+		// Add exception for the gif command
+		if cmd.Name() != "gif" {
+			utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
+		}
 	}
 	if isInputBatch() && len(args) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch"))

@@ -46,6 +46,15 @@ func validateFlagsCompatibility(_ *cobra.Command, args []string) {
 	}
 }
 
+func validateInput(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) {
+	if len(args) > 0 || len(shared.InputDir) > 0 || len(shared.InputFiles) > 0 {
+		return
+	}
+	logger.Error("Error: no input was given, use commands args, or --dir or --batch flags")
+	_ = cmd.Usage()
+	os.Exit(1)
+}
+
 // Add common global flags to command
 func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringSliceVarP(&shared.InputFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png... Batch proccess individual files")

@@ -24,11 +24,7 @@ var bgCmd = &cobra.Command{
 	Short: "Removes the background of the image",
 	Long:  `Removes the background of an image. You can modify the options to achieve better results`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if len(args) > 0 || len(shared.InputDir) > 0 || len(shared.InputFiles) > 0 {
-			return
-		}
-		logger.Error("Error: no input was given, use commands args, or --dir or --batch flags")
-		_ = cmd.Usage()
+		validateInput(cmd, shared, args)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		imageOps := imageio.DetermineImageOperations(shared, args)
@@ -40,20 +36,22 @@ var bgCmd = &cobra.Command{
 			image.WithNumRoutines(numRoutines),
 			image.WithSampleRate(sampleRate),
 		)
-		paths, err := image.ProcessImgs(processor, imageOps)
-		// Only crash when we couldn't proccess any images
+		paths, err := image.ProcessImgs(processor, imageOps, "")
+		// Only crash when we couldn't process any images
 		if len(paths) == 0 {
 			utils.HandleError(err, "Error Processing Images")
 		}
 		// Otherwise print an error message for the unprocessed images
 		if err != nil {
-			logger.Errorf("the following images had errors while proccesing", err)
+			logger.Error(err, "The following images had errors while processing")
 		}
 		// We should only open images when we are dealing with one image and without
-		// stdout as ouput
+		// stdout as output
 		if len(args) > 0 && !imageio.IsStdoutOutput(shared, args) {
 			err = image.OpenImageInViewer(paths[0])
-			logger.Errorf("error opening image", err)
+			if err != nil {
+				logger.Error(err, "Error opening image")
+			}
 		}
 	},
 }

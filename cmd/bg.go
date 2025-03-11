@@ -23,8 +23,13 @@ var bgCmd = &cobra.Command{
 	Use:   "bg [Input]",
 	Short: "Removes the background of the image",
 	Long:  `Removes the background of an image. You can modify the options to achieve better results`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		validateInput(cmd, shared, args)
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		err := validateInput(shared, args)
+		if err != nil {
+			cmd.Usage()
+			return err
+		}
+		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		imageOps := imageio.DetermineImageOperations(shared, args)

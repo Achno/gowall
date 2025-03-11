@@ -25,7 +25,11 @@ var convertCmd = &cobra.Command{
 	Long:  `Convert an img's color scheme`,
 	// In a persistent prerun hook we could validate local command logic
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		validateInput(cmd, shared, args)
+		err := validateInput(shared, args)
+		if err != nil {
+			cmd.Usage()
+			return err
+		}
 		if len(theme) > 0 && len(colorPair) > 0 {
 			cmd.Usage()
 			return fmt.Errorf("cant use both --theme and --replace flags together")

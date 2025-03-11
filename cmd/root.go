@@ -46,13 +46,11 @@ func validateFlagsCompatibility(_ *cobra.Command, args []string) {
 	}
 }
 
-func validateInput(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) {
+func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 	if len(args) > 0 || len(shared.InputDir) > 0 || len(shared.InputFiles) > 0 {
-		return
+		return nil
 	}
-	logger.Error("Error: no input was given, use commands args, or --dir or --batch flags")
-	_ = cmd.Usage()
-	os.Exit(1)
+	return fmt.Errorf("Error: no input was given, use commands args, or --dir or --batch flags")
 }
 
 // Add common global flags to command

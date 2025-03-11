@@ -20,7 +20,6 @@ type GlobalSubCommandFlags struct {
 	OutputDestination string
 	InputDir          string
 	InputFiles        []string
-	Theme             string
 	Format            string
 }
 

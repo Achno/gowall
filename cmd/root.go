@@ -34,9 +34,10 @@ func validateFlagsCompatibility(_ *cobra.Command, args []string) {
 	if isInputBatch() && len(shared.OutputDestination) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
 	}
-	if (len(shared.InputDir) > 0 || len(shared.InputFiles) > 0) && len(args) > 1 {
+	if isInputBatch() && len(args) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch"))
 	}
+	// We could just ignore more args instead of erroring
 	if len(args) > 2 {
 		utils.HandleError(fmt.Errorf("more than two io args provided, only 0, 1 or 2 args are valid"))
 	}

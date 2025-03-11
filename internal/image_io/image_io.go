@@ -122,7 +122,6 @@ type ImageIO struct {
 	ImageInput  ImageReader
 	ImageOutput ImageWriter
 	Format      string
-	Theme       string
 }
 
 // Input image abstraction
@@ -217,7 +216,6 @@ func processSingleFile(flags config.GlobalSubCommandFlags, args []string) []Imag
 			ImageInput:  input,
 			ImageOutput: output,
 			Format:      ext,
-			Theme:       flags.Theme,
 		},
 	}
 }
@@ -381,7 +379,6 @@ func processDirectoryImages(flags config.GlobalSubCommandFlags) []ImageIO {
 			ImageInput:  inputFile,
 			ImageOutput: FileWriter{Path: outputPath},
 			Format:      ext,
-			Theme:       flags.Theme,
 		})
 	}
 
@@ -411,7 +408,6 @@ func processBatchFiles(flags config.GlobalSubCommandFlags) []ImageIO {
 			ImageInput:  input,
 			ImageOutput: FileWriter{Path: outputPath},
 			Format:      ext,
-			Theme:       flags.Theme,
 		})
 	}
 

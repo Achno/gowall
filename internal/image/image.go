@@ -212,7 +212,7 @@ func OpenImageInViewer(filePath string) error {
 }
 
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
-func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) ([]string, error) {
+func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme string) ([]string, error) {
 	var wg sync.WaitGroup
 	var remaining int32 = int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
@@ -223,15 +223,15 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO) ([]string
 		wg.Add(1)
 		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
-			theme := currentImgOp.Theme
+			theme := theme
 			img, err := LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
 				return
 			}
 			// optionally specify a temporary theme via json file in runtime
-			if strings.HasSuffix(currentImgOp.Theme, ".json") {
-				theme, err = loadThemeFromJson(currentImgOp.Theme)
+			if strings.HasSuffix(theme, ".json") {
+				theme, err = loadThemeFromJson(theme)
 				if err != nil {
 					errChan <- fmt.Errorf("file %s : %w", currentImgOp.ImageInput, err)
 					return

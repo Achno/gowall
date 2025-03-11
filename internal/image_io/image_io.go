@@ -224,8 +224,8 @@ func processSingleFile(flags config.GlobalSubCommandFlags, args []string) []Imag
 
 // determineInput resolves the input source (file or stdin)
 func determineInput(args []string) ImageReader {
-	// If no args or first arg is "-", use stdin
-	if len(args) == 0 || args[0] == "-" {
+	// If the first arg is "-", use stdin
+	if len(args) > 0 || args[0] == "-" {
 		return Stdin{}
 	}
 
@@ -417,32 +417,3 @@ func processBatchFiles(flags config.GlobalSubCommandFlags) []ImageIO {
 
 	return operations
 }
-
-// // // Then in your main processing function:
-// func ProcessImages(operations []ImageIO) {
-// 	for _, op := range operations {
-// 		// Open input file
-// 		inputData, err := loadImageData(op.ImageInput)
-// 		if err != nil {
-// 			utils.HandleError(err, "Failed to load input image")
-// 			continue
-// 		}
-//
-// 		// Process the image
-// 		outputData, err := processImageWithTheme(inputData, op.Theme, op.Format)
-// 		if err != nil {
-// 			utils.HandleError(err, "Failed to process image")
-// 			continue
-// 		}
-//
-// 		// Save output (handle stdout specially)
-// 		if op.ImageOutput == "/dev/stdout" {
-// 			os.Stdout.Write(outputData)
-// 		} else {
-// 			err = saveImageData(outputData, op.ImageOutput)
-// 			if err != nil {
-// 				utils.HandleError(err, "Failed to save output image")
-// 			}
-// 		}
-// 	}
-// }

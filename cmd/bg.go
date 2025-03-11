@@ -51,8 +51,10 @@ var bgCmd = &cobra.Command{
 		}
 		// We should only open images when we are dealing with one image and without
 		// stdout as ouput
-		err = image.OpenImageInViewer(paths[0])
-		logger.Errorf("error opening image", err)
+		if len(args) > 0 && !imageio.IsStdoutOutput(shared, args) {
+			err = image.OpenImageInViewer(paths[0])
+			logger.Errorf("error opening image", err)
+		}
 	},
 }
 

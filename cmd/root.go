@@ -38,26 +38,24 @@ func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path s
 }
 
 // Exit cli early if conflicting flags are present
-func validateFlagsCompatibility(cmd *cobra.Command, args []string) {
+func validateFlagsCompatibility(cmd *cobra.Command, args []string) error {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
-		utils.HandleError(fmt.Errorf("cannot use --batch and --dir flags together, use one or the other"))
+		return fmt.Errorf("cannot use --batch and --dir flags together, use one or the other")
 	}
-	if isInputBatch(shared) && len(shared.OutputDestination) > 0 {
-		// Add exception for the gif command
-		if cmd.Name() != "gif" {
-			utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
-		}
+	if isInputBatch(shared) && len(shared.OutputDestination) > 0 && cmd.Name() != "gif" {
+		return fmt.Errorf("cannot use --output flag with --batch or --dir flags only the the gif command can")
 	}
 	if isInputBatch(shared) && len(args) > 0 {
-		utils.HandleError(fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch"))
+		return fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch")
 	}
 	// We could just ignore more args instead of erroring
 	if len(args) > 2 {
-		utils.HandleError(fmt.Errorf("more than two io args provided, only 0, 1 or 2 args are valid"))
+		return fmt.Errorf("more than two io args provided, only 0, 1 or 2 args are valid depending on the command")
 	}
 	if (len(args) == 2 && args[1] == "-") && shared.OutputDestination != "" {
-		utils.HandleError(fmt.Errorf("cannot use - pseudofile for stdout and --output flag at the same time"))
+		return fmt.Errorf("cannot use - pseudofile for stdout and --output flag at the same time")
 	}
+	return nil
 }
 
 func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
@@ -69,15 +67,15 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 
 // Add common global flags to command
 func addGlobalFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceVarP(&shared.InputFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png... Batch proccess individual files")
-	cmd.PersistentFlags().StringVarP(&shared.InputDir, "dir", "d", "", "Usage --dir [/path/to/dir] Batch proccess entire directory")
-	cmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
+	cmd.PersistentFlags().StringSliceVarP(&shared.InputFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
+	cmd.PersistentFlags().StringVarP(&shared.InputDir, "dir", "d", "", "Usage --dir [/path/to/dir] Batch process entire directory")
+	cmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName")
 }
 
 // Configure logger and validates flags
-func initCli(cmd *cobra.Command, args []string) {
+func initCli(cmd *cobra.Command, args []string) error {
 	logger.SetQuiet(imageio.IsStdoutOutput(shared, args))
-	validateFlagsCompatibility(cmd, args)
+	return validateFlagsCompatibility(cmd, args)
 }
 
 // Initialize default configuration and creates default directories
@@ -87,10 +85,10 @@ func initConfig() {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:              "gowall",
-	Short:            "A tool to convert an img's color shceme ",
-	Long:             `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
-	PersistentPreRun: initCli,
+	Use:               "gowall",
+	Short:             "A tool to convert an img's color shceme ",
+	Long:              `Convert an Image's (ex. Wallpaper) color scheme to another ( ex. Catppuccin ) `,
+	PersistentPreRunE: initCli,
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {
 

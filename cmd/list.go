@@ -4,11 +4,11 @@ Copyright © 2024 Achnologia <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ var listCmd = &cobra.Command{
 			utils.HandleError(err)
 
 			for _, color := range colors {
-				fmt.Println(color)
+				logger.Print(color)
 			}
 
 			if previewFlag {
@@ -37,7 +37,7 @@ var listCmd = &cobra.Command{
 			allThemes := image.ListThemes()
 			sort.Strings(allThemes)
 			for _, theme := range allThemes {
-				fmt.Println(theme)
+				logger.Print(theme)
 			}
 		}
 	},

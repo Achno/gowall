@@ -95,10 +95,10 @@ var rootCmd = &cobra.Command{
 		switch {
 
 		case versionFlag:
-			fmt.Printf("gowall version: %s\n", config.Version)
+			logger.Printf("gowall version: %s\n", config.Version)
 
 		case wallOfTheDayFlag:
-			fmt.Println("Fetching wallpaper of the day...")
+			logger.Print("Fetching wallpaper of the day...")
 			url, err := api.GetWallpaperOfTheDay()
 			utils.HandleError(err, "Could not fetch wallpaper of the day")
 
@@ -113,11 +113,11 @@ var rootCmd = &cobra.Command{
 			if !ok {
 				err = os.Remove(path)
 				utils.HandleError(err)
-				fmt.Println("::Image discarded::")
+				logger.Print("::Image discarded::")
 				return
 			}
 
-			fmt.Printf("Image saved as %s\n", path)
+			logger.Print("Image saved as %s\n", path)
 			return
 
 		default:

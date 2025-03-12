@@ -9,11 +9,11 @@ import (
 	"runtime"
 
 	"github.com/Achno/gowall/config"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 )
 
 func SetupUpscaler() error {
-
 	// Make sure the gowall directory is created first
 	dirFolder, err := utils.CreateDirectory()
 	if err != nil {
@@ -39,7 +39,7 @@ func SetupUpscaler() error {
 		return fmt.Errorf("Unsupported OS: %s\n Only available for linux,mac,windows", runtime.GOOS)
 	}
 
-	fmt.Println(utils.BlueColor + " ➜ Downloading models sit back and relax,might take a bit" + utils.ResetColor)
+	logger.Print(utils.BlueColor + " ➜ Downloading models sit back and relax,might take a bit" + utils.ResetColor)
 	// download model
 	err = utils.DownloadUrl(url, zipPath)
 	if err != nil {
@@ -51,7 +51,7 @@ func SetupUpscaler() error {
 	if err != nil {
 		return fmt.Errorf("failed to create folder: %v", err)
 	}
-	fmt.Println(utils.BlueColor + " ➜ Folder created" + utils.ResetColor)
+	logger.Print(utils.BlueColor + " ➜ Folder created" + utils.ResetColor)
 
 	// Extract  zip
 	err = extractZip(zipPath, destFolder)
@@ -64,11 +64,10 @@ func SetupUpscaler() error {
 	if err != nil {
 		return fmt.Errorf("while cleaning up : %v", err)
 	}
-	fmt.Println(utils.BlueColor + " ➜ Cleaning up" + utils.ResetColor)
+	logger.Print(utils.BlueColor + " ➜ Cleaning up" + utils.ResetColor)
 
-	fmt.Println(utils.BlueColor + " ➜ Process complete. Upscaler setup" + utils.ResetColor)
+	logger.Print(utils.BlueColor + " ➜ Process complete. Upscaler setup" + utils.ResetColor)
 	return nil
-
 }
 
 // extractZip extracts the zip files containing the model to a specified destination and gives it permissions.
@@ -81,7 +80,7 @@ func extractZip(src, dest string) error {
 
 	// Create the structure. Create all the directories,subdirectories and blank files.
 	// then just io.Copy() all the content from the zip to the structure and lastly,
-	//give chmod permissions to the binary for the upscaler.
+	// give chmod permissions to the binary for the upscaler.
 
 	for _, file := range reader.File {
 

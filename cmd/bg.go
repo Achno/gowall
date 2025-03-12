@@ -41,23 +41,17 @@ var bgCmd = &cobra.Command{
 			image.WithNumRoutines(numRoutines),
 			image.WithSampleRate(sampleRate),
 		)
-		paths, err := image.ProcessImgs(processor, imageOps, "")
+		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		// Only crash when we couldn't process any images
-		if len(paths) == 0 {
+		if len(processedImages) == 0 {
 			utils.HandleError(err, "Error Processing Images")
 		}
 		// Otherwise print an error message for the unprocessed images
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")
 		}
-		// We should only open images when we are dealing with one image and without
-		// stdout as output
-		if len(args) > 0 && !imageio.IsStdoutOutput(shared, args) {
-			err = image.OpenImageInViewer(paths[0])
-			if err != nil {
-				logger.Error(err, "Error opening image")
-			}
-		}
+		// Open images only when we are in single image mode
+		openImageInViewer(shared, args, processedImages[0])
 	},
 }
 

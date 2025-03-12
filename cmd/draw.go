@@ -17,7 +17,7 @@ var (
 )
 
 var drawCmd = &cobra.Command{
-	Use:   "draw [PATH] ",
+	Use:   "draw [PATH]",
 	Short: "draw a border with a color and thickness (currently)",
 	Long:  `The draw command allows you to draw a plethora of effects. Currently only drawing a border is supported with more to come`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -53,19 +53,15 @@ var drawCmd = &cobra.Command{
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
 
-		if len(processedImages) < 1 {
+		if len(processedImages) == 0 {
 			utils.HandleError(err, "No images were processed")
-			return
 		}
 
-		// For single image processing, open the result in viewer
-		if !isInputBatch(shared) {
-			logger.Print("Opening processed image...")
-			err = image.OpenImageInViewer(processedImages[0])
-			if err != nil {
-				logger.Error(err, "Error opening image")
-			}
+		if err != nil {
+			logger.Error(err, "The following images had errors while processing")
 		}
+
+		openImageInViewer(shared, args, processedImages[0])
 	},
 }
 

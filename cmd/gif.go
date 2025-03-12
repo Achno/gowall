@@ -48,9 +48,6 @@ var (
 				options = append(options, image.WithOutputName(shared.OutputDestination))
 			}
 			imageOps := imageio.DetermineImageOperations(shared, args)
-			if len(imageOps) < 1 {
-				logger.Fatal("could not determine images input/output")
-			}
 			err := image.CreateGif(imageOps, options...)
 			utils.HandleError(err)
 		},

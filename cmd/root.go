@@ -26,6 +26,17 @@ func isInputBatch(flags config.GlobalSubCommandFlags) bool {
 	return len(flags.InputFiles) > 0 || len(flags.InputDir) > 0
 }
 
+func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path string) {
+	if isInputBatch(shared) || imageio.IsStdoutOutput(shared, args) {
+		return
+	}
+	logger.Print("Opening processed image...")
+	err := image.OpenImageInViewer(path)
+	if err != nil {
+		logger.Error(err, "Error opening image")
+	}
+}
+
 // Exit cli early if conflicting flags are present
 func validateFlagsCompatibility(cmd *cobra.Command, args []string) {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {

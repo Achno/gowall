@@ -26,7 +26,6 @@ var (
 				logger.Print("Error: requires at least 1 option `-b` where you specify the filePaths, or `--dir`")
 				logger.Print("Use: gowall gif -b <file,file>")
 				logger.Print("Use: gowall gif -d </path/to/dir>")
-				cmd.Usage()
 				return err
 			}
 			if len(args) > 0 {

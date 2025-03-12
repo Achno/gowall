@@ -52,11 +52,11 @@ func LoadConfig() {
 		log.Fatalf("Error: Could not create config directory: %v", err)
 	}
 
-	_, err = CreateDirectory()
+	defaultDir, err := CreateDirectory()
 	if err != nil {
 		log.Fatalf("Error: Could not create output directories: %v", err)
 	}
-
+	GowallConfig.OutputFolder = defaultDir
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		return
 	}

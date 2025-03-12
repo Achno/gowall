@@ -24,7 +24,6 @@ var drawCmd = &cobra.Command{
 		err := validateInput(shared, args)
 		if err != nil {
 			logger.Print("Error: requires at least 1 arg(s) and options, received 0 input")
-			cmd.Usage()
 			return err
 		}
 		return nil

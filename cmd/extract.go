@@ -29,11 +29,9 @@ var extractCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		if isInputBatch(shared) {
-			cmd.Usage()
 			return fmt.Errorf("extract command only works with single images, --dir or --batch flags are not permitted")
 		}
 		return nil

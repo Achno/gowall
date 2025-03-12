@@ -30,7 +30,6 @@ var flipCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil
@@ -56,7 +55,6 @@ var mirrorCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil
@@ -83,7 +81,6 @@ var grayscaleCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil
@@ -109,7 +106,6 @@ var brightnessCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil

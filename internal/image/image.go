@@ -75,7 +75,6 @@ func LoadImage(imgSrc imageio.ImageReader) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	img, _, err := image.Decode(bytes.NewReader(imgData))
 	if err != nil {
 		return nil, err
@@ -214,7 +213,7 @@ func OpenImageInViewer(filePath string) error {
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
 func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme string) ([]string, error) {
 	var wg sync.WaitGroup
-	var remaining int32 = int32(len(imageOps))
+	remaining := int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
 	var processedImagesFilePaths []string
 

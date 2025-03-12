@@ -23,10 +23,9 @@ var bgCmd = &cobra.Command{
 	Use:   "bg [Input]",
 	Short: "Removes the background of the image",
 	Long:  `Removes the background of an image. You can modify the options to achieve better results`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil

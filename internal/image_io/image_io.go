@@ -127,15 +127,14 @@ type (
 
 func (fr FileReader) Open() (*os.File, error) {
 	f, err := os.Open(fr.Path)
-	f.Close()
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
 }
 
-func (fs FileReader) String() string {
-	filePath, _ := filepath.Abs(fs.Path)
+func (fr FileReader) String() string {
+	filePath, _ := filepath.Abs(fr.Path)
 	return filePath
 }
 
@@ -199,7 +198,7 @@ func processSingleFile(flags config.GlobalSubCommandFlags, args []string) []Imag
 // determineInput resolves the input source (file or stdin)
 func determineInput(args []string) ImageReader {
 	// If the first arg is "-", use stdin
-	if len(args) > 0 || args[0] == "-" {
+	if len(args) > 0 && args[0] == "-" {
 		return Stdin{}
 	}
 
@@ -217,7 +216,6 @@ func determineOutput(flags config.GlobalSubCommandFlags, args []string, input Im
 	}
 
 	outputDest := resolveOutputPath(flags, args, input)
-
 	// Create appropriate writer and get format
 	output := FileWriter{Path: outputDest}
 	ext, err := determineFileExt(flags, input, output)
@@ -263,7 +261,7 @@ func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input 
 // generateOutputPath creates an output path when none is specified
 func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader) string {
 	// For stdin input, generate timestamp-based filename
-	if len(args) == 0 || args[0] == "-" {
+	if len(args) > 0 && args[0] == "-" {
 		ts := time.Now().Format("20060102-150405")
 		filename := fmt.Sprintf("img-%s", ts)
 		ext, err := determineFileExt(flags, input, nil)
@@ -277,6 +275,7 @@ func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input
 	baseName := filepath.Base(absInput)
 	ext, err := determineFileExt(flags, input, nil)
 	utils.HandleError(err, "could not determine file extension")
+	// Use default directory if only one arg is present
 	return filepath.Join(config.GowallConfig.OutputFolder, replaceExt(baseName, ext))
 }
 

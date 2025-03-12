@@ -19,7 +19,6 @@ var invertCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil

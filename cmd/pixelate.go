@@ -19,10 +19,9 @@ var pixelateCmd = &cobra.Command{
 	Long: `It can convert an image to pixel art (blocky appearance). The scale flag [1-25] controls how much the image will get pixelated. 
 		   The lower the number the more pixel effect is prevalent. 
 		   In really large images with huge resolution you may need to set the scale really low [3-8] `,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			cmd.Usage()
 			return err
 		}
 		return nil

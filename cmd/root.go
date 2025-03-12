@@ -27,7 +27,7 @@ func isInputBatch(flags config.GlobalSubCommandFlags) bool {
 }
 
 func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path string) {
-	if isInputBatch(shared) || imageio.IsStdoutOutput(shared, args) {
+	if isInputBatch(shared) || imageio.IsStdoutOutput(flags, args) {
 		return
 	}
 	logger.Print("Opening processed image...")
@@ -61,10 +61,10 @@ func validateFlagsCompatibility(cmd *cobra.Command, args []string) {
 }
 
 func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
-	if len(args) > 0 || len(shared.InputDir) > 0 || len(shared.InputFiles) > 0 {
+	if len(args) > 0 || len(flags.InputDir) > 0 || len(flags.InputFiles) > 0 {
 		return nil
 	}
-	return fmt.Errorf("Error: no input was given, use commands args, or --dir or --batch flags")
+	return fmt.Errorf("error: no input was given, use commands args, or --dir or --batch flags")
 }
 
 // Add common global flags to command
@@ -117,7 +117,7 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			logger.Print("Image saved as %s\n", path)
+			logger.Printf("Image saved as %s\n", path)
 			return
 
 		default:

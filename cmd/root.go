@@ -22,8 +22,8 @@ var (
 	wallOfTheDayFlag bool
 )
 
-func isInputBatch() bool {
-	return len(shared.InputFiles) > 0 || len(shared.InputDir) > 0
+func isInputBatch(flags config.GlobalSubCommandFlags) bool {
+	return len(flags.InputFiles) > 0 || len(flags.InputDir) > 0
 }
 
 // Exit cli early if conflicting flags are present
@@ -31,13 +31,13 @@ func validateFlagsCompatibility(cmd *cobra.Command, args []string) {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use --batch and --dir flags together, use one or the other"))
 	}
-	if isInputBatch() && len(shared.OutputDestination) > 0 {
+	if isInputBatch(shared) && len(shared.OutputDestination) > 0 {
 		// Add exception for the gif command
 		if cmd.Name() != "gif" {
 			utils.HandleError(fmt.Errorf("cannot use --output flag with --batch or --dir flags"))
 		}
 	}
-	if isInputBatch() && len(args) > 0 {
+	if isInputBatch(shared) && len(args) > 0 {
 		utils.HandleError(fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch"))
 	}
 	// We could just ignore more args instead of erroring

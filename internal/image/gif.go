@@ -7,8 +7,10 @@ import (
 	"image/draw"
 	"image/gif"
 	"math"
+	"path/filepath"
 	"time"
 
+	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
@@ -83,12 +85,11 @@ func CreateGif(files []imageio.ImageIO, opts ...GifOption) error {
 		newGif.Image = append(newGif.Image, paletted)
 		newGif.Delay = append(newGif.Delay, options.Delay)
 	}
-
-	timestamp := time.Now().Format(time.DateTime)
-	fileName := fmt.Sprintf("gif-%s", timestamp)
-
-	if options.outputName != "" {
-		fileName = options.outputName
+	fileName := options.outputName
+	if options.outputName == "" {
+		timestamp := time.Now().Format(time.DateTime)
+		fileName = fmt.Sprintf("gif-%s", timestamp)
+		fileName = filepath.Join(config.GowallConfig.OutputFolder, fileName)
 	}
 
 	err := SaveGif(*newGif, fileName)

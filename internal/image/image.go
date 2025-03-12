@@ -97,24 +97,24 @@ func SaveImage(img image.Image, output imageio.ImageWriter, format string) error
 	return encoder(file, img)
 }
 
-func SaveGif(gifData gif.GIF, fileName string) error {
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return err
+func SaveGif(gifData gif.GIF, output string) error {
+	var file *os.File
+	if output == "/dev/stdout" || output == "-" || output == "CON" {
+		file = os.Stdout
+	} else {
+		var err error
+		file, err = os.Create(output)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %w", err)
+		}
+		defer file.Close() // Ensure the file gets closed properly
 	}
-
-	outFile, err := os.Create(filepath.Join(dirFolder, "gifs", fileName+".gif"))
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
-	}
-	defer outFile.Close()
-
-	err = gif.EncodeAll(outFile, &gifData)
+	err := gif.EncodeAll(file, &gifData)
 	if err != nil {
 		return fmt.Errorf("while Encoding gif : %w", err)
 	}
 
-	logger.Printf("Gif processed and saved as %s\n\n", outFile.Name())
+	logger.Printf("Gif processed and saved as %s\n\n", output)
 	return nil
 }
 

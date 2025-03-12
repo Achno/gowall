@@ -78,7 +78,7 @@ func GetImagesFromDirectoryRecursively(path string) ([]FileReader, error) {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if !config.SupportedExtensions[ext] {
+		if config.SupportedExtensions[ext] {
 			files = append(files, FileReader{Path: path})
 		}
 		return nil

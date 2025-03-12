@@ -77,7 +77,7 @@ var convertCmd = &cobra.Command{
 			return
 		}
 		// For single image processing, open the result in viewer
-		if len(shared.InputDir) == 0 && len(shared.InputFiles) == 0 && len(args) > 0 {
+		if !isInputBatch(shared) {
 			logger.Print("Opening processed image...")
 			err = image.OpenImageInViewer(processedImages[0])
 			if err != nil {

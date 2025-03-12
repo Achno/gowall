@@ -55,7 +55,7 @@ var (
 
 func init() {
 	rootCmd.AddCommand(gifCmd)
-	gifCmd.Flags().IntVarP(&delay, "delay", "d", 200, "Frame delay (ms)")
+	gifCmd.Flags().IntVarP(&delay, "delay", "D", 200, "Frame delay (ms)")
 	gifCmd.Flags().IntVarP(&loop, "loop", "l", 0, "Loop=0 (loops forever), Loop=-1 shows frames only 1 time, Loop=n (shows frames n+1)")
 	addGlobalFlags(gifCmd)
 }

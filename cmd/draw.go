@@ -17,7 +17,7 @@ var (
 )
 
 var drawCmd = &cobra.Command{
-	Use:   "draw [PATH]",
+	Use:   "draw [PATH] [OPTIONAL OUTPUT] [--flags]",
 	Short: "draw a border with a color and thickness (currently)",
 	Long:  `The draw command allows you to draw a plethora of effects. Currently only drawing a border is supported with more to come`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

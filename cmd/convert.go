@@ -20,17 +20,16 @@ var (
 )
 
 var convertCmd = &cobra.Command{
-	Use:   "convert [image path / batch flag]",
+	Use:   "convert [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Convert an img's color scheme",
-	Long:  `Convert an img's color scheme`,
-	// In a persistent prerun hook we could validate local command logic
+	Long:  `Convert an img's color scheme or its format ie from webp to png etc`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
 			return err
 		}
 		if len(theme) > 0 && len(colorPair) > 0 {
-			return fmt.Errorf("cant use both --theme and --replace flags together")
+			return fmt.Errorf("cannot use both the --theme and --replace flags together")
 		}
 		return nil
 	},
@@ -89,8 +88,8 @@ func themeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 
 func init() {
 	rootCmd.AddCommand(convertCmd)
-	convertCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName]")
-	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "png", "Usage : --format [image format] format to encode the image")
+	convertCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName] or [PATH to Json file containing theme]")
+	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "png", "Usage : --format [image format] format to encode the image, ie png")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
 	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
 	addGlobalFlags(convertCmd)

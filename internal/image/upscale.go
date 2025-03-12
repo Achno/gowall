@@ -8,26 +8,21 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/upscaler"
 	"github.com/Achno/gowall/utils"
 )
 
 type UpscaleProcessor struct {
-	InputFile  string
-	OutputFile string
+	InputFile  imageio.ImageReader
+	OutputFile imageio.ImageWriter
 	Scale      int
 	ModelName  string
 }
 
 func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, error) {
-
-	// get upscaler directory
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return nil, fmt.Errorf("while creating Directory or getting path : %w", err)
-	}
-	destFolder := filepath.Join(dirFolder, "upscaler")
-
+	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "upscaler")
 	// setup upscaler if it has not been already
 	if _, err := os.Stat(destFolder); os.IsNotExist(err) {
 
@@ -49,14 +44,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 		return nil, fmt.Errorf("while validating parameters: %w", err)
 	}
 
-	// construct outputFile
-	name := filepath.Base(p.InputFile)
-	outputFile := filepath.Join(dirFolder, name)
-	p.OutputFile = outputFile
-
-	// construct model path
-
-	cmd := exec.Command(binary, "-i", p.InputFile, "-o", outputFile, "-s", fmt.Sprintf("%d", p.Scale))
+	cmd := exec.Command(binary, "-i", p.InputFile.String(), "-o", p.OutputFile.String(), "-s", fmt.Sprintf("%d", p.Scale))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -73,8 +61,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 }
 
 func (p *UpscaleProcessor) validateParams() error {
-
-	if _, err := os.Stat(p.InputFile); os.IsNotExist(err) {
+	if _, err := os.Stat(p.InputFile.String()); os.IsNotExist(err) {
 		return fmt.Errorf("this path does not exist")
 	}
 
@@ -98,7 +85,6 @@ func (p *UpscaleProcessor) validateParams() error {
 }
 
 func findRealESRGANBinary(destFolder string) (string, error) {
-
 	binaryNames := map[string]string{
 		"windows": "realesrgan-ncnn-vulkan.exe",
 		"darwin":  "realesrgan-ncnn-vulkan",

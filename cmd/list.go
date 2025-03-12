@@ -18,7 +18,6 @@ var listCmd = &cobra.Command{
 	Short: "Lists available themes",
 	Long:  `List all available themes. This includes the predefined and custom user provided themes in ~/.config/gowall/config.yml`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		th, _ := cmd.Flags().GetString("theme")
 
 		switch {
@@ -46,6 +45,6 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&shared.Theme, "theme", "t", "", "Usage : --theme <theme_name>")
+	listCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme <theme_name>")
 	listCmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
 }

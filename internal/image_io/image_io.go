@@ -185,7 +185,6 @@ func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string)
 func processSingleFile(flags config.GlobalSubCommandFlags, args []string) []ImageIO {
 	input := determineInput(args)
 	output, ext := determineOutput(flags, args, input)
-
 	return []ImageIO{
 		{
 			ImageInput:  input,
@@ -314,14 +313,14 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 	// Check if output is a FileWriter to get its path
 	if fileWriter, ok := output.(FileWriter); ok {
 		if ext := filepath.Ext(fileWriter.Path); ext != "" {
-			return ext, nil
+			return strings.ReplaceAll(ext, ".", ""), nil
 		}
 	}
 
 	// Check if input is a FileReader to get its path
 	if fileReader, ok := input.(FileReader); ok {
 		if ext := filepath.Ext(fileReader.Path); ext != "" {
-			return ext, nil
+			return strings.ReplaceAll(ext, ".", ""), nil
 		}
 	}
 

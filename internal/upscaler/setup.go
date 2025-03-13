@@ -14,17 +14,12 @@ import (
 )
 
 func SetupUpscaler() error {
-	// Make sure the gowall directory is created first
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return fmt.Errorf("while creating Directory or getting path")
-	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("while getting home directory : %w", err)
 	}
 	zipPath := filepath.Join(homeDir, "tmp.zip")
-	destFolder := filepath.Join(dirFolder, "upscaler")
+	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "upscaler")
 
 	// urls of the ESRGAN portable model depending on the operating system
 	urls := map[string]string{
@@ -36,7 +31,7 @@ func SetupUpscaler() error {
 	url, exists := urls[runtime.GOOS]
 
 	if !exists {
-		return fmt.Errorf("Unsupported OS: %s\n Only available for linux,mac,windows", runtime.GOOS)
+		return fmt.Errorf("unsupported OS: %s\n Only available for linux,mac,windows", runtime.GOOS)
 	}
 
 	logger.Print(utils.BlueColor + " ➜ Downloading models sit back and relax,might take a bit" + utils.ResetColor)

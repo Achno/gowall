@@ -124,15 +124,10 @@ func SaveUrlAsImg(url string) (string, error) {
 		return "", err
 	}
 
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return "", fmt.Errorf("while creating Directory or getting path")
-	}
-
 	timestamp := time.Now().Format("20060102-150405")
 	fileName := fmt.Sprintf("wall-%s%s", timestamp, extension)
 
-	path := filepath.Join(dirFolder, fileName)
+	path := filepath.Join(config.GowallConfig.OutputFolder, fileName)
 
 	file, err := os.Create(path)
 	if err != nil {

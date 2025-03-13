@@ -22,7 +22,7 @@ var (
 )
 
 var upscaleCmd = &cobra.Command{
-	Use:   "upscale [PATH]",
+	Use:   "upscale [INPUT] [OPTIONAL OUTPUT]",
 	Short: "Upscale (or Deblur) images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan",
 	Long:  `Upscale images using an Enhanced Super-Resolution Generative Adversarial Network, your GPU must support Vulkan,if you sea black image after a lot of time then that means that you GPU does not support Vulkan. You can give options that specify thescale and Modelname`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

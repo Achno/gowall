@@ -20,7 +20,7 @@ var (
 
 // bgCmd represents the bg command
 var bgCmd = &cobra.Command{
-	Use:   "bg [INPUT] [OPTIONAL OUTPUT] [--flags]",
+	Use:   "bg [INPUT] [OPTIONAL OUTPUT]",
 	Short: "Removes the background of the image",
 	Long:  `Removes the background of an image. You can modify the options to achieve better results`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

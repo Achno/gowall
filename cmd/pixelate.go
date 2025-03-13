@@ -14,7 +14,7 @@ import (
 var ScaleFactor float64
 
 var pixelateCmd = &cobra.Command{
-	Use:   "pixelate [PATH]",
+	Use:   "pixelate [INPUT] [OPTIONAL OUTPUT]",
 	Short: "Turns an image to pixel art depending on the scale flag",
 	Long: `It can convert an image to pixel art (blocky appearance). The scale flag [1-25] controls how much the image will get pixelated. 
 		   The lower the number the more pixel effect is prevalent. 

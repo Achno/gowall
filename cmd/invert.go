@@ -13,7 +13,7 @@ import (
 
 // invertCmd represents the invert command
 var invertCmd = &cobra.Command{
-	Use:   "invert [image path]",
+	Use:   "invert [INPUT] [OPTIONAL OUTPUT]",
 	Short: "Inverts the color's of an image",
 	Long:  `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

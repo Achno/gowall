@@ -20,7 +20,7 @@ var (
 )
 
 var convertCmd = &cobra.Command{
-	Use:   "convert [INPUT] [OPTIONAL OUTPUT] [--flags]",
+	Use:   "convert [INPUT] [OPTIONAL OUTPUT]",
 	Short: "Convert an img's color scheme",
 	Long:  `Convert an img's color scheme or its format ie from webp to png etc`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

@@ -23,7 +23,7 @@ var (
 
 // extractCmd represents the extract command
 var extractCmd = &cobra.Command{
-	Use:   "extract [FILE] [--flags]",
+	Use:   "extract [INPUT]",
 	Short: "Prints the color pallete of the image you specificed (like pywal)",
 	Long:  `Using the colorthief backend ( like pywal ) it prints the color pallete of the image (path) you specified`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {

@@ -17,7 +17,7 @@ var (
 	delay  int
 	loop   int
 	gifCmd = &cobra.Command{
-		Use:   "gif -b [PATHS] --flags",
+		Use:   "gif -b [PATHS]",
 		Short: "Create a gif Animation out of Images",
 		Long:  `Create a gif Animation out of Images specifying the delay between frames, if the gif loops forever and other options`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

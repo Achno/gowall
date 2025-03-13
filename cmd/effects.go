@@ -14,7 +14,7 @@ import (
 var factor float64
 
 var effectsCmd = &cobra.Command{
-	Use:   "effects",
+	Use:   "effects [EFFECT] [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Apply various effects to your images",
 	Long:  `Apply various effects to your images like flip,mirror,grayscale,br(brightness),and more`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -25,7 +25,7 @@ var effectsCmd = &cobra.Command{
 }
 
 var flipCmd = &cobra.Command{
-	Use:   "flip [image]",
+	Use:   "flip [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Flips the image horizontally",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
@@ -50,7 +50,7 @@ var flipCmd = &cobra.Command{
 }
 
 var mirrorCmd = &cobra.Command{
-	Use:   "mirror [image]",
+	Use:   "mirror [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Mirrors the image horizontally",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
@@ -76,7 +76,7 @@ var mirrorCmd = &cobra.Command{
 }
 
 var grayscaleCmd = &cobra.Command{
-	Use:   "grayscale [image]",
+	Use:   "grayscale [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Converts image to grayscale (shades of gray)",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
@@ -101,7 +101,7 @@ var grayscaleCmd = &cobra.Command{
 }
 
 var brightnessCmd = &cobra.Command{
-	Use:   "br [image]",
+	Use:   "br [INPUT] [OPTIONAL OUTPUT] [--flags]",
 	Short: "Increases/Decreases the brightness",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)

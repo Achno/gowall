@@ -43,7 +43,6 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 	if err != nil {
 		return nil, fmt.Errorf("while validating parameters: %w", err)
 	}
-
 	cmd := exec.Command(binary, "-i", p.InputFile.String(), "-o", p.OutputFile.String(), "-s", fmt.Sprintf("%d", p.Scale))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

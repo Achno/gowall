@@ -89,6 +89,9 @@ func SaveImage(img image.Image, output imageio.ImageWriter, format string) error
 		return fmt.Errorf("unsupported format: %s", format)
 	}
 
+	if img == nil {
+		return nil
+	}
 	file, err := output.Create()
 	if err != nil {
 		return err
@@ -245,7 +248,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 				return
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
-			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", i, remainingCount)
+			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", i+1, remainingCount)
 			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
 		}(index, processor, imageOp)
 	}

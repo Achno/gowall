@@ -23,9 +23,9 @@ var (
 
 // extractCmd represents the extract command
 var extractCmd = &cobra.Command{
-	Use:   "extract [FILE]",
-	Short: "Returns the color pallete of the image you specificed (like pywal)",
-	Long:  `Using the colorthief backend ( like pywal ) it returns the color pallete of the image (path) you specified`,
+	Use:   "extract [FILE] [--flags]",
+	Short: "Prints the color pallete of the image you specificed (like pywal)",
+	Long:  `Using the colorthief backend ( like pywal ) it prints the color pallete of the image (path) you specified`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {

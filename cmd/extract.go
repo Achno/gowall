@@ -31,9 +31,6 @@ var extractCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if isInputBatch(shared) {
-			return fmt.Errorf("extract command only works with single images, --dir or --batch flags are not permitted")
-		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

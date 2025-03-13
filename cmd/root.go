@@ -62,7 +62,7 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 	if len(args) > 0 || len(flags.InputDir) > 0 || len(flags.InputFiles) > 0 {
 		return nil
 	}
-	return fmt.Errorf("error: no input was given, use commands args, or --dir or --batch flags")
+	return fmt.Errorf("error: no input was given")
 }
 
 // Add common global flags to command

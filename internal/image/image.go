@@ -90,6 +90,7 @@ func SaveImage(img image.Image, output imageio.ImageWriter, format string) error
 	}
 
 	if img == nil {
+		logger.Print("SaveImage: img received was nil pointer, this means the processor returned nil, will exit early from the save function")
 		return nil
 	}
 	file, err := output.Create()

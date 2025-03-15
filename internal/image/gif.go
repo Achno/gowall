@@ -7,7 +7,11 @@ import (
 	"image/draw"
 	"image/gif"
 	"math"
+	"path/filepath"
 	"time"
+
+	"github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
 type GifOptions struct {
@@ -45,14 +49,14 @@ func defaultGifOptions(options []GifOption) GifOptions {
 	return opts
 }
 
-func CreateGif(files []string, opts ...GifOption) error {
+func CreateGif(files []imageio.ImageIO, opts ...GifOption) error {
 	options := defaultGifOptions(opts)
 
 	var maxWidth, maxHeight int
 	images := []image.Image{}
 
 	for _, pngFile := range files {
-		img, err := LoadImage(pngFile)
+		img, err := LoadImage(pngFile.ImageInput)
 		if err != nil {
 			return fmt.Errorf("while loading image: %w", err)
 		}
@@ -81,12 +85,11 @@ func CreateGif(files []string, opts ...GifOption) error {
 		newGif.Image = append(newGif.Image, paletted)
 		newGif.Delay = append(newGif.Delay, options.Delay)
 	}
-
-	timestamp := time.Now().Format(time.DateTime)
-	fileName := fmt.Sprintf("gif-%s", timestamp)
-
-	if options.outputName != "" {
-		fileName = options.outputName
+	fileName := options.outputName
+	if options.outputName == "" {
+		timestamp := time.Now().Format(time.DateTime)
+		fileName = fmt.Sprintf("gif-%s", timestamp)
+		fileName = filepath.Join(config.GowallConfig.OutputFolder, fileName)
 	}
 
 	err := SaveGif(*newGif, fileName)
@@ -113,8 +116,8 @@ func resizeAspectRatio(img image.Image, targetWidth, targetHeight int) image.Ima
 	}
 
 	newImg := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
-	for y := 0; y < newHeight; y++ {
-		for x := 0; x < newWidth; x++ {
+	for y := range newHeight {
+		for x := range newWidth {
 			srcX := int(math.Round(float64(x) * float64(width) / float64(newWidth)))
 			srcY := int(math.Round(float64(y) * float64(height) / float64(newHeight)))
 			newImg.Set(x, y, img.At(srcX, srcY))

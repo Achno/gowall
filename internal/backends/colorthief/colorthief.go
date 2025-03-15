@@ -8,12 +8,13 @@ import (
 	"os"
 
 	"github.com/Achno/gowall/internal/backends/colorthief/mediancut"
+	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
 var DefaultMaxCubes = 6
 
 // returns the base color from the image file
-func GetColorFromFile(imgPath string) (color.Color, error) {
+func GetColorFromFile(imgPath imageio.ImageIO) (color.Color, error) {
 	colors, err := GetPaletteFromFile(imgPath, DefaultMaxCubes)
 	if err != nil {
 		return color.RGBA{}, nil
@@ -22,12 +23,11 @@ func GetColorFromFile(imgPath string) (color.Color, error) {
 }
 
 // returns cluster similar colors from the image file
-func GetPaletteFromFile(imgPath string, maxCubes int) ([]color.Color, error) {
-	f, err := os.Open(imgPath)
+func GetPaletteFromFile(file imageio.ImageIO, maxCubes int) ([]color.Color, error) {
+	f, err := file.ImageInput.Open()
 	if err != nil {
 		return nil, err
 	}
-
 	defer f.Close()
 	img, _, err := image.Decode(f)
 	if err != nil {
@@ -60,9 +60,9 @@ func PrintColor(colors []color.Color, filename string) error {
 
 	paletted := image.NewPaletted(image.Rect(0, 0, imgWidth, imgHeight), colors)
 
-	for x := 0; x < imgWidth; x++ {
+	for x := range imgWidth {
 		idx := x / 100
-		for y := 0; y < imgHeight; y++ {
+		for y := range imgHeight {
 			paletted.SetColorIndex(x, y, uint8(idx))
 		}
 	}

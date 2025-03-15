@@ -1,6 +1,8 @@
 package utils
 
 // ANSI escape codes for color
-const redColor = "\033[31m"
-const BlueColor = "\033[34m"
-const ResetColor = "\033[0m"
+const (
+	RedColor   = "\033[31m"
+	BlueColor  = "\033[34m"
+	ResetColor = "\033[0m"
+)

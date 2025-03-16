@@ -30,7 +30,6 @@ func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path s
 	if isInputBatch(shared) || imageio.IsStdoutOutput(flags, args) {
 		return
 	}
-	logger.Print("Opening processed image...")
 	err := image.OpenImageInViewer(path)
 	if err != nil {
 		logger.Error(err, "Error opening image")
@@ -67,9 +66,9 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 
 // Add common global flags to command
 func addGlobalFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceVarP(&shared.InputFiles, "batch", "b", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
-	cmd.PersistentFlags().StringVarP(&shared.InputDir, "dir", "d", "", "Usage --dir [/path/to/dir] Batch process entire directory")
-	cmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName")
+	cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
+	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process entire directory")
+	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output imageName")
 }
 
 // Configure logger and validates flags
@@ -81,9 +80,9 @@ func initCli(cmd *cobra.Command, args []string) error {
 // Initialize default configuration and creates default directories
 func initConfig() {
 	config.LoadConfig()
+	image.LoadCustomThemes()
 }
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:               "gowall",
 	Short:             "A tool to convert an img's color shceme ",
@@ -119,8 +118,7 @@ var rootCmd = &cobra.Command{
 			return
 
 		default:
-			cmd.Help()
-
+			_ = cmd.Usage()
 		}
 	},
 }

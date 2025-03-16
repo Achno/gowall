@@ -364,7 +364,10 @@ func processBatchFiles(flags config.GlobalSubCommandFlags) []ImageIO {
 	outputDir := config.GowallConfig.OutputFolder
 	var operations []ImageIO
 
-	for _, path := range flags.InputFiles {
+	// expand the tilde (~) to the full path in case the shell does not
+	files := utils.ExpandTilde(flags.InputFiles)
+
+	for _, path := range files {
 		absolutePath, err := filepath.Abs(path)
 		if err != nil {
 			continue

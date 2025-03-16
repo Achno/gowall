@@ -4,14 +4,9 @@ Copyright © 2024 Achnologia <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-	"image/color"
-
 	"github.com/Achno/gowall/config"
-	"github.com/Achno/gowall/internal/backends/colorthief"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
-	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -35,18 +30,18 @@ var extractCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		imageOps := imageio.DetermineImageOperations(shared, args)
-		clr, err := colorthief.GetPaletteFromFile(imageOps[0], colorsNum)
-		utils.HandleError(err)
 
-		for _, c := range clr {
-			rgba, ok := c.(color.RGBA)
+		NumOfColors, err := cmd.Flags().GetInt("colors")
+		utils.HandleError(err, "Error")
 
-			if !ok {
-				utils.HandleError(fmt.Errorf("error in RGB casting"))
-			}
-			logger.Print(image.RGBtoHex(rgba))
+		processor := &image.ExtractProcessor{
+			NumOfColors: NumOfColors,
 		}
 
+		_, err = image.ProcessImgs(processor, imageOps, theme)
+		utils.HandleError(err, "Error")
+
+		//TODO TEST THIS WITH STDOUT AND MAKE THE IOWRITER for other formats, check for ways to remove the ::: img completed ::: msg
 		// open up hex code preview site
 		if previewFlag {
 			utils.OpenURL(config.HexCodeVisualUrl)
@@ -58,5 +53,6 @@ func init() {
 	rootCmd.AddCommand(extractCmd)
 	extractCmd.Flags().IntVarP(&colorsNum, "colors", "c", 6, "-c <number of colors to return>")
 	extractCmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
-	extractCmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
+	// extractCmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
+	addGlobalFlags(extractCmd)
 }

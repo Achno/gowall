@@ -229,12 +229,19 @@ func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input 
 
 	// Priority for output destination:
 	// 1. --output flag
-	// 2. Second positional argument
+	// 2. Second positional argument ? ╰─ ./gowall convert ~/Pictures/sunset2.jpg ~/Pictures/sunset.jpeg -t cat-yellow makes it overwrite another img
 	// 3. Generated path based on input
+
+	// if flags.OutputDestination != "" {
+	// 	outputDest = flags.OutputDestination
+	// } else if len(args) > 1 {
+	// 	outputDest = args[1]
+	// } else {
+	// 	outputDest = generateOutputPath(flags, args, input)
+	// }
+
 	if flags.OutputDestination != "" {
 		outputDest = flags.OutputDestination
-	} else if len(args) > 1 {
-		outputDest = args[1]
 	} else {
 		outputDest = generateOutputPath(flags, args, input)
 	}
@@ -300,14 +307,14 @@ func shouldRenameFile(outputDest string) bool {
 // Determines file extension based on the output flags, format flags and
 // extensions from the io arguments
 func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, output ImageWriter) (string, error) {
-	// If there is format flag return format
+	// Ext from --format flag
 	if flags.Format != "" {
 		return flags.Format, nil
 	}
 
-	// If there is an output flag and has ext return that ext
+	// Ext from --output flag
 	if ext := filepath.Ext(flags.OutputDestination); ext != "" {
-		return ext, nil
+		return strings.ReplaceAll(ext, ".", ""), nil
 	}
 
 	// Check if output is a FileWriter to get its path
@@ -317,7 +324,7 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 		}
 	}
 
-	// Check if input is a FileReader to get its path
+	// Ext from a Readers Source
 	if fileReader, ok := input.(FileReader); ok {
 		if ext := filepath.Ext(fileReader.Path); ext != "" {
 			return strings.ReplaceAll(ext, ".", ""), nil

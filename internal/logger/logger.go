@@ -14,15 +14,15 @@ const (
 
 type Logger struct {
 	mu        sync.RWMutex
-	quiet     bool
+	quiet     bool // supresses logs to stdout
 	outWriter io.Writer
 	errWriter io.Writer
 }
 
 // Default global logger instance
-var defaultLogger = New(false)
+var defaultLogger = NewLogger(false)
 
-func New(quiet bool) *Logger {
+func NewLogger(quiet bool) *Logger {
 	return &Logger{
 		quiet:     quiet,
 		outWriter: os.Stdout,
@@ -40,6 +40,10 @@ func (l *Logger) SetQuiet(quiet bool) {
 	} else {
 		l.outWriter = os.Stdout
 	}
+}
+
+func (l *Logger) Quiet() bool {
+	return defaultLogger.quiet
 }
 
 // SetQuiet sets the global logger's quiet state

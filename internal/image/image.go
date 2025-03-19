@@ -248,7 +248,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 				return
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
-			logger.Printf(" ::: Image %d Completed , %d Images left ::: \n", i+1, remainingCount)
+			logger.Printf("::: Image completed & saved in %s, %d Images left :::\n", currentImgOp.ImageOutput.String(), remainingCount)
 			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
 		}(index, processor, imageOp)
 	}

@@ -38,7 +38,6 @@ var convertCmd = &cobra.Command{
 
 		// Determine which processor to use
 		if len(theme) > 0 {
-			logger.Printf("Converting image to %s", theme)
 			processor = &image.ThemeConverter{}
 		} else if len(colorPair) > 0 {
 			logger.Print("Replacing color...")
@@ -88,7 +87,7 @@ func themeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 func init() {
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName] or [PATH to Json file containing theme]")
-	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "png", "Usage : --format [image format] format to encode the image, ie png")
+	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "", "Usage : --format [image format] png,webp,jpg,jpeg")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
 	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
 	addGlobalFlags(convertCmd)

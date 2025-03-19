@@ -14,7 +14,6 @@ type ExtractProcessor struct {
 }
 
 func (e *ExtractProcessor) Process(img image.Image, theme string) (image.Image, error) {
-
 	clr, err := colorthief.GetPalette(img, e.NumOfColors)
 	if err != nil {
 		return nil, err

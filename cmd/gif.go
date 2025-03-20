@@ -46,8 +46,10 @@ var (
 			if cmd.Flags().Changed("output") {
 				options = append(options, image.WithOutputName(shared.OutputDestination))
 			}
-			imageOps := imageio.DetermineImageOperations(shared, args)
-			err := image.CreateGif(imageOps, options...)
+			imageOps, err := imageio.DetermineImageOperations(shared, args)
+			utils.HandleError(err)
+
+			err = image.CreateGif(imageOps, options...)
 			utils.HandleError(err)
 		},
 	}

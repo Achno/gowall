@@ -63,7 +63,8 @@ var convertCmd = &cobra.Command{
 			processor = &image.NoOpImageProcessor{}
 		}
 
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 
 		logger.Print("Processing images...")
 		processedImages, err := image.ProcessImgs(processor, imageOps, theme)

@@ -46,7 +46,8 @@ var drawCmd = &cobra.Command{
 			BorderThickness: BorderThickness,
 		}
 
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 
 		logger.Print("Processing images...")
 

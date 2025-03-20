@@ -42,7 +42,9 @@ var upscaleCmd = &cobra.Command{
 			ModelName: modelName,
 		}
 
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
+
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		// Only crash when we couldn't process any images
 		if len(processedImages) == 0 {

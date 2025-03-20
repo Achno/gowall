@@ -37,7 +37,8 @@ var flipCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger.Print("Processing image...")
 		processor := &image.FlipProcessor{}
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		if len(processedImages) == 0 {
 			utils.HandleError(err, "Error Processing Images")
@@ -63,7 +64,8 @@ var mirrorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger.Print("Processing image...")
 		processor := &image.MirrorProcessor{}
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		if len(processedImages) == 0 {
 			utils.HandleError(err, "Error Processing Images")
@@ -88,7 +90,8 @@ var grayscaleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger.Print("Processing image...")
 		processor := &image.GrayScaleProcessor{}
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		if len(processedImages) == 0 {
 			utils.HandleError(err, "Error Processing Images")
@@ -114,7 +117,8 @@ var brightnessCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger.Print("Processing image...")
 		processor := &image.BrightnessProcessor{Factor: factor}
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 		if len(processedImages) == 0 {
 			utils.HandleError(err, "Error Processing Images")

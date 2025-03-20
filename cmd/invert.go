@@ -32,7 +32,8 @@ var invertCmd = &cobra.Command{
 
 		processor := &image.Inverter{}
 
-		imageOps := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
 

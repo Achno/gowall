@@ -67,8 +67,8 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 // Add common global flags to command
 func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
-	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process entire directory")
-	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output imageName")
+	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
+	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output [ImgName] (No extension : just renames the img and saves it into the default dir, --output [ImgName.png] (With extension: will output the image in the current directory))")
 }
 
 // Configure logger and validates flags

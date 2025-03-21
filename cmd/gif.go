@@ -16,8 +16,9 @@ import (
 var (
 	delay  int
 	loop   int
+	resize int
 	gifCmd = &cobra.Command{
-		Use:   "gif -b [PATHS]",
+		Use:   "gif [--batch,--dir] [PATH(S)]",
 		Short: "Create a gif Animation out of Images",
 		Long:  `Create a gif Animation out of Images specifying the delay between frames, if the gif loops forever and other options`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -46,6 +47,9 @@ var (
 			if cmd.Flags().Changed("output") {
 				options = append(options, image.WithOutputName(shared.OutputDestination))
 			}
+			if cmd.Flags().Changed("resize") {
+				options = append(options, image.WithMode(resize))
+			}
 			imageOps, err := imageio.DetermineImageOperations(shared, args)
 			utils.HandleError(err)
 
@@ -57,7 +61,8 @@ var (
 
 func init() {
 	rootCmd.AddCommand(gifCmd)
-	gifCmd.Flags().IntVarP(&delay, "delay", "D", 200, "Frame delay (ms)")
+	gifCmd.Flags().IntVarP(&delay, "delay", "d", 200, "Frame delay (ms)")
+	gifCmd.Flags().IntVarP(&resize, "resize", "r", image.Resize, "Automatically resizes all images to the same dimensions")
 	gifCmd.Flags().IntVarP(&loop, "loop", "l", 0, "Loop=0 (loops forever), Loop=-1 shows frames only 1 time, Loop=n (shows frames n+1)")
 	addGlobalFlags(gifCmd)
 }

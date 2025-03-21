@@ -57,6 +57,13 @@ func (fr FileReader) String() string {
 }
 
 func (fw FileWriter) Create() (*os.File, error) {
+	dir := filepath.Dir(fw.Path)
+
+	// Create all necessary parent directories
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create directories: %w", err)
+	}
+
 	f, err := os.Create(fw.Path)
 	if err != nil {
 		return nil, err
@@ -89,7 +96,11 @@ func (so Stdout) String() string {
 func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string) ([]ImageIO, error) {
 	// Process by priority: directory > batch files > single file/stdin
 	if flags.InputDir != "" {
-		return directoryIO(flags), nil
+		imgIO, err := directoryIO(flags)
+		if err != nil {
+			return nil, err
+		}
+		return imgIO, nil
 	}
 
 	if len(flags.InputFiles) > 0 {
@@ -120,10 +131,11 @@ func SingleIO(flags config.GlobalSubCommandFlags, args []string) ([]ImageIO, err
 }
 
 // directoryIO handles the case when a directory of images is provided
-func directoryIO(flags config.GlobalSubCommandFlags) []ImageIO {
+func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 	inputFiles, err := GetImagesFromDirectoryRecursively(flags.InputDir)
-	utils.HandleError(err)
-
+	if err != nil {
+		return nil, err
+	}
 	outputDir := config.GowallConfig.OutputFolder
 	var operations []ImageIO
 
@@ -141,7 +153,7 @@ func directoryIO(flags config.GlobalSubCommandFlags) []ImageIO {
 		})
 	}
 
-	return operations
+	return operations, nil
 }
 
 // batchIO handles the case when a list of input files is provided

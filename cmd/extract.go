@@ -42,7 +42,6 @@ var extractCmd = &cobra.Command{
 		_, err = image.ProcessImgs(processor, imageOps, theme)
 		utils.HandleError(err, "Error")
 
-		//TODO TEST THIS WITH STDOUT AND MAKE THE IOWRITER for other formats, check for ways to remove the ::: img completed ::: msg
 		// open up hex code preview site
 		if previewFlag {
 			utils.OpenURL(config.HexCodeVisualUrl)

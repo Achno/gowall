@@ -41,9 +41,9 @@ func validateFlagsCompatibility(cmd *cobra.Command, args []string) error {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
 		return fmt.Errorf("cannot use --batch and --dir flags together, use one or the other")
 	}
-	if isInputBatch(shared) && len(shared.OutputDestination) > 0 && cmd.Name() != "gif" {
-		return fmt.Errorf("cannot use --output flag with --batch or --dir flags only the the gif command can")
-	}
+	// if isInputBatch(shared) && len(shared.OutputDestination) > 0 && cmd.Name() != "gif" {
+	// 	return fmt.Errorf("cannot use --output flag with --batch or --dir flags only the the gif command can")
+	// } //!
 	if isInputBatch(shared) && len(args) > 0 {
 		return fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch")
 	}
@@ -61,7 +61,7 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 	if len(args) > 0 || len(flags.InputDir) > 0 || len(flags.InputFiles) > 0 {
 		return nil
 	}
-	return fmt.Errorf("error: no input was given")
+	return fmt.Errorf("no input was given")
 }
 
 // Add common global flags to command

@@ -42,10 +42,11 @@ var bgCmd = &cobra.Command{
 			image.WithSampleRate(sampleRate),
 		)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
+		utils.HandleError(err, "Error")
 		// Only crash when we couldn't process any images
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "Error Processing Images")
-		}
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "Error Processing Images")
+		// }
 		// Otherwise print an error message for the unprocessed images
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")

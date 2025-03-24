@@ -77,7 +77,7 @@ func LoadImage(imgSrc imageio.ImageReader) (image.Image, error) {
 	}
 	img, _, err := image.Decode(bytes.NewReader(imgData))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unknown format : %s", imgSrc.String())
 	}
 	return img, nil
 }

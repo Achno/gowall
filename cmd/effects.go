@@ -120,9 +120,11 @@ var brightnessCmd = &cobra.Command{
 		imageOps, err := imageio.DetermineImageOperations(shared, args)
 		utils.HandleError(err)
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "Error Processing Images")
-		}
+		utils.HandleError(err, "Error")
+
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "Error Processing Images")
+		// }
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")
 		}

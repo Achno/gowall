@@ -196,7 +196,8 @@ func determineInput(args []string) ImageReader {
 	}
 
 	// Otherwise file
-	return FileReader{Path: args[0]}
+	f := utils.ExpandTilde(args)
+	return FileReader{Path: f[0]}
 }
 
 // determineOutput resolves the output destination and format
@@ -319,8 +320,13 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 		}
 	}
 
+	//? If there is a file in stdin assume its a png, so it gets encoded later
+	if _, ok := input.(Stdin); ok {
+		return "png", nil
+	}
+
 	// by default if given a Stdin Reader source, encode it into png
-	return "png", nil
+	return "", fmt.Errorf("extension not found")
 }
 
 // replaceExt replaces the file extension of inputName with ext

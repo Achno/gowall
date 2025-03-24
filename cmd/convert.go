@@ -26,7 +26,7 @@ var convertCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			utils.HandleError(err)
+			return err
 		}
 		if len(theme) > 0 && len(colorPair) > 0 {
 			return fmt.Errorf("cannot use both the --theme and --replace flags together")
@@ -68,14 +68,12 @@ var convertCmd = &cobra.Command{
 
 		logger.Print("Processing images...")
 		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
-		if err != nil {
-			logger.Error(err)
-		}
+		utils.HandleError(err, "Error")
 
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "No images were processed")
-			return
-		}
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "No images were processed")
+		// 	return
+		// }
 
 		openImageInViewer(shared, args, processedImages[0])
 	},

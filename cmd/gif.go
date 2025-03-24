@@ -30,7 +30,7 @@ var (
 				return err
 			}
 			if len(args) > 0 {
-				return fmt.Errorf("cannot use positional args in the gif command")
+				return fmt.Errorf("use --batch or --dir with gif")
 			}
 			return nil
 		},

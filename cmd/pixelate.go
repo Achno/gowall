@@ -37,10 +37,11 @@ var pixelateCmd = &cobra.Command{
 		utils.HandleError(err)
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
+		utils.HandleError(err, "Error")
 
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "Error Processing Images")
-		}
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "Error Processing Images")
+		// }
 
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")

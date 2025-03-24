@@ -13,9 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This function is tightly coupled to work with user input, so there's no way
-// to use --stdout in this command as user input prompts pollute stdout.
-
 var (
 	scale     int
 	modelName string
@@ -31,7 +28,7 @@ var upscaleCmd = &cobra.Command{
 			return err
 		}
 		if imageio.IsStdoutOutput(shared, args) {
-			return fmt.Errorf("this command is not compatible with stdout output")
+			return fmt.Errorf("the upscale is not compatible with stdout output")
 		}
 		return nil
 	},
@@ -46,15 +43,14 @@ var upscaleCmd = &cobra.Command{
 		utils.HandleError(err)
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")
-		// Only crash when we couldn't process any images
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "Error Processing Images")
-		}
-		// Otherwise print an error message for the unprocessed images
+		utils.HandleError(err, "Error")
+
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "Error Processing Images")
+		// }
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")
 		}
-		// Open images only when we are in single image mode
 		openImageInViewer(shared, args, processedImages[0])
 	},
 }

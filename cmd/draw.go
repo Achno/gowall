@@ -23,7 +23,6 @@ var drawCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
-			logger.Print("Error: requires at least 1 arg(s) and options, received 0 input")
 			return err
 		}
 		return nil
@@ -52,10 +51,11 @@ var drawCmd = &cobra.Command{
 		logger.Print("Processing images...")
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
+		utils.HandleError(err, "Error")
 
-		if len(processedImages) == 0 {
-			utils.HandleError(err, "No images were processed")
-		}
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "No images were processed")
+		// }
 
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")

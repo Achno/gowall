@@ -18,7 +18,7 @@ func CreateDirectory() (dirPath string, err error) {
 	}
 	dirPath = filepath.Join(homeDir, folderName)
 
-	// Handle XDG_PICTURES_DIR for better Linux compatibility
+	// Handle XDG_PICTURES_DIR
 	env := os.Getenv("XDG_PICTURES_DIR")
 	if env != "" && GowallConfig.OutputFolder == "" {
 		dirPath = filepath.Join(env, "gowall")

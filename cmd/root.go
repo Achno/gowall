@@ -41,15 +41,8 @@ func validateFlagsCompatibility(cmd *cobra.Command, args []string) error {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
 		return fmt.Errorf("cannot use --batch and --dir flags together, use one or the other")
 	}
-	// if isInputBatch(shared) && len(shared.OutputDestination) > 0 && cmd.Name() != "gif" {
-	// 	return fmt.Errorf("cannot use --output flag with --batch or --dir flags only the the gif command can")
-	// } //!
 	if isInputBatch(shared) && len(args) > 0 {
-		return fmt.Errorf("cannot use positional args for input and batch file flags at the same time ie: --dir or --batch")
-	}
-	// We could just ignore more args instead of erroring
-	if len(args) > 2 {
-		return fmt.Errorf("more than two io args provided, only 0, 1 or 2 args are valid depending on the command")
+		return fmt.Errorf("you cant use --batch and normal input or stdout")
 	}
 	if (len(args) == 2 && args[1] == "-") && shared.OutputDestination != "" {
 		return fmt.Errorf("cannot use - pseudofile for stdout and --output flag at the same time")
@@ -68,7 +61,7 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
 	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
-	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output [ImgName] (No extension : just renames the img and saves it into the default dir, --output [ImgName.png] (With extension: will output the image in the current directory))")
+	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
 }
 
 // Configure logger and validates flags
@@ -127,7 +120,8 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 
-	rootCmd.SilenceErrors = true // Prevents Cobra from printing errors
+	// Prevents Cobra from printing errors so we can wrap them into our logs
+	rootCmd.SilenceErrors = true
 
 	err := rootCmd.Execute()
 	if err != nil {

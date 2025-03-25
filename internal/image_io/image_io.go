@@ -136,8 +136,13 @@ func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 	if err != nil {
 		return nil, err
 	}
-	outputDir := config.GowallConfig.OutputFolder
 	var operations []ImageIO
+	dir := config.GowallConfig.OutputFolder
+
+	// --output - multiple files
+	if flags.OutputDestination != "" {
+		dir = filepath.Join(flags.OutputDestination)
+	}
 
 	for _, inputFile := range inputFiles {
 		baseName := filepath.Base(inputFile.Path)
@@ -145,7 +150,7 @@ func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 		if err != nil {
 			continue
 		}
-		outputPath := filepath.Join(outputDir, replaceExt(baseName, ext))
+		outputPath := filepath.Join(dir, replaceExt(baseName, ext))
 		operations = append(operations, ImageIO{
 			ImageInput:  inputFile,
 			ImageOutput: FileWriter{Path: outputPath},
@@ -158,8 +163,13 @@ func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 
 // batchIO handles the case when a list of input files is provided
 func batchIO(flags config.GlobalSubCommandFlags) []ImageIO {
-	outputDir := config.GowallConfig.OutputFolder
 	var operations []ImageIO
+	dir := config.GowallConfig.OutputFolder
+
+	// --output - multiple files
+	if flags.OutputDestination != "" {
+		dir = filepath.Join(flags.OutputDestination)
+	}
 
 	// expand the tilde (~) to the full path in case the shell does not
 	files := utils.ExpandTilde(flags.InputFiles)
@@ -177,7 +187,7 @@ func batchIO(flags config.GlobalSubCommandFlags) []ImageIO {
 			continue
 		}
 
-		outputPath := filepath.Join(outputDir, replaceExt(baseName, ext))
+		outputPath := filepath.Join(dir, replaceExt(baseName, ext))
 		operations = append(operations, ImageIO{
 			ImageInput:  input,
 			ImageOutput: FileWriter{Path: outputPath},
@@ -226,45 +236,28 @@ func determineOutput(flags config.GlobalSubCommandFlags, args []string, input Im
 
 // resolveOutputPath determines the final output path based on flags and args
 func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (string, error) {
-	// outputDest will be either the "OutputFolder" config option or a path defined by the user.
-	var outputDest string
-
-	// Priority for output destination:
-	// 1. --output flag
-	// 3. Generated path based on input
-
-	outputDest, err := generateOutputPath(flags, args, input)
-	if err != nil {
-		return "", fmt.Errorf("could not generate outputPath")
-	}
-	if flags.OutputDestination != "" {
-		outputDest = flags.OutputDestination
-	}
-
-	// Resolve absolute path and ensure correct extension
-	absPath, err := filepath.Abs(outputDest)
+	dir := config.GowallConfig.OutputFolder
+	name, err := generateFileName(flags, args, input)
 	if err != nil {
 		return "", err
 	}
 
-	// Determine final directory
-	var finalDir string
-	if flags.OutputDestination != "" && filepath.Ext(flags.OutputDestination) == "" {
-		finalDir = config.GowallConfig.OutputFolder
-	} else {
-		finalDir = filepath.Dir(absPath)
+	// --output full destination - single file
+	if flags.OutputDestination != "" && filepath.Ext(flags.OutputDestination) != "" && (flags.InputDir == "" && len(flags.InputFiles) <= 0) {
+		return flags.OutputDestination, nil
 	}
 
-	ext, err := determineFileExt(flags, input, FileWriter{Path: outputDest})
-	if err != nil {
-		return "", err
+	// --output directory - single file
+	if flags.OutputDestination != "" && filepath.Ext(flags.OutputDestination) == "" && (flags.InputDir == "" && len(flags.InputFiles) <= 0) {
+		dir = flags.OutputDestination
+		return filepath.Join(dir, name), nil
 	}
 
-	return filepath.Join(finalDir, replaceExt(filepath.Base(absPath), ext)), nil
+	return filepath.Join(dir, name), nil
 }
 
-// generateOutputPath creates an output path when none is specified
-func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (string, error) {
+// generateFileName creates a filename with an extension for an image
+func generateFileName(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (string, error) {
 	// For stdin input, generate timestamp-based filename
 	if len(args) > 0 && args[0] == "-" {
 		ts := time.Now().Format("20060102-150405")
@@ -273,7 +266,7 @@ func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input
 		if err != nil {
 			return "", err
 		}
-		return filepath.Join(config.GowallConfig.OutputFolder, filename+"."+ext), nil
+		return filepath.Join(filename + "." + ext), nil
 	}
 
 	// For file input, base output on input filename
@@ -284,7 +277,7 @@ func generateOutputPath(flags config.GlobalSubCommandFlags, args []string, input
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(config.GowallConfig.OutputFolder, replaceExt(baseName, ext)), nil
+	return filepath.Join(replaceExt(baseName, ext)), nil
 }
 
 // IsStdoutOutput checks if the output destination indicates stdout

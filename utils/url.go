@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // opens a URL in your default browser of your operating system
@@ -56,4 +60,25 @@ func DownloadUrl(url, dest string) error {
 	}
 
 	return nil
+}
+
+func GetFileExtensionFromURL(rawurl string) (string, error) {
+	parsedURL, err := url.Parse(rawurl)
+	if err != nil {
+		return "", fmt.Errorf("could not parse URL: %w", err)
+	}
+
+	filePath := parsedURL.Path
+
+	// Extract filename
+	fileName := path.Base(filePath)
+
+	// Remove query parameters, if any
+	if idx := strings.Index(fileName, "?"); idx != -1 {
+		fileName = fileName[:idx]
+	}
+
+	// Get the file extension
+	extension := filepath.Ext(fileName)
+	return extension, nil
 }

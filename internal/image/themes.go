@@ -45,11 +45,11 @@ var themes = map[string]Theme{
 	"rose-pine":        RosePine,
 }
 
-func init() {
-	loadCustomThemes()
-}
+// func init() {
+// 	loadCustomThemes()
+// }
 
-func loadCustomThemes() {
+func LoadCustomThemes() {
 
 	for _, tw := range config.GowallConfig.Themes {
 		valid := true

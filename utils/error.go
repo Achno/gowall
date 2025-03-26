@@ -1,25 +1,19 @@
 package utils
 
 import (
-	"fmt"
-	"os"
+	"github.com/Achno/gowall/internal/logger"
 )
 
 // Prints the error in red and exits
 func HandleError(err error, msg ...string) {
 	if err != nil {
-
 		switch {
 
 		case len(msg) > 0:
-			fmt.Printf("%s %s: %s %s\n", redColor, msg[0], err, ResetColor)
-
+			logger.Fatalf("%s: %s", msg[0], err)
 		default:
-			fmt.Printf("%s %s %s\n", redColor, err, ResetColor)
-
+			logger.Fatalf(err.Error())
 		}
-
-		os.Exit(1)
 	}
 }
 

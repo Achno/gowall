@@ -8,26 +8,19 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/upscaler"
 	"github.com/Achno/gowall/utils"
 )
 
 type UpscaleProcessor struct {
-	InputFile  string
-	OutputFile string
-	Scale      int
-	ModelName  string
+	Scale     int
+	ModelName string
 }
 
 func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, error) {
-
-	// get upscaler directory
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return nil, fmt.Errorf("while creating Directory or getting path : %w", err)
-	}
-	destFolder := filepath.Join(dirFolder, "upscaler")
-
+	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "upscaler")
 	// setup upscaler if it has not been already
 	if _, err := os.Stat(destFolder); os.IsNotExist(err) {
 
@@ -42,21 +35,23 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 	if err != nil {
 		return nil, fmt.Errorf("while finding upscaler binary : %w", err)
 	}
-
-	// validate params
-	err = p.validateParams()
+	// Create temporary files for input and output
+	tempDir, err := os.MkdirTemp("", "gowall-upscale-*")
 	if err != nil {
+		return nil, fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	inputPath := filepath.Join(tempDir, "input.png")
+	outputPath := filepath.Join(tempDir, "output.png")
+	if err := SaveImage(img, imageio.FileWriter{Path: inputPath}, "png"); err != nil {
+		return nil, fmt.Errorf("failed to save temp input image: %w", err)
+	}
+	// Validate params
+	if err := p.validateParams(inputPath); err != nil {
 		return nil, fmt.Errorf("while validating parameters: %w", err)
 	}
-
-	// construct outputFile
-	name := filepath.Base(p.InputFile)
-	outputFile := filepath.Join(dirFolder, name)
-	p.OutputFile = outputFile
-
-	// construct model path
-
-	cmd := exec.Command(binary, "-i", p.InputFile, "-o", outputFile, "-s", fmt.Sprintf("%d", p.Scale))
+	cmd := exec.Command(binary, "-i", inputPath, "-o", outputPath, "-s", fmt.Sprintf("%d", p.Scale))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -68,13 +63,16 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 		}
 		return nil, fmt.Errorf("command failed: %w", err)
 	}
+	imgUpscaled, err := LoadImage(imageio.FileReader{Path: outputPath})
+	if err != nil {
+		return nil, fmt.Errorf("could not open upscaled image after processing in %s", outputPath)
+	}
 
-	return nil, nil
+	return imgUpscaled, nil
 }
 
-func (p *UpscaleProcessor) validateParams() error {
-
-	if _, err := os.Stat(p.InputFile); os.IsNotExist(err) {
+func (p *UpscaleProcessor) validateParams(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return fmt.Errorf("this path does not exist")
 	}
 
@@ -98,7 +96,6 @@ func (p *UpscaleProcessor) validateParams() error {
 }
 
 func findRealESRGANBinary(destFolder string) (string, error) {
-
 	binaryNames := map[string]string{
 		"windows": "realesrgan-ncnn-vulkan.exe",
 		"darwin":  "realesrgan-ncnn-vulkan",

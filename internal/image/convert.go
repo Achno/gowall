@@ -15,19 +15,16 @@ import (
 
 	"github.com/Achno/gowall/config"
 	haldclut "github.com/Achno/gowall/internal/backends/colorthief/haldClut"
-	"github.com/Achno/gowall/utils"
 )
 
 var clutMutex sync.Mutex
 
-type ThemeConverter struct {
-}
+type ThemeConverter struct{}
 
 func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.Image, error) {
 	level := 8
 
 	selectedTheme, err := SelectTheme(theme)
-
 	if err != nil {
 		return nil, fmt.Errorf("%w %s", err, theme)
 	}
@@ -41,11 +38,6 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 		return newimg, nil
 	}
 
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return nil, fmt.Errorf("while creating Directory or getting path : %w", err)
-	}
-
 	// hash colors to know if anything in the custom themes have changed
 	clrs, err := GetThemeColors(theme)
 	if err != nil {
@@ -56,7 +48,7 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 
 	clutMutex.Lock()
 	// if clut exists skip to save time
-	_, err = os.Stat(filepath.Join(dirFolder, "cluts", clutPath))
+	_, err = os.Stat(filepath.Join(config.GowallConfig.OutputFolder, "cluts", clutPath))
 	if os.IsNotExist(err) {
 
 		identityClut, err := haldclut.GenerateIdentityCLUT(level)
@@ -66,13 +58,12 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 		}
 		mapper := &haldclut.RBFMapper{}
 		palette, err := toRGBA(selectedTheme.Colors)
-
 		if err != nil {
 			clutMutex.Unlock()
 			return nil, fmt.Errorf("could not parse colors to RGBA")
 		}
 		modifiedClut := haldclut.InterpolateCLUT(identityClut, palette, level, mapper)
-		err = haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(dirFolder, "cluts", clutPath))
+		err = haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(config.GowallConfig.OutputFolder, "cluts", clutPath))
 		if err != nil {
 			clutMutex.Unlock()
 			return nil, fmt.Errorf("while saving the CLUT: %w", err)
@@ -81,7 +72,7 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 	}
 	clutMutex.Unlock()
 
-	clut, err := haldclut.LoadHaldCLUT(filepath.Join(dirFolder, "cluts", clutPath))
+	clut, err := haldclut.LoadHaldCLUT(filepath.Join(config.GowallConfig.OutputFolder, "cluts", clutPath))
 	if err != nil {
 		return nil, fmt.Errorf("while loading CLUT: %w", err)
 	}
@@ -114,11 +105,9 @@ func NearestNeighbour(img image.Image, theme Theme) (image.Image, error) {
 	}
 
 	return newImg, nil
-
 }
 
 func nearestColor(clr color.Color, theme Theme) color.Color {
-
 	r, g, b, _ := clr.RGBA()
 
 	// Convert from 16-bit to 8-bit
@@ -143,7 +132,6 @@ func nearestColor(clr color.Color, theme Theme) color.Color {
 	}
 
 	return nearestClr
-
 }
 
 func colorDistance(r1, g1, b1, r2, g2, b2 uint32) float64 {
@@ -151,7 +139,6 @@ func colorDistance(r1, g1, b1, r2, g2, b2 uint32) float64 {
 }
 
 func toRGBA(clrs []color.Color) ([]color.RGBA, error) {
-
 	rgbaColors := make([]color.RGBA, len(clrs))
 
 	for i, c := range clrs {
@@ -166,7 +153,6 @@ func toRGBA(clrs []color.Color) ([]color.RGBA, error) {
 }
 
 func hashPalette(colors []string) string {
-
 	hasher := md5.New()
 	for _, color := range colors {
 		hasher.Write([]byte(color))

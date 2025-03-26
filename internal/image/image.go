@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,9 +21,10 @@ import (
 	"time"
 
 	"github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
-
 	webp "github.com/HugoSmits86/nativewebp"
 	_ "golang.org/x/image/webp"
 )
@@ -63,79 +65,72 @@ func (p *NoOpImageProcessor) Process(img image.Image, options string) (image.Ima
 	return img, nil
 }
 
-func LoadImage(filePath string) (image.Image, error) {
-
-	file, err := os.Open(filePath)
-
+func LoadImage(imgSrc imageio.ImageReader) (image.Image, error) {
+	reader, err := imgSrc.Open()
 	if err != nil {
 		return nil, err
 	}
-
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-
-	return img, err
+	defer reader.Close()
+	imgData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	img, _, err := image.Decode(bytes.NewReader(imgData))
+	if err != nil {
+		return nil, fmt.Errorf("unknown format : %s", imgSrc.String())
+	}
+	return img, nil
 }
 
-func SaveImage(img image.Image, filePath string, format string) error {
-
+func SaveImage(img image.Image, output imageio.ImageWriter, format string) error {
 	encoder, ok := encoders[strings.ToLower(format)]
 
 	if !ok {
 		return fmt.Errorf("unsupported format: %s", format)
 	}
 
-	file, err := os.Create(filePath)
-
+	if img == nil {
+		return nil
+	}
+	file, err := output.Create()
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 	return encoder(file, img)
-
 }
 
-func SaveGif(gifData gif.GIF, fileName string) error {
-	dirFolder, err := utils.CreateDirectory()
-	if err != nil {
-		return err
+func SaveGif(gifData gif.GIF, output string) error {
+	var file *os.File
+	if output == "/dev/stdout" || output == "-" || output == "CON" {
+		file = os.Stdout
+	} else {
+		var err error
+		file, err = os.Create(output)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %w", err)
+		}
+		defer file.Close() // Ensure the file gets closed properly
 	}
-
-	outFile, err := os.Create(filepath.Join(dirFolder, "gifs", fileName+".gif"))
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
-	}
-	defer outFile.Close()
-
-	err = gif.EncodeAll(outFile, &gifData)
+	err := gif.EncodeAll(file, &gifData)
 	if err != nil {
 		return fmt.Errorf("while Encoding gif : %w", err)
 	}
 
-	fmt.Printf("Gif processed and saved as %s\n\n", outFile.Name())
+	logger.Printf("Gif processed and saved as %s\n\n", output)
 	return nil
 }
 
 func SaveUrlAsImg(url string) (string, error) {
-
 	extension, err := utils.GetFileExtensionFromURL(url)
-
 	if err != nil {
 		return "", err
-	}
-
-	dirFolder, err := utils.CreateDirectory()
-
-	if err != nil {
-		return "", fmt.Errorf("while creating Directory or getting path")
 	}
 
 	timestamp := time.Now().Format("20060102-150405")
 	fileName := fmt.Sprintf("wall-%s%s", timestamp, extension)
 
-	path := filepath.Join(dirFolder, fileName)
+	path := filepath.Join(config.GowallConfig.OutputFolder, fileName)
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -163,8 +158,7 @@ func SaveUrlAsImg(url string) (string, error) {
 
 // Opens the image on the default viewing application of every operating system.
 // or in the terminal for kitty,wezterm,ghostty and konsole
-func OpenImage(filePath string) error {
-
+func OpenImageInViewer(filePath string) error {
 	if !config.GowallConfig.EnableImagePreviewing {
 		return nil
 	}
@@ -212,81 +206,76 @@ func OpenImage(filePath string) error {
 	}
 
 	return cmd.Start()
-
-}
-
-type ProcessOptions struct {
-	SaveToFile bool   // Whether to save the processed image to file
-	OutputExt  string // Optional output extension to override the original
-	OutputName string // Optional outputName
-}
-
-func DefaultProcessOptions() ProcessOptions {
-	return ProcessOptions{
-		SaveToFile: true,
-	}
 }
 
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
-// You can pass an optional  "ProcessOptions" struct with extra options.
-func ProcessImg(imgPath string, processor ImageProcessor, theme string, opts ...ProcessOptions) (string, *image.Image, error) {
-	// Use default options if none provided
-	options := DefaultProcessOptions()
-	if len(opts) > 0 {
-		options = opts[0]
-	}
-
-	// Handle directory creation
-	dirPath, err := utils.CreateDirectory()
-	if err != nil {
-		return "", nil, fmt.Errorf("while creating directory: %w", err)
-	}
+func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme string) ([]string, error) {
+	var wg sync.WaitGroup
+	remaining := int32(len(imageOps))
+	errChan := make(chan error, len(imageOps))
+	var processedImagesFilePaths []string
 
 	// Load the image
-	img, err := LoadImage(imgPath)
-	if err != nil {
-		return "", nil, fmt.Errorf("while loading image: %w", err)
-	}
+	for index, imageOp := range imageOps {
+		wg.Add(1)
+		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
+			defer wg.Done()
+			theme := theme
+			img, err := LoadImage(currentImgOp.ImageInput)
+			if err != nil {
+				errChan <- fmt.Errorf("while loading image: %w", err)
+				return
+			}
+			// optionally specify a temporary theme via json file in runtime
+			if strings.HasSuffix(theme, ".json") {
+				theme, err = loadThemeFromJson(theme)
+				if err != nil {
+					errChan <- fmt.Errorf("file %s : %w", currentImgOp.ImageInput, err)
+					return
+				}
+			}
+			// Process the image
+			newImg, err := imgProcessor.Process(img, theme)
+			if err != nil {
+				errChan <- fmt.Errorf("while processing image: %w", err)
+				return
+			}
 
-	// optionally specify a temporary theme via json file in runtime
-	if strings.HasSuffix(theme, ".json") {
-		theme, err = loadThemeFromJson(theme)
-		if err != nil {
-			return "", nil, err
+			// Save the image
+			err = SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format)
+			if err != nil {
+				errChan <- fmt.Errorf("while saving image: %w in %s", err, currentImgOp.ImageOutput)
+				return
+			}
+			remainingCount := atomic.AddInt32(&remaining, -1)
+			logger.Printf("::: Image completed & saved in %s, %d Images left :::\n", currentImgOp.ImageOutput.String(), remainingCount)
+			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
+		}(index, processor, imageOp)
+	}
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		// return <-errChan
+		var errs []error
+
+		for err := range errChan {
+			errs = append(errs, err)
 		}
-	}
 
-	// Process the image
-	newImg, err := processor.Process(img, theme)
-	if err != nil {
-		return "", nil, fmt.Errorf("while processing image: %w", err)
+		return processedImagesFilePaths, errors.New(utils.FormatErrors(errs))
 	}
-
-	// If we don't need to save, return early with the processed image
-	if !options.SaveToFile {
-		return "", &newImg, nil
-	}
-
-	outputFilePath, err := buildOutputPath(imgPath, options, dirPath)
-	if err != nil {
-		return "", nil, err
-	}
-
-	ext := strings.ToLower(filepath.Ext(outputFilePath))[1:]
-	// Save the image
-	err = SaveImage(newImg, outputFilePath, ext)
-	if err != nil {
-		return "", nil, fmt.Errorf("while saving image: %w in %s", err, outputFilePath)
-	}
-
-	fmt.Printf("Image processed and saved as %s\n\n", outputFilePath)
-	return outputFilePath, &newImg, nil
+	return processedImagesFilePaths, nil
 }
 
 // returns themeName that was inserted to the theme map
 func loadThemeFromJson(jsonTheme string) (string, error) {
-	expandFile := utils.ExpandHomeDirectory([]string{jsonTheme})
-	data, err := os.ReadFile(expandFile[0])
+	reader, err := os.Open(jsonTheme)
+	if err != nil {
+		return "", fmt.Errorf("error opening image file")
+	}
+	defer reader.Close()
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return "", fmt.Errorf("while reading the json file")
 	}
@@ -311,79 +300,4 @@ func loadThemeFromJson(jsonTheme string) (string, error) {
 	}
 
 	return tm.Name, nil
-}
-
-// returns the outputFilePath where the image should be saved, taking into account the ProcessOptions.
-// If options.OutputName has no extension, its inferred and is saved to the default Dir.
-// otherwise options.OutputName is treated like an absolute path, so you can save the image outside the default directory
-func buildOutputPath(imgPath string, options ProcessOptions, dirPath string) (string, error) {
-	originalExt := strings.ToLower(filepath.Ext(imgPath))
-	if originalExt == "" {
-		return "", fmt.Errorf("error: Could not determine file extension")
-	}
-	originalExt = originalExt[1:] // remove '.'
-
-	finalExt := originalExt
-	if options.OutputExt != "" {
-		if _, exists := encoders[strings.ToLower(options.OutputExt)]; !exists {
-			return "", fmt.Errorf("unsupported format: %s", options.OutputExt)
-		}
-		finalExt = options.OutputExt
-	}
-
-	// If OutputName contains extension (e.g., "output.png"), use it as absolute path
-	if options.OutputName != "" && filepath.Ext(options.OutputName) != "" {
-		return options.OutputName, nil
-	}
-
-	// Build filename without extension
-	baseName := strings.TrimSuffix(filepath.Base(imgPath), filepath.Ext(imgPath))
-	if options.OutputName != "" {
-		baseName = options.OutputName
-	}
-
-	return filepath.Join(dirPath, baseName+"."+finalExt), nil
-}
-
-// Process images concurrently and return the first error if there was one
-func ProcessBatchImgs(files []string, theme string, processor ImageProcessor) error {
-
-	var wg sync.WaitGroup
-	var remaining int32 = int32(len(files))
-	errChan := make(chan error, len(files))
-
-	for index, file := range files {
-
-		wg.Add(1)
-
-		go func(file string, index int) {
-			defer wg.Done()
-
-			_, _, err := ProcessImg(file, processor, theme)
-
-			if err != nil {
-				errChan <- fmt.Errorf("file %s : %w", file, err)
-				return
-			}
-			remainingCount := atomic.AddInt32(&remaining, -1)
-			fmt.Printf(" ::: Image %d Completed , %d Images left ::: \n", index, remainingCount)
-		}(file, index)
-
-	}
-
-	wg.Wait()
-	close(errChan)
-
-	if len(errChan) > 0 {
-		// return <-errChan
-		var errs []error
-
-		for err := range errChan {
-			errs = append(errs, err)
-		}
-
-		return errors.New(utils.FormatErrors(errs))
-	}
-
-	return nil
 }

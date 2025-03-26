@@ -9,11 +9,9 @@ import (
 )
 
 func GetWallpaperOfTheDay() (string, error) {
-
 	url := config.WallOfTheDayUrl
 
 	response, err := http.Get(url)
-
 	if err != nil {
 		return "", err
 	}
@@ -26,7 +24,6 @@ func GetWallpaperOfTheDay() (string, error) {
 
 	// Parse the html and select the top wallpaper of the day
 	doc, err := goquery.NewDocumentFromReader(response.Body)
-
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +34,7 @@ func GetWallpaperOfTheDay() (string, error) {
 		imgUrl, exists := selection.Attr("src")
 
 		if exists {
-			// fmt.Printf("index %d %s\n", index, imgUrl)
+			// logger.Print("index %d %s\n", index, imgUrl)
 			imageUrls = append(imageUrls, imgUrl)
 		}
 	})

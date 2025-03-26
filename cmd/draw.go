@@ -4,9 +4,9 @@ Copyright © 2024 Achno <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/Achno/gowall/internal/image"
+	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -17,37 +17,51 @@ var (
 )
 
 var drawCmd = &cobra.Command{
-	Use:   "draw [PATH] ",
+	Use:   "draw [PATH] [OPTIONAL OUTPUT]",
 	Short: "draw a border with a color and thickness (currently)",
 	Long:  `The draw command allows you to draw a plethora of effects. Currently only drawing a border is supported with more to come`,
-	Run: func(cmd *cobra.Command, args []string) {
-
-		switch {
-		case len(args) > 0:
-			fmt.Println("Processing single image...")
-
-			hex, err := cmd.Flags().GetString("color")
-			utils.HandleError(err, "Error")
-
-			clr, err := image.HexToRGBA(hex)
-			utils.HandleError(err, "Error")
-
-			processor := &image.DrawProcessor{
-				Color:           clr,
-				BorderThickness: BorderThickness,
-			}
-			expandFile := utils.ExpandHomeDirectory(args)
-
-			path, _, err := image.ProcessImg(expandFile[0], processor, shared.Theme)
-			utils.HandleError(err)
-
-			err = image.OpenImage(path)
-			utils.HandleError(err)
-
-		default:
-			fmt.Println("Error: requires at least 1 arg(s) and options, only received 0")
-			_ = cmd.Usage()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		err := validateInput(shared, args)
+		if err != nil {
+			return err
 		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			logger.Print("Processing single image...")
+		}
+		if isInputBatch(shared) {
+			logger.Print("Processing batch of images...")
+		}
+		hex, err := cmd.Flags().GetString("color")
+		utils.HandleError(err, "Error")
+
+		clr, err := image.HexToRGBA(hex)
+		utils.HandleError(err, "Error")
+
+		processor := &image.DrawProcessor{
+			Color:           clr,
+			BorderThickness: BorderThickness,
+		}
+
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
+
+		logger.Print("Processing images...")
+
+		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
+		utils.HandleError(err, "Error")
+
+		// if len(processedImages) == 0 {
+		// 	utils.HandleError(err, "No images were processed")
+		// }
+
+		if err != nil {
+			logger.Error(err, "The following images had errors while processing")
+		}
+
+		openImageInViewer(shared, args, processedImages[0])
 	},
 }
 
@@ -55,5 +69,5 @@ func init() {
 	rootCmd.AddCommand(drawCmd)
 	drawCmd.Flags().StringVarP(&colorB, "color", "c", "#5D3FD3", "--color #5D3FD3")
 	drawCmd.Flags().IntVarP(&BorderThickness, "borderThickness", "b", 5, "-b 5")
-
+	addGlobalFlags(drawCmd)
 }

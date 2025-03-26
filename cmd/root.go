@@ -32,7 +32,7 @@ func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path s
 	}
 	err := image.OpenImageInViewer(path)
 	if err != nil {
-		logger.Error(err, "Error opening image")
+		logger.Error("Error opening image: ", err)
 	}
 }
 

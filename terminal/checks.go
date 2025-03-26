@@ -57,3 +57,13 @@ func HasIcat() bool {
 
 	return path != ""
 }
+
+// Checks if the user has chafa in his $PATH
+func HasChafa() bool {
+	path, err := exec.LookPath("chafa")
+	if err != nil {
+		return false
+	}
+
+	return path != ""
+}

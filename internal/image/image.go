@@ -162,8 +162,18 @@ func OpenImageInViewer(filePath string) error {
 	if !config.GowallConfig.EnableImagePreviewing {
 		return nil
 	}
-
 	var cmd *exec.Cmd
+
+	if config.GowallConfig.ImagePreviewBackend == "chafa" {
+		if ok := terminal.HasChafa(); !ok {
+			return fmt.Errorf("you specified `chafa` in ImagePreviewBackend but gowall could not find chafa in your $PATH,ensure chafa is installed")
+		}
+
+		cmd = exec.Command("chafa", filePath)
+		cmd.Stdout = os.Stdout
+
+		return cmd.Run()
+	}
 
 	if terminal.IsKittyTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)

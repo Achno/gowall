@@ -78,6 +78,9 @@ func ApplyCLUT(img *image.RGBA, clut *image.RGBA, level int) *image.RGBA {
 			clutX, clutY := correctPixel(original, level)
 
 			mappedColor := clut.RGBAAt(clutX, clutY)
+			if original.A == 0 {
+				mappedColor.A = 0
+			}
 			newImg.SetRGBA(x, y, mappedColor)
 		}
 	}

@@ -43,11 +43,10 @@ var themes = map[string]Theme{
 	"night-owl":        NightOwl,
 	"github-light":     GitHubLight,
 	"rose-pine":        RosePine,
+	"kanagawa":         Kanagawa,
+	"cat-frappe":       Frappe,
+	"cat-latte":        Latte,
 }
-
-// func init() {
-// 	loadCustomThemes()
-// }
 
 func LoadCustomThemes() {
 
@@ -783,6 +782,101 @@ var (
 			color.RGBA{R: 33, G: 32, B: 46, A: 255},
 			color.RGBA{R: 64, G: 61, B: 82, A: 255},
 			color.RGBA{R: 82, G: 79, B: 103, A: 255},
+		},
+	}
+
+	Kanagawa = Theme{
+		Name: "Kanagawa",
+		Colors: []color.Color{
+			color.RGBA{R: 101, G: 133, B: 148, A: 255},
+			color.RGBA{R: 156, G: 171, B: 202, A: 255},
+			color.RGBA{R: 255, G: 93, B: 98, A: 255},
+			color.RGBA{R: 192, G: 163, B: 110, A: 255},
+			color.RGBA{R: 230, G: 195, B: 132, A: 255},
+			color.RGBA{R: 106, G: 149, B: 137, A: 255},
+			color.RGBA{R: 255, G: 160, B: 102, A: 255},
+			color.RGBA{R: 152, G: 187, B: 108, A: 255},
+			color.RGBA{R: 228, G: 104, B: 118, A: 255},
+			color.RGBA{R: 127, G: 180, B: 202, A: 255},
+			color.RGBA{R: 149, G: 127, B: 184, A: 255},
+			color.RGBA{R: 126, G: 156, B: 216, A: 255},
+			color.RGBA{R: 122, G: 168, B: 159, A: 255},
+			color.RGBA{R: 210, G: 126, B: 153, A: 255},
+			color.RGBA{R: 232, G: 36, B: 36, A: 255},
+			color.RGBA{R: 147, G: 138, B: 169, A: 255},
+			color.RGBA{R: 45, G: 79, B: 103, A: 255},
+			color.RGBA{R: 45, G: 79, B: 103, A: 255},
+			color.RGBA{R: 34, G: 50, B: 73, A: 255},
+			color.RGBA{R: 114, G: 113, B: 105, A: 255},
+			color.RGBA{R: 220, G: 215, B: 186, A: 255},
+			color.RGBA{R: 22, G: 22, B: 29, A: 255},
+			color.RGBA{R: 30, G: 31, B: 40, A: 255},
+			color.RGBA{R: 42, G: 42, B: 55, A: 255},
+			color.RGBA{R: 54, G: 54, B: 70, A: 255},
+			color.RGBA{R: 84, G: 84, B: 109, A: 255},
+		},
+	}
+
+	Latte = Theme{
+		Name: "cat-latte",
+		Colors: []color.Color{
+			color.RGBA{R: 220, G: 138, B: 120, A: 255}, // Rosewater
+			color.RGBA{R: 221, G: 120, B: 120, A: 255}, // Flamingo
+			color.RGBA{R: 234, G: 118, B: 203, A: 255}, // Pink
+			color.RGBA{R: 136, G: 57, B: 239, A: 255},  // Mauve
+			color.RGBA{R: 210, G: 15, B: 57, A: 255},   // Red
+			color.RGBA{R: 230, G: 69, B: 83, A: 255},   // Maroon
+			color.RGBA{R: 254, G: 100, B: 11, A: 255},  // Peach
+			color.RGBA{R: 223, G: 142, B: 29, A: 255},  // Yellow
+			color.RGBA{R: 64, G: 160, B: 43, A: 255},   // Green
+			color.RGBA{R: 23, G: 146, B: 153, A: 255},  // Teal
+			color.RGBA{R: 4, G: 165, B: 229, A: 255},   // Sky
+			color.RGBA{R: 32, G: 159, B: 181, A: 255},  // Sapphire
+			color.RGBA{R: 30, G: 102, B: 245, A: 255},  // Blue
+			color.RGBA{R: 114, G: 135, B: 253, A: 255}, // Lavender
+			color.RGBA{R: 76, G: 79, B: 105, A: 255},   // Text
+			color.RGBA{R: 92, G: 95, B: 119, A: 255},   // Subtext1
+			color.RGBA{R: 108, G: 111, B: 133, A: 255}, // Subtext0
+			color.RGBA{R: 124, G: 127, B: 147, A: 255}, // Overlay2
+			color.RGBA{R: 140, G: 143, B: 161, A: 255}, // Overlay1
+			color.RGBA{R: 156, G: 160, B: 176, A: 255}, // Overlay0
+			color.RGBA{R: 172, G: 176, B: 190, A: 255}, // Surface2
+			color.RGBA{R: 188, G: 192, B: 204, A: 255}, // Surface1
+			color.RGBA{R: 204, G: 208, B: 218, A: 255}, // Surface0
+			color.RGBA{R: 239, G: 241, B: 245, A: 255}, // Base
+			color.RGBA{R: 230, G: 233, B: 239, A: 255}, // Mantle
+			color.RGBA{R: 220, G: 224, B: 232, A: 255}, // Crust
+		},
+	}
+	Frappe = Theme{
+		Name: "cat-frappe",
+		Colors: []color.Color{
+			color.RGBA{R: 242, G: 213, B: 207, A: 255},
+			color.RGBA{R: 238, G: 190, B: 190, A: 255},
+			color.RGBA{R: 244, G: 184, B: 228, A: 255},
+			color.RGBA{R: 202, G: 158, B: 230, A: 255},
+			color.RGBA{R: 231, G: 130, B: 132, A: 255},
+			color.RGBA{R: 234, G: 153, B: 156, A: 255},
+			color.RGBA{R: 239, G: 159, B: 118, A: 255},
+			color.RGBA{R: 229, G: 200, B: 144, A: 255},
+			color.RGBA{R: 166, G: 209, B: 137, A: 255},
+			color.RGBA{R: 129, G: 200, B: 190, A: 255},
+			color.RGBA{R: 153, G: 209, B: 219, A: 255},
+			color.RGBA{R: 133, G: 193, B: 220, A: 255},
+			color.RGBA{R: 140, G: 170, B: 238, A: 255},
+			color.RGBA{R: 186, G: 187, B: 241, A: 255},
+			color.RGBA{R: 198, G: 208, B: 245, A: 255},
+			color.RGBA{R: 181, G: 191, B: 226, A: 255},
+			color.RGBA{R: 165, G: 173, B: 206, A: 255},
+			color.RGBA{R: 148, G: 156, B: 187, A: 255},
+			color.RGBA{R: 131, G: 139, B: 167, A: 255},
+			color.RGBA{R: 115, G: 121, B: 148, A: 255},
+			color.RGBA{R: 98, G: 104, B: 128, A: 255},
+			color.RGBA{R: 81, G: 87, B: 109, A: 255},
+			color.RGBA{R: 65, G: 69, B: 89, A: 255},
+			color.RGBA{R: 48, G: 52, B: 70, A: 255},
+			color.RGBA{R: 41, G: 44, B: 60, A: 255},
+			color.RGBA{R: 35, G: 38, B: 52, A: 255},
 		},
 	}
 )

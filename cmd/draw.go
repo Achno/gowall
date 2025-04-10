@@ -14,12 +14,27 @@ import (
 var (
 	colorB          string
 	BorderThickness int
+
+	gridSize      int
+	gridColor     string
+	gridThickness int
+	gridMask      bool
 )
 
 var drawCmd = &cobra.Command{
-	Use:   "draw [PATH] [OPTIONAL OUTPUT]",
-	Short: "draw a border with a color and thickness (currently)",
-	Long:  `The draw command allows you to draw a plethora of effects. Currently only drawing a border is supported with more to come`,
+	Use:   "draw [DRAW-COMMAND] [INPUT] [OPTIONAL OUTPUT]",
+	Short: "Draw on images",
+	Long:  `Draw a [border,grid] in your images`,
+	Run: func(cmd *cobra.Command, args []string) {
+		logger.Print("Please specify an draw command to apply")
+		err := cmd.Usage()
+		utils.HandleError(err)
+	},
+}
+
+var GridCmd = &cobra.Command{
+	Use:   "grid [PATH] [OPTIONAL OUTPUT]",
+	Short: "draw a grid with a specific size,color and thickness on the image",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		err := validateInput(shared, args)
 		if err != nil {
@@ -28,19 +43,45 @@ var drawCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) > 0 {
-			logger.Print("Processing single image...")
+		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		utils.HandleError(err)
+		logger.Print("Processing images...")
+
+		processor := &image.GridProcessor{}
+		processor.SetGridOptions(
+			image.WithGridSize(gridSize),
+			image.WithGridColor(gridColor),
+			image.WithGridThickness(gridThickness),
+			image.WithMaskonly(gridMask),
+		)
+		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
+		utils.HandleError(err, "Error")
+
+		if err != nil {
+			logger.Error(err, "The following images had errors while processing")
 		}
-		if isInputBatch(shared) {
-			logger.Print("Processing batch of images...")
+		openImageInViewer(shared, args, processedImages[0])
+	},
+}
+
+var BorderCmd = &cobra.Command{
+	Use:   "border [PATH] [OPTIONAL OUTPUT]",
+	Short: "draw a border with a specified  color and thickness on the image",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		err := validateInput(shared, args)
+		if err != nil {
+			return err
 		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		hex, err := cmd.Flags().GetString("color")
 		utils.HandleError(err, "Error")
 
 		clr, err := image.HexToRGBA(hex)
 		utils.HandleError(err, "Error")
 
-		processor := &image.DrawProcessor{
+		processor := &image.BorderProcessor{
 			Color:           clr,
 			BorderThickness: BorderThickness,
 		}
@@ -53,10 +94,6 @@ var drawCmd = &cobra.Command{
 		processedImages, err := image.ProcessImgs(processor, imageOps, theme)
 		utils.HandleError(err, "Error")
 
-		// if len(processedImages) == 0 {
-		// 	utils.HandleError(err, "No images were processed")
-		// }
-
 		if err != nil {
 			logger.Error(err, "The following images had errors while processing")
 		}
@@ -67,7 +104,16 @@ var drawCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(drawCmd)
-	drawCmd.Flags().StringVarP(&colorB, "color", "c", "#5D3FD3", "--color #5D3FD3")
-	drawCmd.Flags().IntVarP(&BorderThickness, "borderThickness", "b", 5, "-b 5")
+
+	drawCmd.AddCommand(BorderCmd)
+	drawCmd.AddCommand(GridCmd)
+
+	BorderCmd.Flags().StringVarP(&colorB, "color", "c", "#5D3FD3", "--color #5D3FD3")
+	BorderCmd.Flags().IntVarP(&BorderThickness, "borderThickness", "b", 5, "-b 5")
+	GridCmd.Flags().IntVarP(&gridSize, "size", "s", 80, "--size 80")
+	GridCmd.Flags().IntVarP(&gridThickness, "thickness", "t", 1, "--thickness 1")
+	GridCmd.Flags().StringVarP(&gridColor, "color", "c", "#5D3FD3", "--color #5D3FD3")
+	GridCmd.Flags().BoolVarP(&gridMask, "mask", "m", false, "--mask true to use apply the grid only to transparent pixels (background)")
+
 	addGlobalFlags(drawCmd)
 }

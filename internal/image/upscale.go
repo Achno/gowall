@@ -109,6 +109,15 @@ func findRealESRGANBinary(destFolder string) (string, error) {
 
 	binaryPath := filepath.Join(destFolder, binaryName)
 
+	// NixOS does not allow dynamically linked binaries,so just check $PATH for it instead.
+	path, err := exec.LookPath(binaryName)
+	if err != nil {
+	}
+
+	if path != "" {
+		binaryPath = path
+	}
+
 	// Check if binary exists and is executable
 	info, err := os.Stat(binaryPath)
 	if err != nil {

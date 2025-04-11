@@ -10,7 +10,7 @@
 
 # Overview :framed_picture:
 
-Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / pallete you like!
+Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / palette you like!
 It also offers a bunch of image processing features (image to pixel art, Image upscaling, color palette extraction...)
 
 ## Docs 
@@ -134,7 +134,7 @@ Notes 🗒️ :
 # Usage :gear:
 
 
-1.  `Singe conversion`
+1.  `Single conversion`
 
   ```bash
     gowall convert path/to/img.png -t <theme-name>
@@ -218,9 +218,9 @@ Notes 🗒️ :
    <br>
 
 
-8.  `Pallete extraction` ( Like pywal )
+8.  `Palette extraction` ( Like pywal )
 
-    You can extract the color pallete of an image as shown below : 
+    You can extract the color palette of an image as shown below : 
 
     ```bash
     gowall extract /path/to/img.png -c 6

@@ -1,7 +1,7 @@
 package config
 
 const (
-	Version            = "v0.2.0"
+	Version            = "v0.2.1"
 	OutputFolder       = "Pictures/gowall"
 	configFile         = "config.yml"
 	WallOfTheDayUrl    = "https://www.reddit.com/r/wallpaper/top/"

@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*.*.*' # Trigger workflow on tags that start with 'v'
+  workflow_dispatch:
 
 permissions:
   contents: write

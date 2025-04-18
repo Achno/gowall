@@ -22,6 +22,5 @@ func defaultConfig() Options {
 		Themes:                ThemesDefault,
 		InlineImagePreview:    InlineImagePreviewDefault,
 		ImagePreviewBackend:   ImagePreviewBackend,
-		OutputFolder:          OutputFolder,
 	}
 }

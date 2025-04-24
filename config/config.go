@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -48,9 +49,22 @@ func LoadConfig() {
 	configPath := filepath.Join(configDir, ".config", "gowall", configFile)
 	configFolder := filepath.Dir(configPath)
 
-	data, err := os.ReadFile(configPath)
+	err = os.MkdirAll(configFolder, 0755)
 	if err != nil {
-		log.Printf("Error reading config file: %v", err)
+		log.Fatalf("could not create config directory %v", err)
+		return
+	}
+
+	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDONLY, 0o644)
+	if err != nil {
+		log.Printf("Error opening/creating config file: %v", err)
+		return
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatalf("Error reading config : %v", err)
 		return
 	}
 

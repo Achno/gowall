@@ -46,6 +46,8 @@ var themes = map[string]Theme{
 	"kanagawa":         Kanagawa,
 	"cat-frappe":       Frappe,
 	"cat-latte":        Latte,
+	"melange-dark":     Melange_Dark,
+	"melange-light":    Melange_Light,
 }
 
 func LoadCustomThemes() {
@@ -877,6 +879,41 @@ var (
 			color.RGBA{R: 48, G: 52, B: 70, A: 255},
 			color.RGBA{R: 41, G: 44, B: 60, A: 255},
 			color.RGBA{R: 35, G: 38, B: 52, A: 255},
+		},
+	}
+
+	Melange_Light = Theme{
+		Name: "melange-light",
+		Colors: []color.Color{
+			color.RGBA{R: 250, G: 248, B: 245, A: 255},
+			color.RGBA{R: 92, G: 84, B: 119, A: 255},
+			color.RGBA{R: 204, G: 102, B: 102, A: 255},
+			color.RGBA{R: 222, G: 147, B: 95, A: 255},
+			color.RGBA{R: 240, G: 198, B: 116, A: 255},
+			color.RGBA{R: 181, G: 189, B: 104, A: 255},
+			color.RGBA{R: 129, G: 162, B: 190, A: 255},
+			color.RGBA{R: 178, G: 148, B: 187, A: 255},
+			color.RGBA{R: 150, G: 152, B: 150, A: 255},
+			color.RGBA{R: 197, G: 200, B: 198, A: 255},
+			color.RGBA{R: 137, G: 138, B: 154, A: 255},
+			color.RGBA{R: 234, G: 232, B: 229, A: 255},
+		},
+	}
+	Melange_Dark = Theme{
+		Name: "melange-dark",
+		Colors: []color.Color{
+			color.RGBA{R: 37, G: 37, B: 48, A: 255},
+			color.RGBA{R: 239, G: 241, B: 245, A: 255},
+			color.RGBA{R: 233, G: 137, B: 137, A: 255},
+			color.RGBA{R: 228, G: 183, B: 129, A: 255},
+			color.RGBA{R: 238, G: 212, B: 149, A: 255},
+			color.RGBA{R: 167, G: 192, B: 128, A: 255},
+			color.RGBA{R: 140, G: 170, B: 238, A: 255},
+			color.RGBA{R: 184, G: 161, B: 227, A: 255},
+			color.RGBA{R: 101, G: 107, B: 131, A: 255},
+			color.RGBA{R: 75, G: 80, B: 104, A: 255},
+			color.RGBA{R: 149, G: 156, B: 189, A: 255},
+			color.RGBA{R: 52, G: 58, B: 74, A: 255},
 		},
 	}
 )

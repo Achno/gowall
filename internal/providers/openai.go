@@ -1,6 +1,5 @@
 package providers
 
-// use OPENAI_BASE_URL
 import (
 	"context"
 	"fmt"
@@ -8,17 +7,15 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Achno/gowall/internal/logger"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 const (
-	defaultOpenAIModel     = "gpt-4-vision-preview"
-	defaultOpenAIMaxTokens = 1024
+	defaultOpenAIModel = "gpt-4-vision-preview"
 )
 
-// OpenAIProvider implements the OCRProvider interface for OpenAI's vision API
+// OpenAIProvider implements the OCRProvider interface
 type OpenAIProvider struct {
 	client *openai.Client
 	model  string
@@ -26,20 +23,28 @@ type OpenAIProvider struct {
 }
 
 // NewOpenAIProvider creates a new OpenAI provider
-func NewOpenAIProvider(config Config) OCRProvider {
-	// Get base URL and API key from environment
-	// baseURL := os.Getenv("OPENAI_BASE_URL")
-	baseURL := "http://localhost:8000/v1"
-	// apiKey := os.Getenv("OPENAI_API_KEY")
-	apiKey := "x"
+func NewOpenAIProvider(config Config) (OCRProvider, error) {
+
+	baseURL := "https://api.openai.com/v1"
+	if config.VisionLLMProvider == "vllm" {
+		//http://localhost:8000/v1
+		baseURL = os.Getenv("OPENAI_BASE_URL")
+	}
+
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if config.VisionLLMProvider == "vllm" {
+		apiKey = "x"
+	}
+	if apiKey == "" {
+		return nil, fmt.Errorf("OPENAI_API_KEY env is not set")
+	}
 	retriesStr := os.Getenv("OPENAI_MAX_RETRIES")
 	var retries = 2
 
 	if retriesStr != "" {
 		retriesParsed, err := strconv.Atoi(retriesStr)
 		if err != nil {
-			logger.Errorf("failed converting OPENAI_MAX_RETRIES to an int")
-			return nil
+			return nil, fmt.Errorf("failed converting OPENAI_MAX_RETRIES to an int")
 		}
 		retries = retriesParsed
 	}
@@ -61,8 +66,7 @@ func NewOpenAIProvider(config Config) OCRProvider {
 		client: &client,
 		model:  model,
 		config: config,
-	}
-
+	}, nil
 }
 
 func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult, error) {
@@ -99,8 +103,7 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 			openai.UserMessage(o.config.VisionLLMPrompt),
 			ImgMsg,
 		},
-		// Model: openai.ChatModelGPT4o,
-		Model: "ds4sd/SmolDocling-256M-preview",
+		Model: o.model,
 	})
 	if err != nil {
 		return nil, err
@@ -116,77 +119,3 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 	}, nil
 
 }
-
-// // OCR implements the OCRProvider interface
-// func (p *OpenAIProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
-// 	// Convert image to base64 encoded JPEG
-// 	var buf bytes.Buffer
-// 	if err := jpeg.Encode(&buf, img, nil); err != nil {
-// 		return nil, fmt.Errorf("failed to encode image: %w", err)
-// 	}
-// 	imgBase64 := base64.StdEncoding.EncodeToString(buf.Bytes())
-
-// 	// Create vision request
-// 	req := &vision.ChatCompletionRequest{
-// 		Model: p.model,
-// 		Messages: []vision.ChatCompletionMessage{
-// 			{
-// 				Role: vision.ChatMessageRoleUser,
-// 				Content: []vision.ChatCompletionMessageContent{
-// 					vision.ChatCompletionTextContent{
-// 						Type: vision.ChatMessageContentTypeText,
-// 						Text: p.prompt,
-// 					},
-// 					vision.ChatCompletionImageContent{
-// 						Type:     vision.ChatMessageContentTypeImageURL,
-// 						ImageURL: &vision.ChatCompletionImageURL{
-// 							URL: fmt.Sprintf("data:image/jpeg;base64,%s", imgBase64),
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 		MaxTokens: defaultOpenAIMaxTokens,
-// 	}
-
-// 	// Make API call
-// 	resp, err := p.client.ChatCompletions.Create(ctx, req)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("OpenAI API error: %w", err)
-// 	}
-
-// 	// Check if we got a valid response
-// 	if len(resp.Choices) == 0 {
-// 		return nil, errors.New("no text extracted from image")
-// 	}
-
-// 	// Extract text from response
-// 	extractedText := resp.Choices[0].Message.Content
-
-// 	// Build result
-// 	result := &OCRResult{
-// 		Text: extractedText,
-// 		Metadata: map[string]string{
-// 			"provider": "openai",
-// 			"model":    p.model,
-// 			"prompt":   p.prompt,
-// 			"tokens":   fmt.Sprintf("%d", resp.Usage.TotalTokens),
-// 		},
-// 	}
-
-// 	// If markdown was requested, also save it in the specific field
-// 	if p.config.EnableMarkdown {
-// 		result.Markdown = extractedText
-// 	}
-
-// 	return result, nil
-// }
-
-// errorProvider is a helper implementation of OCRProvider that just returns an error
-// type errorProvider struct {
-// 	err error
-// }
-
-// func (p *errorProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
-// 	return nil, p.err
-// }

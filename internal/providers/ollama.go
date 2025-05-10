@@ -110,7 +110,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, 
 	return result, nil
 }
 
-func NewOllamaProvider(config Config) OCRProvider {
+func NewOllamaProvider(config Config) (OCRProvider, error) {
 	host := os.Getenv("OLLAMA_HOST")
 	if host == "" {
 		host = "http://127.0.0.1:11434"
@@ -119,5 +119,5 @@ func NewOllamaProvider(config Config) OCRProvider {
 	return &OllamaProvider{
 		config: config,
 		host:   host,
-	}
+	}, nil
 }

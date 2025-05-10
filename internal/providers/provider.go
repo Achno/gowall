@@ -22,12 +22,12 @@ type OCRResult struct {
 }
 
 type Config struct {
-	ProviderName string // "ollama,openai,mistral"
-	OutputFormat string // txt,json,markdown
-
-	VisionLLMProvider string
+	VisionLLMProvider string // "ollama,openai,mistral,vllm"
 	VisionLLMModel    string
 	VisionLLMPrompt   string
+
+	BaseURL string
+	Port    string
 
 	// OCR output options
 	EnableMarkdown bool
@@ -40,17 +40,19 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 		return nil, fmt.Errorf("missing OCR model,provider configuration")
 	}
 
-	providers := map[string]func(config Config) OCRProvider{
+	providers := map[string]func(config Config) (OCRProvider, error){
 		"ollama": NewOllamaProvider,
 		"vllm":   NewOpenAIProvider,
+		"openai": NewOpenAIProvider,
+		"gemini": NewGeminiProvider,
 	}
 
-	provider, ok := providers[config.ProviderName]
+	provider, ok := providers[config.VisionLLMProvider]
 	if !ok {
 		return nil, fmt.Errorf("you have not entered a valid provider")
 	}
 
-	return provider(config), nil
+	return provider(config)
 }
 
 func imageToBase64(img image.Image) (string, error) {
@@ -59,4 +61,12 @@ func imageToBase64(img image.Image) (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
+}
+
+func imageToBytes(img image.Image) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, nil); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

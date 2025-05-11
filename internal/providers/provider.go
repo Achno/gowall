@@ -16,11 +16,13 @@ type OCRProvider interface {
 // OCRResult holds the output from OCR processing
 type OCRResult struct {
 	Text     string // required
-	HOCR     string // optional if provider supports it.
-	Markdown string
+	Images   OCRImage
 	Metadata map[string]string
 }
 
+type OCRImage struct {
+	MistralImages []MistralOcrImage
+}
 type Config struct {
 	VisionLLMProvider string // "ollama,openai,mistral,vllm"
 	VisionLLMModel    string
@@ -41,10 +43,11 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	providers := map[string]func(config Config) (OCRProvider, error){
-		"ollama": NewOllamaProvider,
-		"vllm":   NewOpenAIProvider,
-		"openai": NewOpenAIProvider,
-		"gemini": NewGeminiProvider,
+		"ollama":  NewOllamaProvider,
+		"vllm":    NewOpenAIProvider,
+		"openai":  NewOpenAIProvider,
+		"gemini":  NewGeminiProvider,
+		"mistral": NewMistralProvider,
 	}
 
 	provider, ok := providers[config.VisionLLMProvider]

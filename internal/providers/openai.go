@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultOpenAIModel = "gpt-4-vision-preview"
+	defaultOpenAIModel = "gpt-4o"
 )
 
 // OpenAIProvider implements the OCRProvider interface
@@ -26,8 +26,9 @@ type OpenAIProvider struct {
 func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	baseURL := "https://api.openai.com/v1"
-	if config.VisionLLMProvider == "vllm" {
+	if config.VisionLLMProvider == "vllm" || config.VisionLLMProvider == "openrouter" {
 		//http://localhost:8000/v1
+		//https://openrouter.ai/api/v1
 		baseURL = os.Getenv("OPENAI_BASE_URL")
 	}
 
@@ -35,6 +36,10 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 	if config.VisionLLMProvider == "vllm" {
 		apiKey = "x"
 	}
+	if config.VisionLLMProvider == "openrouter" {
+		apiKey = os.Getenv("OPENROUTER_API_KEY")
+	}
+
 	if apiKey == "" {
 		return nil, fmt.Errorf("OPENAI_API_KEY env is not set")
 	}
@@ -87,9 +92,6 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 	if err != nil {
 		return nil, err
 	}
-
-	//TODO remove the official lib for this https://github.com/sashabaranov/go-openai/issues/596
-	//TODO NVM found the answer here : https://github.com/openai/openai-go/issues/67
 
 	ImgMsg := openai.UserMessage([]openai.ChatCompletionContentPartUnionParam{
 		openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{

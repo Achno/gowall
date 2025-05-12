@@ -43,11 +43,12 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	providers := map[string]func(config Config) (OCRProvider, error){
-		"ollama":  NewOllamaProvider,
-		"vllm":    NewOpenAIProvider,
-		"openai":  NewOpenAIProvider,
-		"gemini":  NewGeminiProvider,
-		"mistral": NewMistralProvider,
+		"ollama":     NewOllamaProvider,
+		"vllm":       NewOpenAIProvider,
+		"openai":     NewOpenAIProvider,
+		"gemini":     NewGeminiProvider,
+		"mistral":    NewMistralProvider,
+		"openrouter": NewOpenAIProvider,
 	}
 
 	provider, ok := providers[config.VisionLLMProvider]

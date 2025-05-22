@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	image2 "image"
 
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -25,7 +26,6 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ocr called")
 		// n, err := providers.NewOCRProvider(providers.Config{
 		// 	ProviderName:      "ollama",
 		// 	VisionLLMProvider: "ollama",
@@ -68,42 +68,25 @@ to quickly create a Cobra application.`,
 			// VisionLLMPrompt: "turn code to text",
 		})
 		utils.HandleError(err)
+		imagePaths := []string{"/home/achno/Pictures/2024-07-19_23-17.png", "/home/achno/Pictures/2024-07-19_23-53.png"}
 
-		img, err := image.LoadImage(imageio.FileReader{Path: args[0]})
+		// load the images from the imagePaths
+		utils.Spinner.Start()
+		utils.Spinner.Message("uploading data")
+		imgs := []image2.Image{}
+		for _, path := range imagePaths {
+			img, err := image.LoadImage(imageio.FileReader{Path: path})
+			utils.HandleError(err)
+			imgs = append(imgs, img)
+		}
+		res, err := n.OCRBatchImages(context.Background(), imgs)
 		utils.HandleError(err)
+		utils.Spinner.Stop()
 
-		res, err := n.OCR(context.Background(), img)
-		utils.HandleError(err)
-
-		fmt.Println(res.Text)
-		fmt.Println(res.Metadata)
-
-		// img2, err := image.LoadImage(imageio.FileReader{Path: args[1]})
-
-		// imgarray := []image2.Image{img, img2}
-		// res := []string{}
-
-		// var wg sync.WaitGroup
-		// var mu sync.RWMutex
-
-		// for i := 0; i < len(imgarray); i++ {
-		// 	i := i
-		// 	wg.Add(1)
-		// 	go func() {
-		// 		defer wg.Done()
-		// 		result, err := n.OCR(context.Background(), imgarray[i])
-		// 		utils.HandleError(err)
-
-		// 		mu.Lock()
-		// 		res = append(res, result.Text)
-		// 		mu.Unlock()
-		// 	}()
-		// }
-		// wg.Wait()
-
-		// for _, item := range res {
-		// 	fmt.Println(item)
-		// }
+		for _, item := range res {
+			fmt.Println(item.Text)
+			fmt.Println("###################")
+		}
 
 	},
 }

@@ -2,12 +2,15 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"os"
+	"strconv"
+	"sync"
 
-	// "os"
-
+	"github.com/Achno/gowall/internal/logger"
+	"github.com/Achno/gowall/utils"
 	"google.golang.org/genai"
 )
 
@@ -72,4 +75,36 @@ func (g *GeminiProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, 
 			"codexresult": res.CodeExecutionResult(),
 		},
 	}, nil
+}
+
+func (g *GeminiProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+	wg := sync.WaitGroup{}
+	results := make([]*OCRResult, len(images))
+	errChan := make(chan error, len(images))
+
+	for i, img := range images {
+		wg.Add(1)
+		go func(i int, img image.Image) {
+			defer wg.Done()
+			result, err := g.OCR(ctx, img)
+			if err != nil {
+				errChan <- err
+			}
+			results[i] = result
+			logger.Print(utils.BlueColor + " ➜ OCR Batch Image " + strconv.Itoa(i) + " completed" + utils.ResetColor)
+		}(i, img)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		var errs []error
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+		return results, errors.New(utils.FormatErrors(errs))
+	}
+
+	return results, nil
 }

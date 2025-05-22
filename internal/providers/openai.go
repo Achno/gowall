@@ -2,17 +2,23 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"os"
 	"strconv"
+	"sync"
+	"time"
 
+	"github.com/Achno/gowall/internal/logger"
+	"github.com/Achno/gowall/utils"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 const (
 	defaultOpenAIModel = "gpt-4o"
+	batchInterval      = 2 * time.Second
 )
 
 // OpenAIProvider implements the OCRProvider interface
@@ -25,23 +31,32 @@ type OpenAIProvider struct {
 // NewOpenAIProvider creates a new OpenAI provider
 func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
-	baseURL := "https://api.openai.com/v1"
-	if config.VisionLLMProvider == "vllm" || config.VisionLLMProvider == "openrouter" {
-		//http://localhost:8000/v1
-		//https://openrouter.ai/api/v1
-		baseURL = os.Getenv("OPENAI_BASE_URL")
+	urlMap := map[string]string{
+		"vllm":       "http://localhost:8000/v1",
+		"openrouter": "https://openrouter.ai/api/v1",
+		"openai":     "https://api.openai.com/v1",
+		"oc":         os.Getenv("OPENAI_BASE_URL"),
 	}
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if config.VisionLLMProvider == "vllm" {
-		apiKey = "x"
+	baseURL, ok := urlMap[config.VisionLLMProvider]
+	if !ok {
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.VisionLLMProvider)
 	}
-	if config.VisionLLMProvider == "openrouter" {
-		apiKey = os.Getenv("OPENROUTER_API_KEY")
+
+	apiMap := map[string]string{
+		"vllm":       "x",
+		"openrouter": os.Getenv("OPENROUTER_API_KEY"),
+		"openai":     os.Getenv("OPENAI_API_KEY"),
+		"oc":         os.Getenv("OPENAI_API_COMPATIBLE_SERVICE_API_KEY"),
+	}
+
+	apiKey, ok := apiMap[config.VisionLLMProvider]
+	if !ok {
+		return nil, fmt.Errorf("%s v", config.VisionLLMProvider)
 	}
 
 	if apiKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY env is not set")
+		return nil, fmt.Errorf("your API key env is not set")
 	}
 	retriesStr := os.Getenv("OPENAI_MAX_RETRIES")
 	var retries = 2
@@ -74,6 +89,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 	}, nil
 }
 
+// OCR OCRs a single image and returns an OCRResult
 func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult, error) {
 
 	prompt := "Extract all text from this image."
@@ -120,4 +136,41 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 		},
 	}, nil
 
+}
+
+// OCRBatchImages OCRs a batch of images in parallel and returns a slice of OCRResults or a joint error
+func (o *OpenAIProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+
+	wg := sync.WaitGroup{}
+	results := make([]*OCRResult, len(images))
+	errChan := make(chan error, len(images))
+
+	for i, img := range images {
+		wg.Add(1)
+		go func(i int, img image.Image) {
+			defer wg.Done()
+			result, err := o.OCR(ctx, img)
+
+			if err != nil {
+				errChan <- err
+			}
+			results[i] = result
+			logger.Print(utils.BlueColor + " ➜ OCR Batch Image " + strconv.Itoa(i) + " completed" + utils.ResetColor)
+		}(i, img)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		var errs []error
+
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+
+		return results, errors.New(utils.FormatErrors(errs))
+	}
+
+	return results, nil
 }

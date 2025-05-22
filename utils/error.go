@@ -10,9 +10,9 @@ func HandleError(err error, msg ...string) {
 		switch {
 
 		case len(msg) > 0:
-			logger.Fatalf("%s: %s", msg[0], err)
+			logger.Fatalf("\n %s: %s", msg[0], err)
 		default:
-			logger.Fatalf(err.Error())
+			logger.Fatalf("\n" + err.Error())
 		}
 	}
 }

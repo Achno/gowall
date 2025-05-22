@@ -11,6 +11,7 @@ import (
 
 type OCRProvider interface {
 	OCR(ctx context.Context, image image.Image) (*OCRResult, error)
+	OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error)
 }
 
 // OCRResult holds the output from OCR processing

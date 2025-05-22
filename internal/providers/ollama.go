@@ -4,11 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"sync"
+
+	"github.com/Achno/gowall/internal/logger"
+	"github.com/Achno/gowall/utils"
 )
 
 // OllamaProvider implements the Provider Interface
@@ -120,4 +126,37 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 		config: config,
 		host:   host,
 	}, nil
+}
+
+func (o *OllamaProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+	wg := sync.WaitGroup{}
+	results := make([]*OCRResult, len(images))
+	errChan := make(chan error, len(images))
+
+	for i, img := range images {
+		wg.Add(1)
+		go func(i int, img image.Image) {
+			defer wg.Done()
+			result, err := o.OCR(ctx, img)
+			if err != nil {
+				errChan <- err
+			}
+			results[i] = result
+			logger.Print(utils.BlueColor + " ➜ OCR Batch Image " + strconv.Itoa(i) + " completed" + utils.ResetColor)
+		}(i, img)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		var errs []error
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+
+		return results, errors.New(utils.FormatErrors(errs))
+	}
+
+	return results, nil
 }

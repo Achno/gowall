@@ -2,23 +2,17 @@ package providers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"image"
 	"os"
 	"strconv"
-	"sync"
-	"time"
 
-	"github.com/Achno/gowall/internal/logger"
-	"github.com/Achno/gowall/utils"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 const (
 	defaultOpenAIModel = "gpt-4o"
-	batchInterval      = 2 * time.Second
 )
 
 // OpenAIProvider implements the OCRProvider interface
@@ -52,7 +46,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	apiKey, ok := apiMap[config.VisionLLMProvider]
 	if !ok {
-		return nil, fmt.Errorf("%s v", config.VisionLLMProvider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.VisionLLMProvider)
 	}
 
 	if apiKey == "" {
@@ -100,8 +94,6 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 	// Add output format instructions
 	if o.config.EnableMarkdown {
 		prompt += " Format the output in Markdown."
-	} else if o.config.EnableJSON {
-		prompt += " Format the output as JSON."
 	}
 
 	base64Image, err := imageToBase64(image)
@@ -110,6 +102,7 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 	}
 
 	ImgMsg := openai.UserMessage([]openai.ChatCompletionContentPartUnionParam{
+		openai.TextContentPart(prompt),
 		openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
 			URL:    fmt.Sprintf("data:image/jpeg;base64,%s", base64Image),
 			Detail: "auto",
@@ -118,7 +111,6 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(o.config.VisionLLMPrompt),
 			ImgMsg,
 		},
 		Model: o.model,
@@ -138,39 +130,6 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 
 }
 
-// OCRBatchImages OCRs a batch of images in parallel and returns a slice of OCRResults or a joint error
 func (o *OpenAIProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
-
-	wg := sync.WaitGroup{}
-	results := make([]*OCRResult, len(images))
-	errChan := make(chan error, len(images))
-
-	for i, img := range images {
-		wg.Add(1)
-		go func(i int, img image.Image) {
-			defer wg.Done()
-			result, err := o.OCR(ctx, img)
-
-			if err != nil {
-				errChan <- err
-			}
-			results[i] = result
-			logger.Print(utils.BlueColor + " ➜ OCR Batch Image " + strconv.Itoa(i) + " completed" + utils.ResetColor)
-		}(i, img)
-	}
-
-	wg.Wait()
-	close(errChan)
-
-	if len(errChan) > 0 {
-		var errs []error
-
-		for err := range errChan {
-			errs = append(errs, err)
-		}
-
-		return results, errors.New(utils.FormatErrors(errs))
-	}
-
-	return results, nil
+	return processBatchConcurrently(ctx, images, o.OCR, "openai")
 }

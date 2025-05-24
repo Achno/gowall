@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	batchJobTimeout = 3 * time.Minute
+	batchJobTimeout = 15 * time.Second
 )
 
 // OllamaProvider implements the Provider Interface

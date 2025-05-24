@@ -29,12 +29,8 @@ type Config struct {
 	VisionLLMModel    string
 	VisionLLMPrompt   string
 
-	BaseURL string
-	Port    string
-
 	// OCR output options
 	EnableMarkdown bool
-	EnableJSON     bool
 }
 
 func NewOCRProvider(config Config) (OCRProvider, error) {

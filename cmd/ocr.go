@@ -61,14 +61,22 @@ to quickly create a Cobra application.`,
 		// 	// VisionLLMPrompt: "turn code to text",
 		// })
 		//? Openrouter
+		// n, err := providers.NewOCRProvider(providers.Config{
+		// 	VisionLLMProvider: "openrouter",
+		// 	VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
+		// 	VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
+		// 	// VisionLLMPrompt: "turn code to text",
+		// })
+		//? Tesseract
 		n, err := providers.NewOCRProvider(providers.Config{
-			VisionLLMProvider: "openrouter",
-			VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
-			VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-			// VisionLLMPrompt: "turn code to text",
+			VisionLLMProvider: "tesseract",
+			VisionLLMModel:    "tesseract",
+			VisionLLMPrompt:   "X",
+			Language:          "eng",
 		})
 		utils.HandleError(err)
-		imagePaths := []string{"/home/achno/Pictures/2024-07-19_23-17.png", "/home/achno/Pictures/2024-07-19_23-53.png"}
+		// imagePaths := []string{"/home/achno/Pictures/2024-07-19_23-17.png", "/home/achno/Pictures/2024-07-19_23-53.png"}
+		imagePaths := []string{"/home/achno/Pictures/2024-07-19_23-17.png"}
 
 		// load the images from the imagePaths
 		utils.Spinner.Start()

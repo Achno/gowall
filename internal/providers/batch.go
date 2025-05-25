@@ -38,11 +38,11 @@ func processBatchConcurrently(ctx context.Context, images []image.Image, singleO
 	close(errChan)
 
 	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
 
 	if len(errs) > 0 {
-		for err := range errChan {
-			errs = append(errs, err)
-		}
 		return results, errors.New(utils.FormatErrors(errs))
 	}
 

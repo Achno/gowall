@@ -29,8 +29,11 @@ type Config struct {
 	VisionLLMModel    string
 	VisionLLMPrompt   string
 
+	Language string
+
 	// OCR output options
 	EnableMarkdown bool
+	EnableHOCR     bool // only for providers that support it like tesseract
 }
 
 func NewOCRProvider(config Config) (OCRProvider, error) {
@@ -46,6 +49,7 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 		"gemini":     NewGeminiProvider,
 		"mistral":    NewMistralProvider,
 		"openrouter": NewOpenAIProvider,
+		"tesseract":  NewTesseractProvider,
 	}
 
 	provider, ok := providers[config.VisionLLMProvider]

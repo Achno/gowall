@@ -76,6 +76,7 @@ func initConfig() {
 	config.LoadConfig()
 	image.LoadCustomThemes()
 	utils.NewSpinner(utils.SpinnerConfig())
+	defer utils.Spinner.Stop()
 }
 
 var rootCmd = &cobra.Command{

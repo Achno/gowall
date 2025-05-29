@@ -50,6 +50,7 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 		"mistral":    NewMistralProvider,
 		"openrouter": NewOpenAIProvider,
 		"tesseract":  NewTesseractProvider,
+		"docling":    NewDoclingProvider,
 	}
 
 	provider, ok := providers[config.VisionLLMProvider]

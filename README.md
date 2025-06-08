@@ -176,6 +176,20 @@ I would also be very happy if you can provide the `rgb values` of your theme as 
 
 Feel free to suggest any cool features that would improve gowall even further by opening an `issue` 
 
+# Community 
+
+##  Community Extensions
+
+The following are **third-party projects** built by the community that extend or integrate with `gowall`.
+
+>[!Warning]
+>These tools are **not officially affiliated with the `gowall` project**. Please audit/inspects scripts before running them.  
+
+### 🔗 Projects
+
+- [**tinted-gowall**](https://github.com/tinted-theming/tinted-gowall) — A bridge between `gowall` and the [tinted-theming](https://github.com/tinted-theming) ecosystem. This project enables users to apply their `base16`/`base24` themes with `gowall`, unlocking hundreds of new visual styles.
+
+
 # Special Thanks
 
 Special thanks to [lutgen](https://github.com/ozwaldorf/lutgen-rs) for the original implementation of the color correction algorithm which i adapted for this project.

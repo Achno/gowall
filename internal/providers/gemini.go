@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"image"
 	"os"
 
 	"google.golang.org/genai"
@@ -34,9 +33,9 @@ func NewGeminiProvider(config Config) (OCRProvider, error) {
 	}, nil
 }
 
-func (g *GeminiProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
+func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
-	bytes, err := imageToBytes(img)
+	bytes, err := imageToBytes(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("while converting img to base64 : %w", err)
 	}
@@ -51,7 +50,6 @@ func (g *GeminiProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, 
 		model = g.config.VisionLLMModel
 	}
 
-	// Create prompt
 	parts := []*genai.Part{
 		{Text: prompt},
 		{InlineData: &genai.Blob{Data: bytes, MIMEType: "image/jpeg"}},
@@ -72,6 +70,6 @@ func (g *GeminiProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, 
 	}, nil
 }
 
-func (g *GeminiProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (g *GeminiProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, g.OCR, "gemini")
 }

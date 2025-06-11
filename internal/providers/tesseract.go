@@ -23,20 +23,20 @@ func NewTesseractProvider(config Config) (OCRProvider, error) {
 	}, nil
 }
 
-func (p *TesseractProvider) OCR(ctx context.Context, image image.Image) (*OCRResult, error) {
+func (p *TesseractProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
 	if !p.client.IsTesseractInstalled() {
 		return nil, fmt.Errorf("tesseract is not installed")
 	}
 
-	return p.client.OCRImageCmd(ctx, image, p.config.Language)
+	return p.client.OCRImageCmd(ctx, input.Image, p.config.Language)
 }
 
-func (p *TesseractProvider) HOCRImage(ctx context.Context, image image.Image) (*OCRResult, error) {
+func (p *TesseractProvider) HOCRImage(ctx context.Context, input OCRInput) (*OCRResult, error) {
 	return nil, nil
 }
 
-func (p *TesseractProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (p *TesseractProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 
 	if p.config.EnableHOCR {
 		return processBatchConcurrently(ctx, images, p.HOCRImage, "tesseract")

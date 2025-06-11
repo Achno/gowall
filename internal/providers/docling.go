@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"image"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -90,8 +89,7 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 	return provider, nil
 }
 
-func (p *DoclingProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
-	// Get OCR engine (env var overrides default, config overrides env)
+func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 	ocrEngine := defaultDoclingOCREngine
 	if env := os.Getenv("DOCLING_OCR_ENGINE"); env != "" {
 		ocrEngine = env
@@ -100,7 +98,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, img image.Image) (*OCRResult,
 		ocrEngine = p.Config.VisionLLMModel
 	}
 
-	imageBytes, err := imageToBytes(img)
+	imageBytes, err := imageToBytes(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
 	}
@@ -141,7 +139,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, img image.Image) (*OCRResult,
 	}, nil
 }
 
-func (p *DoclingProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (p *DoclingProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, p.OCR, "docling")
 }
 

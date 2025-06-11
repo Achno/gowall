@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"image"
 	"io"
 	"net/http"
 	"os"
@@ -41,9 +40,8 @@ type OllamaResponse struct {
 	TotalDuration int64 `json:"total_duration"`
 }
 
-func (o *OllamaProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
-	// Convert image to base64
-	imgBase64, err := imageToBase64(img)
+func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
+	imgBase64, err := imageToBase64(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert image to base64: %w", err)
 	}
@@ -118,6 +116,6 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 	}, nil
 }
 
-func (o *OllamaProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (o *OllamaProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, o.OCR, "ollama")
 }

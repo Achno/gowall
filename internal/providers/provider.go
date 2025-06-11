@@ -9,9 +9,23 @@ import (
 	"image/jpeg"
 )
 
+type InputType int
+
+const (
+	InputTypeImage InputType = iota
+	InputTypePDF
+)
+
 type OCRProvider interface {
-	OCR(ctx context.Context, image image.Image) (*OCRResult, error)
-	OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error)
+	OCR(ctx context.Context, input OCRInput) (*OCRResult, error)
+	OCRBatchImages(ctx context.Context, input []OCRInput) ([]*OCRResult, error)
+}
+
+type OCRInput struct {
+	Type     InputType
+	Image    image.Image // for image inputs
+	PDFData  []byte      // for PDF inputs
+	Filename string      // optional filename for context
 }
 
 // OCRResult holds the output from OCR processing
@@ -67,6 +81,10 @@ func imageToBase64(img image.Image) (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
+}
+
+func bytesToBase64(bytes []byte) (string, error) {
+	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
 func imageToBytes(img image.Image) ([]byte, error) {

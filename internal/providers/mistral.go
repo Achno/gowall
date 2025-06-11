@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"image"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -40,8 +39,10 @@ type MistralOcrResquest struct {
 }
 
 type MistralOcrDocument struct {
-	ImageURL string `json:"image_url"`
-	Type     string `json:"type"`
+	ImageURL     string `json:"image_url,omitempty"`
+	DocumentURL  string `json:"document_url,omitempty"`
+	DocumentName string `json:"document_name,omitempty"`
+	Type         string `json:"type"`
 }
 
 // Mistral single OCR response
@@ -88,14 +89,14 @@ type MistralBatchFile struct {
 	ID string `json:"id"`
 }
 
-func (m *MistralProvider) OCR(ctx context.Context, img image.Image) (*OCRResult, error) {
+func (m *MistralProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
 	model := "mistral-ocr-latest"
 	if m.config.VisionLLMModel != "" {
 		model = m.config.VisionLLMModel
 	}
 
-	base64Image, err := imageToBase64(img)
+	base64Image, err := imageToBase64(input.Image)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +106,12 @@ func (m *MistralProvider) OCR(ctx context.Context, img image.Image) (*OCRResult,
 		Document:           MistralOcrDocument{Type: "image_url", ImageURL: fmt.Sprintf("data:image/jpeg;base64,%s", base64Image)},
 		IncludeImageBase64: true,
 	}
+
+	// payload := MistralOcrResquest{
+	// 	Model:              model,
+	// 	Document:           MistralOcrDocument{Type: "document_url", DocumentURL: fmt.Sprintf("https://arxiv.org/pdf/2201.04234"), DocumentName: input.Filename},
+	// 	IncludeImageBase64: true,
+	// }
 
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -182,14 +189,14 @@ func NewMistralProvider(config Config) (OCRProvider, error) {
 }
 
 // createBatchJSONL creates a temporary JSONL file with batch OCR entries
-func (m *MistralProvider) createBatchJSONL(images []image.Image) (*os.File, error) {
+func (m *MistralProvider) createBatchJSONL(images []OCRInput) (*os.File, error) {
 	tempFile, err := os.CreateTemp("", "mistral-batch-*.jsonl")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
 
 	for i, img := range images {
-		base64Image, err := imageToBase64(img)
+		base64Image, err := imageToBase64(img.Image)
 		if err != nil {
 			tempFile.Close()
 			os.Remove(tempFile.Name())
@@ -417,7 +424,7 @@ func (m *MistralProvider) downloadBatchResults(ctx context.Context, fileID strin
 }
 
 // Makes use of Mistral's batch OCR API
-func (m *MistralProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (m *MistralProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	model := "mistral-ocr-latest"
 	if m.config.VisionLLMModel != "" {
 		model = m.config.VisionLLMModel

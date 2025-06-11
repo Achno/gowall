@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"image"
 	"os"
 	"strconv"
 
@@ -84,7 +83,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 }
 
 // OCR OCRs a single image and returns an OCRResult
-func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult, error) {
+func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
 	prompt := "Extract all text from this image."
 	if o.config.VisionLLMPrompt != "" {
@@ -96,22 +95,30 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 		prompt += " Format the output in Markdown."
 	}
 
-	base64Image, err := imageToBase64(image)
+	var (
+		base64    string
+		err       error
+		FileParam openai.ChatCompletionMessageParamUnion
+	)
+
+	switch input.Type {
+	case InputTypeImage:
+		base64, err = imageToBase64(input.Image)
+		FileParam = o.WithImage(base64, prompt)
+	case InputTypePDF:
+		base64, err = bytesToBase64(input.PDFData)
+		FileParam = o.WithPDF(base64, prompt)
+	default:
+		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
-	ImgMsg := openai.UserMessage([]openai.ChatCompletionContentPartUnionParam{
-		openai.TextContentPart(prompt),
-		openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
-			URL:    fmt.Sprintf("data:image/jpeg;base64,%s", base64Image),
-			Detail: "auto",
-		}),
-	})
-
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			ImgMsg,
+			FileParam,
 		},
 		Model: o.model,
 	})
@@ -130,6 +137,26 @@ func (o *OpenAIProvider) OCR(ctx context.Context, image image.Image) (*OCRResult
 
 }
 
-func (o *OpenAIProvider) OCRBatchImages(ctx context.Context, images []image.Image) ([]*OCRResult, error) {
+func (o *OpenAIProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, o.OCR, "openai")
+}
+
+func (o *OpenAIProvider) WithImage(base64Image string, prompt string) openai.ChatCompletionMessageParamUnion {
+
+	return openai.UserMessage([]openai.ChatCompletionContentPartUnionParam{
+		openai.TextContentPart(prompt),
+		openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
+			URL:    fmt.Sprintf("data:image/jpeg;base64,%s", base64Image),
+			Detail: "auto",
+		}),
+	})
+}
+
+func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCompletionMessageParamUnion {
+	return openai.UserMessage([]openai.ChatCompletionContentPartUnionParam{
+		openai.TextContentPart(prompt),
+		openai.FileContentPart(openai.ChatCompletionContentPartFileFileParam{
+			FileData: openai.String(fmt.Sprintf("data:application/pdf;base64,%s", base64PDF)),
+		}),
+	})
 }

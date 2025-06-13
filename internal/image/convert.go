@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/Achno/gowall/config"
@@ -32,6 +33,15 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.I
 	// NearestNeighbour backend if specified in the config
 	if config.GowallConfig.ColorCorrectionBackend == "nn" {
 		newimg, err := NearestNeighbour(img, selectedTheme)
+		if err != nil {
+			return nil, err
+		}
+		return newimg, nil
+	}
+
+	// Shepard's method backend
+	if config.GowallConfig.ColorCorrectionBackend == config.BackendShepard {
+		newimg, err := ShepardMethod(img, selectedTheme)
 		if err != nil {
 			return nil, err
 		}
@@ -104,6 +114,67 @@ func NearestNeighbour(img image.Image, theme Theme) (image.Image, error) {
 		return nil, errors.New("error processing the Image")
 	}
 
+	return newImg, nil
+}
+
+func ShepardMethod(img image.Image, theme Theme) (image.Image, error) {
+	bounds := img.Bounds()
+	newImg := image.NewRGBA(bounds)
+
+	// Convert theme colors to RGBA
+	paletteRGBAs := make([]color.RGBA, len(theme.Colors))
+	for i, c := range theme.Colors {
+		if rgba, ok := c.(color.RGBA); ok {
+			paletteRGBAs[i] = rgba
+		} else {
+			return nil, fmt.Errorf("theme color at index %d is not color.RGBA", i)
+		}
+	}
+
+	// Create a ShepardMapper with the options from the config
+	opts := haldclut.ShepardMapperOptions{
+		Nearest: config.GowallConfig.ShepardOptions.Nearest,
+		Power:   config.GowallConfig.ShepardOptions.Power,
+	}
+	mapper := haldclut.NewShepardMapper(opts)
+
+	// Concurrent processing using goroutines
+	numWorkers := runtime.NumCPU()
+	height := bounds.Max.Y - bounds.Min.Y
+	rowsPerWorker := height / numWorkers
+	if rowsPerWorker == 0 {
+		rowsPerWorker = 1
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < numWorkers; i++ {
+		startY := bounds.Min.Y + i*rowsPerWorker
+		endY := startY + rowsPerWorker
+		if i == numWorkers-1 {
+			endY = bounds.Max.Y
+		}
+
+		wg.Add(1)
+		go func(startY, endY int) {
+			defer wg.Done()
+			for y := startY; y < endY; y++ {
+				for x := bounds.Min.X; x < bounds.Max.X; x++ {
+					originalColor := img.At(x, y)
+					originalRGBA := color.RGBAModel.Convert(originalColor).(color.RGBA)
+
+					if originalRGBA.A == 0 {
+						newImg.Set(x, y, color.Transparent)
+						continue
+					}
+
+					newColor := mapper.Map(originalRGBA, paletteRGBAs)
+					newImg.Set(x, y, newColor)
+				}
+			}
+		}(startY, endY)
+	}
+
+	wg.Wait()
 	return newImg, nil
 }
 

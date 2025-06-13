@@ -36,6 +36,12 @@ type Options struct {
 	ColorCorrectionBackend string         `yaml:"ColorCorrectionBackend"`
 	OutputFolder           string         `yaml:"OutputFolder"`
 	Themes                 []themeWrapper `yaml:"themes"`
+	ShepardOptions         ShepardOptions `yaml:"shepardOptions"`
+}
+
+type ShepardOptions struct {
+	Nearest int     `yaml:"nearest"`
+	Power   float64 `yaml:"power"`
 }
 
 var GowallConfig = defaultConfig()

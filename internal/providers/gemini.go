@@ -70,6 +70,6 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	}, nil
 }
 
-func (g *GeminiProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+func (g *GeminiProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, g.OCR, "gemini")
 }

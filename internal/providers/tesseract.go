@@ -36,11 +36,8 @@ func (p *TesseractProvider) HOCRImage(ctx context.Context, input OCRInput) (*OCR
 	return nil, nil
 }
 
-func (p *TesseractProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+func (p *TesseractProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 
-	if p.config.EnableHOCR {
-		return processBatchConcurrently(ctx, images, p.HOCRImage, "tesseract")
-	}
 	return processBatchConcurrently(ctx, images, p.OCR, "tesseract")
 }
 

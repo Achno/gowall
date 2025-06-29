@@ -10,6 +10,7 @@ require (
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/image v0.22.0
 	golang.org/x/term v0.30.0
+	golang.org/x/time v0.6.0
 	google.golang.org/genai v1.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )

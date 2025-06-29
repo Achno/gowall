@@ -56,19 +56,19 @@ to quickly create a Cobra application.`,
 		// 	// VisionLLMPrompt: "turn code to text",
 		// })
 		//? Mistral
-		// n, err := providers.NewOCRProvider(providers.Config{
-		// 	VisionLLMProvider: "mistral",
-		// 	VisionLLMModel:    "mistral-ocr-latest",
-		// 	VisionLLMPrompt:   "Extract all visible text from this pdf in greek,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-		// 	// VisionLLMPrompt: "turn code to text",
-		// })
-		//? Openrouter
 		n, err := providers.NewOCRProvider(providers.Config{
-			VisionLLMProvider: "openrouter",
-			VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
-			VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
+			VisionLLMProvider: "mistral",
+			VisionLLMModel:    "mistral-ocr-latest",
+			VisionLLMPrompt:   "Extract all visible text from this pdf,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
 			// VisionLLMPrompt: "turn code to text",
 		})
+		//? Openrouter
+		// n, err := providers.NewOCRProvider(providers.Config{
+		// 	VisionLLMProvider: "openrouter",
+		// 	VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
+		// 	VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
+		// 	// VisionLLMPrompt: "turn code to text",
+		// })
 		//? Tesseract
 		// n, err := providers.NewOCRProvider(providers.Config{
 		// 	VisionLLMProvider: "tesseract",
@@ -123,16 +123,17 @@ to quickly create a Cobra application.`,
 		}
 		// can you pass the names of the images in the context?
 		// res, err := n.OCRBatchImages(context.Background(), imgs)
-		res, err := n.OCR(context.Background(), imgs[0])
+		// res, err := n.OCR(context.Background(), imgs[0])
+		res, err := n.OCRBatch(context.Background(), imgs)
 		utils.HandleError(err)
 		utils.Spinner.Stop()
 
-		fmt.Println(res.Text)
+		// fmt.Println(res.Text)
 
-		// for _, item := range res {
-		// 	fmt.Println(item.Text)
-		// 	fmt.Println("###################")
-		// }
+		for _, item := range res {
+			fmt.Println(item.Text)
+			fmt.Println("###################")
+		}
 
 	},
 }

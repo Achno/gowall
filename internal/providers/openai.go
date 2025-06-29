@@ -85,42 +85,14 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 // OCR OCRs a single image and returns an OCRResult
 func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
-	prompt := "Extract all text from this image."
-	if o.config.VisionLLMPrompt != "" {
-		prompt = o.config.VisionLLMPrompt
-	}
-
-	// Add output format instructions
-	if o.config.EnableMarkdown {
-		prompt += " Format the output in Markdown."
-	}
-
-	var (
-		base64    string
-		err       error
-		FileParam openai.ChatCompletionMessageParamUnion
-	)
-
-	switch input.Type {
-	case InputTypeImage:
-		base64, err = imageToBase64(input.Image)
-		FileParam = o.WithImage(base64, prompt)
-	case InputTypePDF:
-		base64, err = bytesToBase64(input.PDFData)
-		FileParam = o.WithPDF(base64, prompt)
-	default:
-		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
-	}
-
+	messages, err := o.InputToMessages(input)
 	if err != nil {
 		return nil, err
 	}
 
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			FileParam,
-		},
-		Model: o.model,
+		Messages: messages,
+		Model:    o.model,
 	})
 	if err != nil {
 		return nil, err
@@ -137,8 +109,22 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 
 }
 
-func (o *OpenAIProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+func (o *OpenAIProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, o.OCR, "openai")
+}
+
+func (o *OpenAIProvider) SupportsPDF() bool {
+	bMap := map[string]bool{
+		"openai":     false,
+		"openrouter": false,
+		"vllm":       false,
+		"oc":         o.config.SupportsPDF,
+	}
+	supported, ok := bMap[o.config.VisionLLMProvider]
+	if !ok {
+		return false
+	}
+	return supported
 }
 
 func (o *OpenAIProvider) WithImage(base64Image string, prompt string) openai.ChatCompletionMessageParamUnion {
@@ -159,4 +145,40 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 			FileData: openai.String(fmt.Sprintf("data:application/pdf;base64,%s", base64PDF)),
 		}),
 	})
+}
+
+func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
+
+	prompt := "Extract all text from this image."
+	if o.config.VisionLLMPrompt != "" {
+		prompt = o.config.VisionLLMPrompt
+	}
+
+	// Add output format instructions
+	if o.config.EnableMarkdown {
+		prompt += " Format the output in Markdown."
+	}
+
+	switch input.Type {
+	case InputTypeImage:
+		base64, err := imageToBase64(input.Image)
+		if err != nil {
+			return nil, err
+		}
+		return []openai.ChatCompletionMessageParamUnion{o.WithImage(base64, prompt)}, nil
+	case InputTypePDF:
+		// If the provider supports PDF's directly, just send the pdf
+		if o.SupportsPDF() {
+			base64, err := bytesToBase64(input.PDFData)
+			if err != nil {
+				return nil, err
+			}
+			return []openai.ChatCompletionMessageParamUnion{o.WithPDF(base64, prompt)}, nil
+		}
+		// Otherwise fallback to pdf -> images
+		return nil, fmt.Errorf("OpenAI doesn't support Scanned PDF's directly")
+	default:
+		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	}
+
 }

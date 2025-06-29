@@ -116,6 +116,6 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 	}, nil
 }
 
-func (o *OllamaProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+func (o *OllamaProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, o.OCR, "ollama")
 }

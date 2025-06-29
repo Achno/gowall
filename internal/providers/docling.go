@@ -139,7 +139,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	}, nil
 }
 
-func (p *DoclingProvider) OCRBatchImages(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+func (p *DoclingProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return processBatchConcurrently(ctx, images, p.OCR, "docling")
 }
 

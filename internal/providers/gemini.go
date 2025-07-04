@@ -71,5 +71,5 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func (g *GeminiProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return processBatchConcurrently(ctx, images, g.OCR, "gemini")
+	return ProcessBatchWithPDFFallback(ctx, g, g.OCR, images, "gemini", 1, nil)
 }

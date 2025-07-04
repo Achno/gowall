@@ -117,5 +117,5 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 }
 
 func (o *OllamaProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return processBatchConcurrently(ctx, images, o.OCR, "ollama")
+	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, images, "ollama", 1, nil)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/providers"
+	rLimit "github.com/Achno/gowall/internal/providers/rateLimit"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -56,19 +57,19 @@ to quickly create a Cobra application.`,
 		// 	// VisionLLMPrompt: "turn code to text",
 		// })
 		//? Mistral
-		n, err := providers.NewOCRProvider(providers.Config{
-			VisionLLMProvider: "mistral",
-			VisionLLMModel:    "mistral-ocr-latest",
-			VisionLLMPrompt:   "Extract all visible text from this pdf,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-			// VisionLLMPrompt: "turn code to text",
-		})
-		//? Openrouter
 		// n, err := providers.NewOCRProvider(providers.Config{
-		// 	VisionLLMProvider: "openrouter",
-		// 	VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
-		// 	VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
+		// 	VisionLLMProvider: "mistral",
+		// 	VisionLLMModel:    "mistral-ocr-latest",
+		// 	VisionLLMPrompt:   "Extract all visible text from this pdf,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
 		// 	// VisionLLMPrompt: "turn code to text",
 		// })
+		//? Openrouter
+		n, err := providers.NewOCRProvider(providers.Config{
+			VisionLLMProvider: "openrouter",
+			VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
+			VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
+			// VisionLLMPrompt: "turn code to text",
+		})
 		//? Tesseract
 		// n, err := providers.NewOCRProvider(providers.Config{
 		// 	VisionLLMProvider: "tesseract",
@@ -85,9 +86,11 @@ to quickly create a Cobra application.`,
 		// })
 		utils.HandleError(err)
 
-		// imagePaths := []string{"/home/achno/Pictures/2024-07-19_23-17.png"}
-		imagePaths := args
-		// imagePaths := []string{"/home/achno/Pictures/Screenshots/Screenshot_20250528_005937.png", "/home/achno/Pictures/Screenshots/Screenshot_20250530_000416.png"}
+		n = rLimit.WithRateLimit(n, 0, 12)
+
+		// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Documents/WEB_EX.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
+		imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
+		// imagePaths := args
 
 		// load the images from the imagePaths
 		utils.Spinner.Start()

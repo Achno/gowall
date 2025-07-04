@@ -109,8 +109,8 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 
 }
 
-func (o *OpenAIProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return processBatchConcurrently(ctx, images, o.OCR, "openai")
+func (o *OpenAIProvider) OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error) {
+	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, inputs, "openai", 10, nil)
 }
 
 func (o *OpenAIProvider) SupportsPDF() bool {
@@ -175,8 +175,7 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 			}
 			return []openai.ChatCompletionMessageParamUnion{o.WithPDF(base64, prompt)}, nil
 		}
-		// Otherwise fallback to pdf -> images
-		return nil, fmt.Errorf("OpenAI doesn't support Scanned PDF's directly")
+		return nil, fmt.Errorf("the provider doesn't support PDF's directly")
 	default:
 		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
 	}

@@ -33,17 +33,15 @@ func (r *RateLimitedProvider) OCR(ctx context.Context, input providers.OCRInput)
 }
 
 func (r *RateLimitedProvider) OCRBatch(ctx context.Context, inputs []providers.OCRInput) ([]*providers.OCRResult, error) {
-	results := make([]*providers.OCRResult, len(inputs))
-
-	//rate limit each call
-	for i, input := range inputs {
-		result, err := r.OCR(ctx, input)
-		if err != nil {
-			return nil, err
-		}
-		results[i] = result
-	}
-	return results, nil
+	return providers.ProcessBatchWithPDFFallback(
+		ctx,
+		r.provider,
+		r.provider.OCR,
+		inputs,
+		"provider",
+		30,
+		r.limiter,
+	)
 }
 
 // Implement "PDFCapable" interface and return the result of the wrapped provider otherwise false

@@ -208,5 +208,5 @@ func MistralToOCRResult(res *MistralOcrResponse) (*OCRResult, error) {
 }
 
 func (m *MistralProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return processBatchConcurrently(ctx, images, m.OCR, "mistral")
+	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", 1, nil)
 }

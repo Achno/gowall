@@ -140,7 +140,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 }
 
 func (p *DoclingProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return processBatchConcurrently(ctx, images, p.OCR, "docling")
+	return ProcessBatchWithPDFFallback(ctx, p, p.OCR, images, "docling", 1, nil)
 }
 
 func (p *DoclingProvider) waitForTask(ctx context.Context, taskID string) (*DoclingConvertDocumentResponse, error) {

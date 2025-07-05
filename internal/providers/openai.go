@@ -3,8 +3,8 @@ package providers
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
+
+	cf "github.com/Achno/gowall/config"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -28,7 +28,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 		"vllm":       "http://localhost:8000/v1",
 		"openrouter": "https://openrouter.ai/api/v1",
 		"openai":     "https://api.openai.com/v1",
-		"oc":         os.Getenv("OPENAI_BASE_URL"),
+		"oc":         cf.GowallConfig.EnvConfig.OPENAI_BASE_URL,
 	}
 
 	baseURL, ok := urlMap[config.VisionLLMProvider]
@@ -38,9 +38,9 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	apiMap := map[string]string{
 		"vllm":       "x",
-		"openrouter": os.Getenv("OPENROUTER_API_KEY"),
-		"openai":     os.Getenv("OPENAI_API_KEY"),
-		"oc":         os.Getenv("OPENAI_API_COMPATIBLE_SERVICE_API_KEY"),
+		"openrouter": cf.GowallConfig.EnvConfig.OPENROUTER_API_KEY,
+		"openai":     cf.GowallConfig.EnvConfig.OPENAI_API_KEY,
+		"oc":         cf.GowallConfig.EnvConfig.OPENAI_API_COMPATIBLE_SERVICE_API_KEY,
 	}
 
 	apiKey, ok := apiMap[config.VisionLLMProvider]
@@ -51,16 +51,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("your API key env is not set")
 	}
-	retriesStr := os.Getenv("OPENAI_MAX_RETRIES")
-	var retries = 2
-
-	if retriesStr != "" {
-		retriesParsed, err := strconv.Atoi(retriesStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed converting OPENAI_MAX_RETRIES to an int")
-		}
-		retries = retriesParsed
-	}
+	retries := cf.GowallConfig.EnvConfig.OPENAI_MAX_RETRIES
 
 	model := defaultOpenAIModel
 	if config.VisionLLMModel != "" {
@@ -110,7 +101,7 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func (o *OpenAIProvider) OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, inputs, "openai", 10, nil)
+	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, inputs, "openai", nil)
 }
 
 func (o *OpenAIProvider) SupportsPDF() bool {

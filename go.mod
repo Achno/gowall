@@ -6,6 +6,7 @@ require (
 	github.com/HugoSmits86/nativewebp v0.9.3
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/gen2brain/go-fitz v1.24.15
+	github.com/joho/godotenv v1.5.1
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/spf13/cobra v1.8.1
 	github.com/theckman/yacspin v0.13.12
@@ -20,7 +21,6 @@ require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
-	github.com/alitto/pond v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/fatih/color v1.13.0 // indirect

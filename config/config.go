@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,6 +35,8 @@ type Options struct {
 	ColorCorrectionBackend string         `yaml:"ColorCorrectionBackend"`
 	OutputFolder           string         `yaml:"OutputFolder"`
 	Themes                 []themeWrapper `yaml:"themes"`
+	EnvConfig              *EnvConfig
+	EnvFilePath            string `yaml:"EnvFilePath"`
 }
 
 var GowallConfig = defaultConfig()
@@ -52,19 +53,11 @@ func LoadConfig() {
 	err = os.MkdirAll(configFolder, 0755)
 	if err != nil {
 		log.Fatalf("could not create config directory %v", err)
-		return
 	}
 
-	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDONLY, 0o644)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		log.Printf("Error opening/creating config file: %v", err)
-		return
-	}
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		log.Fatalf("Error reading config : %v", err)
+		log.Printf("Error reading config file: %v", err)
 		return
 	}
 
@@ -74,10 +67,10 @@ func LoadConfig() {
 		return
 	}
 
-	err = os.MkdirAll(configFolder, 0755)
-	if err != nil {
-		log.Fatalf("Error: Could not create config directory: %v", err)
-	}
+	// err = os.MkdirAll(configFolder, 0755)
+	// if err != nil {
+	// 	log.Fatalf("Error: Could not create config directory: %v", err)
+	// }
 
 	defaultDir, err := CreateDirectory()
 	if err != nil {
@@ -87,4 +80,19 @@ func LoadConfig() {
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		return
 	}
+
+	// data, err = os.ReadFile(configPath)
+	// if err != nil {
+	// 	log.Printf("Error reading config file: %v", err)
+	// 	return
+	// }
+
+	// err = yaml.Unmarshal(data, &GowallConfig)
+	// if err != nil {
+	// 	log.Printf("Error unmarshalling config file: %v", err)
+	// 	return
+	// }
+
+	EnvConfig := GetEnvConfig(filepath.Join(configDir, GowallConfig.EnvFilePath))
+	GowallConfig.EnvConfig = EnvConfig
 }

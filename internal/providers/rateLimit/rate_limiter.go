@@ -39,7 +39,6 @@ func (r *RateLimitedProvider) OCRBatch(ctx context.Context, inputs []providers.O
 		r.provider.OCR,
 		inputs,
 		"provider",
-		30,
 		r.limiter,
 	)
 }

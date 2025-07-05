@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	cf "github.com/Achno/gowall/config"
 )
 
 const (
@@ -66,7 +68,7 @@ type DoclingConvertDocumentResponse struct {
 
 func NewDoclingProvider(config Config) (OCRProvider, error) {
 
-	baseURL := os.Getenv("DOCLING_BASE_URL")
+	baseURL := cf.GowallConfig.EnvConfig.DOCLING_BASE_URL
 	if baseURL == "" {
 		baseURL = doclingDefaultBaseURL
 	}
@@ -140,7 +142,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 }
 
 func (p *DoclingProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, p, p.OCR, images, "docling", 1, nil)
+	return ProcessBatchWithPDFFallback(ctx, p, p.OCR, images, "docling", nil)
 }
 
 func (p *DoclingProvider) waitForTask(ctx context.Context, taskID string) (*DoclingConvertDocumentResponse, error) {

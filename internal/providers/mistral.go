@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
+
+	cf "github.com/Achno/gowall/config"
 )
 
 const (
@@ -86,7 +87,7 @@ type MistralBatchFile struct {
 
 func NewMistralProvider(config Config) (OCRProvider, error) {
 
-	apiKey := os.Getenv("MISTRAL_API_KEY")
+	apiKey := cf.GowallConfig.EnvConfig.MISTRAL_API_KEY
 	if apiKey == "" {
 		return nil, fmt.Errorf("MISTRAL_API_KEY env is not set")
 	}
@@ -208,5 +209,5 @@ func MistralToOCRResult(res *MistralOcrResponse) (*OCRResult, error) {
 }
 
 func (m *MistralProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", 1, nil)
+	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", nil)
 }

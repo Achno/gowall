@@ -3,8 +3,8 @@ package providers
 import (
 	"context"
 	"fmt"
-	"os"
 
+	cf "github.com/Achno/gowall/config"
 	"google.golang.org/genai"
 )
 
@@ -15,7 +15,7 @@ type GeminiProvider struct {
 
 func NewGeminiProvider(config Config) (OCRProvider, error) {
 
-	apiKey := os.Getenv("GEMINI_API_KEY")
+	apiKey := cf.GowallConfig.EnvConfig.GEMINI_API_KEY
 	if apiKey == "" {
 		return nil, fmt.Errorf("GEMINI_API_KEY env is not set")
 	}
@@ -71,5 +71,5 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func (g *GeminiProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, g, g.OCR, images, "gemini", 1, nil)
+	return ProcessBatchWithPDFFallback(ctx, g, g.OCR, images, "gemini", nil)
 }

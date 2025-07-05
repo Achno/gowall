@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
+
+	cf "github.com/Achno/gowall/config"
 )
 
 // OllamaProvider implements the Provider Interface
@@ -105,7 +106,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func NewOllamaProvider(config Config) (OCRProvider, error) {
-	host := os.Getenv("OLLAMA_HOST")
+	host := cf.GowallConfig.EnvConfig.OLLAMA_HOST
 	if host == "" {
 		host = "http://127.0.0.1:11434"
 	}
@@ -117,5 +118,5 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 }
 
 func (o *OllamaProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, images, "ollama", 1, nil)
+	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, images, "ollama", nil)
 }

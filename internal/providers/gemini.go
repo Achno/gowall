@@ -8,6 +8,10 @@ import (
 	"google.golang.org/genai"
 )
 
+const (
+	geminimodel = "gemini-2.0-flash"
+)
+
 type GeminiProvider struct {
 	config Config
 	client *genai.Client
@@ -45,7 +49,7 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		prompt = g.config.VisionLLMPrompt
 	}
 
-	model := "gemini-2.0-flash"
+	model := geminimodel
 	if g.config.VisionLLMModel != "" {
 		model = g.config.VisionLLMModel
 	}

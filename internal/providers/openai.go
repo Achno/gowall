@@ -49,7 +49,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 	}
 
 	if apiKey == "" {
-		return nil, fmt.Errorf("your API key env is not set")
+		return nil, fmt.Errorf("your [OpenAI/OpenRouter or OpenAI Compatible] API key env is not set, check that your .env file location is correct inside config.yml or you are properly providing the env's")
 	}
 	retries := cf.GowallConfig.EnvConfig.OPENAI_MAX_RETRIES
 

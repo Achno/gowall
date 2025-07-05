@@ -41,7 +41,6 @@ type MistralOcrDocument struct {
 	Type         string `json:"type"`
 }
 
-// Mistral single OCR response
 type MistralOcrResponse struct {
 	Pages     []MistralOcrPage `json:"pages"`
 	Model     string           `json:"model"`
@@ -70,7 +69,6 @@ type MistralOcrDimensions struct {
 	Width  int `json:"width"`
 }
 
-// MistralBatchJob represents a batch OCR job
 type MistralBatchJob struct {
 	ID                string `json:"id"`
 	Status            string `json:"status"`
@@ -80,7 +78,6 @@ type MistralBatchJob struct {
 	OutputFile        string `json:"output_file"`
 }
 
-// MistralBatchFile represents a file uploaded for batch processing
 type MistralBatchFile struct {
 	ID string `json:"id"`
 }
@@ -89,7 +86,7 @@ func NewMistralProvider(config Config) (OCRProvider, error) {
 
 	apiKey := cf.GowallConfig.EnvConfig.MISTRAL_API_KEY
 	if apiKey == "" {
-		return nil, fmt.Errorf("MISTRAL_API_KEY env is not set")
+		return nil, fmt.Errorf("MISTRAL_API_KEY env is not set,check that your .env file location is correct inside config.yml or you are properly providing the env's")
 	}
 
 	return &MistralProvider{
@@ -136,6 +133,10 @@ func (m *MistralProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	}
 
 	return MistralToOCRResult(&respData)
+}
+
+func (m *MistralProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
+	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", nil)
 }
 
 func (m *MistralProvider) SupportsPDF() bool {
@@ -206,8 +207,4 @@ func MistralToOCRResult(res *MistralOcrResponse) (*OCRResult, error) {
 		},
 		Metadata: meta,
 	}, nil
-}
-
-func (m *MistralProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", nil)
 }

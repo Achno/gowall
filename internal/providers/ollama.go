@@ -41,6 +41,18 @@ type OllamaResponse struct {
 	TotalDuration int64 `json:"total_duration"`
 }
 
+func NewOllamaProvider(config Config) (OCRProvider, error) {
+	host := cf.GowallConfig.EnvConfig.OLLAMA_HOST
+	if host == "" {
+		host = "http://127.0.0.1:11434"
+	}
+
+	return &OllamaProvider{
+		config: config,
+		host:   host,
+	}, nil
+}
+
 func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 	imgBase64, err := imageToBase64(input.Image)
 	if err != nil {
@@ -105,18 +117,10 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	return result, nil
 }
 
-func NewOllamaProvider(config Config) (OCRProvider, error) {
-	host := cf.GowallConfig.EnvConfig.OLLAMA_HOST
-	if host == "" {
-		host = "http://127.0.0.1:11434"
-	}
-
-	return &OllamaProvider{
-		config: config,
-		host:   host,
-	}, nil
-}
-
 func (o *OllamaProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
 	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, images, "ollama", nil)
+}
+
+func (o *OllamaProvider) SupportsPDF() bool {
+	return false
 }

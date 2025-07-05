@@ -18,7 +18,7 @@ const defaultImageBatchSize = 10
 // ocrFunc is a function type that matches the signature of a single OCR operation
 type ocrFunc func(ctx context.Context, img OCRInput) (*OCRResult, error)
 
-// expandedItem tracks the mapping between original inputs and expanded items
+// expandedItem tracks the mapping between original inputs and expanded items (ex. A pdf expanded to images)
 type expandedItem struct {
 	input         OCRInput // The original input either a PDF or an image
 	originalIndex int
@@ -34,7 +34,6 @@ func processBatchConcurrently(ctx context.Context, items []expandedItem, singleO
 
 	var completed, failed int64
 
-	// Track completion per original item
 	originalCompleted := make(map[int]bool)
 	originalFailed := make(map[int]bool)
 
@@ -119,7 +118,7 @@ func ProcessBatchWithPDFFallback(ctx context.Context, provider OCRProvider, sing
 		if input.Type == InputTypePDF {
 			pdfCapable, ok := provider.(PDFCapable)
 			if !ok || !pdfCapable.SupportsPDF() {
-				// Convert PDF to images
+
 				images, err := pdf.ConvertPDFToImages(input.PDFData, pdf.DefaultOptions())
 				if err != nil {
 					return nil, fmt.Errorf("failed to convert PDF '%s' to images: %w", input.Filename, err)
@@ -167,7 +166,6 @@ func ProcessBatchWithPDFFallback(ctx context.Context, provider OCRProvider, sing
 	// 3. Stitch results back together
 	finalResults := stitchResults(inputs, allResults, expandedItems)
 
-	// Return combined error if any
 	var finalError error
 	if len(allErrors) > 0 {
 		finalError = errors.New(utils.FormatErrors(allErrors))
@@ -182,7 +180,7 @@ func stitchResults(originalInputs []OCRInput, expandedResults []*OCRResult, expa
 
 	// Group results by original index
 	resultGroups := make(map[int][]*OCRResult)
-	pageGroups := make(map[int][]int) // Track page indices for proper ordering
+	pageGroups := make(map[int][]int)
 
 	for i, result := range expandedResults {
 		if result == nil {
@@ -213,12 +211,11 @@ func stitchResults(originalInputs []OCRInput, expandedResults []*OCRResult, expa
 			continue
 		}
 
-		// For multiple results (expanded PDF), stitch them together
+		// For multiple results (expanded PDF) stitch them together
 		var textParts []string
 		var combinedImages OCRImage
 		var combinedMetadata map[string]string
 
-		// Sort results by page index to ensure correct order
 		pageIndices := pageGroups[originalIndex]
 		sortedResults := make([]*OCRResult, len(results))
 
@@ -256,9 +253,8 @@ func stitchResults(originalInputs []OCRInput, expandedResults []*OCRResult, expa
 			}
 		}
 
-		// Create final combined result
 		finalResults[originalIndex] = &OCRResult{
-			Text:     strings.Join(textParts, "\n\n"), // Use double newline for page breaks
+			Text:     strings.Join(textParts, "\n\n"), // <-- Add new lines for Page breaks
 			Images:   combinedImages,
 			Metadata: combinedMetadata,
 		}

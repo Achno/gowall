@@ -13,8 +13,8 @@ type RateLimitedProvider struct {
 	limiter  *rate.Limiter
 }
 
+// WithRateLimit wraps an OCRProvider to rate limit its OCR calls. If rps <= 0 rate limiting is disabled.
 func WithRateLimit(provider providers.OCRProvider, rps float64, burst int) providers.OCRProvider {
-	// No rate limiting
 	if rps <= 0 {
 		return provider
 	}
@@ -43,7 +43,7 @@ func (r *RateLimitedProvider) OCRBatch(ctx context.Context, inputs []providers.O
 	)
 }
 
-// Implement "PDFCapable" interface and return the result of the wrapped provider otherwise false
+// Implements "PDFCapable" interface and return the result of the wrapped provider otherwise false
 func (r *RateLimitedProvider) SupportsPDF() bool {
 	if pdfCapable, ok := r.provider.(providers.PDFCapable); ok {
 		return pdfCapable.SupportsPDF()
@@ -51,6 +51,7 @@ func (r *RateLimitedProvider) SupportsPDF() bool {
 	return false
 }
 
+// Implements the "RateLimited" interface
 func (r *RateLimitedProvider) SetRateLimit(rps float64, burst int) {
 	r.limiter = rate.NewLimiter(rate.Limit(rps), burst)
 }

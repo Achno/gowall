@@ -89,8 +89,8 @@ to quickly create a Cobra application.`,
 		n = rLimit.WithRateLimit(n, 0, 12)
 
 		// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Documents/WEB_EX.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
-		imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
-		// imagePaths := args
+		// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
+		imagePaths := args
 
 		// load the images from the imagePaths
 		utils.Spinner.Start()

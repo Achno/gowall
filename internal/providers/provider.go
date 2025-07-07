@@ -50,20 +50,20 @@ type RateLimited interface {
 
 // Configuration for providers
 type Config struct {
-	VisionLLMProvider string // "openai", "openrouter", "mistral", "vllm" ...
-	VisionLLMModel    string
-	VisionLLMPrompt   string
-	Language          string // depends on the provider
+	VisionLLMProvider string `yaml:"provider"` // "openai", "openrouter", "mistral", "vllm" ...
+	VisionLLMModel    string `yaml:"model"`
+	VisionLLMPrompt   string `yaml:"prompt"`
+	Language          string `yaml:"language"` // depends on the provider
 
 	// OCR output options
-	EnableMarkdown bool
+	EnableMarkdown bool `yaml:"markdown"`
 
 	// Rate limiting
-	RateLimitRPS   float64 // requests per second
-	RateLimitBurst int     // burst size
+	RateLimitRPS   float64 `yaml:"rps"`   // requests per second
+	RateLimitBurst int     `yaml:"burst"` // burst size
 
 	// Provider-specific settings
-	SupportsPDF bool
+	SupportsPDF bool `yaml:"supports_pdf"`
 	Settings    map[string]any
 }
 

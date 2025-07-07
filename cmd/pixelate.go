@@ -33,7 +33,7 @@ var pixelateCmd = &cobra.Command{
 			Scale: ScaleFactor,
 		}
 
-		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 		utils.HandleError(err)
 
 		processedImages, err := image.ProcessImgs(processor, imageOps, "")

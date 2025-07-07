@@ -31,7 +31,7 @@ var bgCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 		utils.HandleError(err)
 		logger.Print("Removing background...")
 		processor := &image.BackgroundProcessor{}

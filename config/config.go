@@ -9,11 +9,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var SupportedExtensions = map[string]bool{
+var SupportedImageExtensions = map[string]bool{
 	".png":  true,
 	".jpeg": true,
 	".jpg":  true,
 	".webp": true,
+}
+
+var SupportedTextExtensions = map[string]bool{
+	".pdf": true,
 }
 
 type GlobalSubCommandFlags struct {

@@ -53,6 +53,8 @@ func BuildOCRCmd() *cobra.Command {
 	flags.StringVarP(&language, "language", "l", "", "Language to use for OCR")
 	flags.StringVarP(&schema, "schema", "s", "", "The schema name to use for OCR")
 
+	addGlobalFlags(cmd)
+
 	return cmd
 }
 
@@ -120,6 +122,8 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	// 	VisionLLMPrompt:   "X",
 	// 	Language:          "en",
 	// })
+	_, err = imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
 
 	n, err := providers.NewOCRProvider(cfg)
 	utils.HandleError(err, "Error")

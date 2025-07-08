@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/Achno/gowall/config"
-	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/providers"
 	rLimit "github.com/Achno/gowall/internal/providers/rateLimit"
@@ -151,7 +150,7 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 				Filename: path,
 			})
 		} else if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" {
-			img, err := image.LoadImage(imageio.FileReader{Path: path})
+			img, err := imageio.LoadImage(imageio.FileReader{Path: path})
 			utils.HandleError(err)
 			imgs = append(imgs, providers.OCRInput{
 				Type:     providers.InputTypeImage,

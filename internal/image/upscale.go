@@ -44,7 +44,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 
 	inputPath := filepath.Join(tempDir, "input.png")
 	outputPath := filepath.Join(tempDir, "output.png")
-	if err := SaveImage(img, imageio.FileWriter{Path: inputPath}, "png"); err != nil {
+	if err := imageio.SaveImage(img, imageio.FileWriter{Path: inputPath}, "png"); err != nil {
 		return nil, fmt.Errorf("failed to save temp input image: %w", err)
 	}
 	// Validate params
@@ -63,7 +63,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string) (image.Image, 
 		}
 		return nil, fmt.Errorf("command failed: %w", err)
 	}
-	imgUpscaled, err := LoadImage(imageio.FileReader{Path: outputPath})
+	imgUpscaled, err := imageio.LoadImage(imageio.FileReader{Path: outputPath})
 	if err != nil {
 		return nil, fmt.Errorf("could not open upscaled image after processing in %s", outputPath)
 	}

@@ -2,7 +2,6 @@ package imageio
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -370,15 +369,4 @@ func GetFilesFromDirectory(path string, filter func(string, fs.DirEntry) bool) (
 	}
 
 	return files, nil
-}
-
-func LoadFileBytes(src ImageReader) ([]byte, error) {
-	reader, err := src.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-	bytes, err := io.ReadAll(reader)
-
-	return bytes, err
 }

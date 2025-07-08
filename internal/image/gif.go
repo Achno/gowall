@@ -97,7 +97,7 @@ func CreateGif(files []imageio.ImageIO, opts ...GifOption) error {
 		fileName = filepath.Join(config.GowallConfig.OutputFolder, fileName)
 	}
 
-	err = SaveGif(*newGif, fileName)
+	err = imageio.SaveGif(*newGif, fileName)
 	if err != nil {
 		return fmt.Errorf("while saving gif: %w", err)
 	}
@@ -163,7 +163,7 @@ func scanImages(files []imageio.ImageIO) ([]*frames, int, int, error) {
 		go func(f *imageio.ImageIO) {
 			defer wg.Done()
 
-			img, err := LoadImage(f.ImageInput)
+			img, err := imageio.LoadImage(f.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
 				return

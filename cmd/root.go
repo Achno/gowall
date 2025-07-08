@@ -97,7 +97,7 @@ var rootCmd = &cobra.Command{
 			url, err := api.GetWallpaperOfTheDay()
 			utils.HandleError(err, "Could not fetch wallpaper of the day")
 
-			path, err := image.SaveUrlAsImg(url)
+			path, err := imageio.SaveUrlAsImg(url)
 			utils.HandleError(err)
 			utils.Spinner.Stop()
 			err = image.OpenImageInViewer(path)

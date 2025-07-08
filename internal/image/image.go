@@ -1,52 +1,44 @@
 package image
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
-	webp "github.com/HugoSmits86/nativewebp"
 	_ "golang.org/x/image/webp"
 )
 
-// Available formats to Encode an image in
-var encoders = map[string]func(file *os.File, img image.Image) error{
-	"png": func(file *os.File, img image.Image) error {
-		png := &png.Encoder{
-			CompressionLevel: png.BestSpeed,
-		}
-		return png.Encode(file, img)
-	},
-	"jpg": func(file *os.File, img image.Image) error {
-		return jpeg.Encode(file, img, nil)
-	},
-	"jpeg": func(file *os.File, img image.Image) error {
-		return jpeg.Encode(file, img, nil)
-	},
-	"webp": func(file *os.File, img image.Image) error {
-		return webp.Encode(file, img, nil)
-	},
-}
+// // Available formats to Encode an image in
+// var encoders = map[string]func(file *os.File, img image.Image) error{
+// 	"png": func(file *os.File, img image.Image) error {
+// 		png := &png.Encoder{
+// 			CompressionLevel: png.BestSpeed,
+// 		}
+// 		return png.Encode(file, img)
+// 	},
+// 	"jpg": func(file *os.File, img image.Image) error {
+// 		return jpeg.Encode(file, img, nil)
+// 	},
+// 	"jpeg": func(file *os.File, img image.Image) error {
+// 		return jpeg.Encode(file, img, nil)
+// 	},
+// 	"webp": func(file *os.File, img image.Image) error {
+// 		return webp.Encode(file, img, nil)
+// 	},
+// }
 
 // Create a Processor of this interface and call 'ProcessImg'
 type ImageProcessor interface {
@@ -65,101 +57,119 @@ func (p *NoOpImageProcessor) Process(img image.Image, options string) (image.Ima
 	return img, nil
 }
 
-func LoadImage(imgSrc imageio.ImageReader) (image.Image, error) {
-	reader, err := imgSrc.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-	imgData, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	img, _, err := image.Decode(bytes.NewReader(imgData))
-	if err != nil {
-		return nil, fmt.Errorf("unknown format : %s", imgSrc.String())
-	}
-	return img, nil
-}
+// func LoadImage(imgSrc imageio.ImageReader) (image.Image, error) {
+// 	reader, err := imgSrc.Open()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer reader.Close()
+// 	imgData, err := io.ReadAll(reader)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	img, _, err := image.Decode(bytes.NewReader(imgData))
+// 	if err != nil {
+// 		return nil, fmt.Errorf("unknown format : %s", imgSrc.String())
+// 	}
+// 	return img, nil
+// }
 
-func SaveImage(img image.Image, output imageio.ImageWriter, format string) error {
-	encoder, ok := encoders[strings.ToLower(format)]
+// func SaveImage(img image.Image, output imageio.ImageWriter, format string) error {
+// 	encoder, ok := encoders[strings.ToLower(format)]
 
-	if !ok {
-		return fmt.Errorf("unsupported format: %s", format)
-	}
+// 	if !ok {
+// 		return fmt.Errorf("unsupported format: %s", format)
+// 	}
 
-	if img == nil {
-		return nil
-	}
-	file, err := output.Create()
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return encoder(file, img)
-}
+// 	if img == nil {
+// 		return nil
+// 	}
+// 	file, err := output.Create()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer file.Close()
+// 	return encoder(file, img)
+// }
 
-func SaveGif(gifData gif.GIF, output string) error {
-	var file *os.File
-	if output == "/dev/stdout" || output == "-" || output == "CON" {
-		file = os.Stdout
-	} else {
-		var err error
-		file, err = os.Create(output)
-		if err != nil {
-			return fmt.Errorf("failed to create output file: %w", err)
-		}
-		defer file.Close() // Ensure the file gets closed properly
-	}
-	err := gif.EncodeAll(file, &gifData)
-	if err != nil {
-		return fmt.Errorf("while Encoding gif : %w", err)
-	}
+// func SaveGif(gifData gif.GIF, output string) error {
+// 	var file *os.File
+// 	if output == "/dev/stdout" || output == "-" || output == "CON" {
+// 		file = os.Stdout
+// 	} else {
+// 		var err error
+// 		file, err = os.Create(output)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to create output file: %w", err)
+// 		}
+// 		defer file.Close() // Ensure the file gets closed properly
+// 	}
+// 	err := gif.EncodeAll(file, &gifData)
+// 	if err != nil {
+// 		return fmt.Errorf("while Encoding gif : %w", err)
+// 	}
 
-	logger.Printf("Gif processed and saved as %s\n\n", output)
-	return nil
-}
+// 	logger.Printf("Gif processed and saved as %s\n\n", output)
+// 	return nil
+// }
 
-func SaveUrlAsImg(url string) (string, error) {
-	extension, err := utils.GetFileExtensionFromURL(url)
-	if err != nil {
-		return "", err
-	}
+// func SaveUrlAsImg(url string) (string, error) {
+// 	extension, err := utils.GetFileExtensionFromURL(url)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	timestamp := time.Now().Format("20060102-150405")
-	fileName := fmt.Sprintf("wall-%s%s", timestamp, extension)
+// 	timestamp := time.Now().Format("20060102-150405")
+// 	fileName := fmt.Sprintf("wall-%s%s", timestamp, extension)
 
-	path := filepath.Join(config.GowallConfig.OutputFolder, fileName)
+// 	path := filepath.Join(config.GowallConfig.OutputFolder, fileName)
 
-	file, err := os.Create(path)
-	if err != nil {
-		return "", fmt.Errorf("could not create file: %w", err)
-	}
-	defer file.Close()
+// 	file, err := os.Create(path)
+// 	if err != nil {
+// 		return "", fmt.Errorf("could not create file: %w", err)
+// 	}
+// 	defer file.Close()
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("could not fetch the URL: %w", err)
-	}
-	defer resp.Body.Close()
+// 	resp, err := http.Get(url)
+// 	if err != nil {
+// 		return "", fmt.Errorf("could not fetch the URL: %w", err)
+// 	}
+// 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to fetch image: status code %d", resp.StatusCode)
-	}
+// 	if resp.StatusCode != http.StatusOK {
+// 		return "", fmt.Errorf("failed to fetch image: status code %d", resp.StatusCode)
+// 	}
 
-	_, err = io.Copy(file, resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("could not write to file: %w", err)
-	}
+// 	_, err = io.Copy(file, resp.Body)
+// 	if err != nil {
+// 		return "", fmt.Errorf("could not write to file: %w", err)
+// 	}
 
-	return path, nil
-}
+// 	return path, nil
+// }
 
 // Opens the image on the default viewing application of every operating system.
 // or in the terminal for kitty,wezterm,ghostty and konsole
 func OpenImageInViewer(filePath string) error {
-	if !config.GowallConfig.EnableImagePreviewing {
+	if !config.GowallConfig.EnableImagePreviewing { // Available formats to Encode an image in
+		// var encoders = map[string]func(file *os.File, img image.Image) error{
+		// 	"png": func(file *os.File, img image.Image) error {
+		// 		png := &png.Encoder{
+		// 			CompressionLevel: png.BestSpeed,
+		// 		}
+		// 		return png.Encode(file, img)
+		// 	},
+		// 	"jpg": func(file *os.File, img image.Image) error {
+		// 		return jpeg.Encode(file, img, nil)
+		// 	},
+		// 	"jpeg": func(file *os.File, img image.Image) error {
+		// 		return jpeg.Encode(file, img, nil)
+		// 	},
+		// 	"webp": func(file *os.File, img image.Image) error {
+		// 		return webp.Encode(file, img, nil)
+		// 	},
+		// }
+
 		return nil
 	}
 	var cmd *exec.Cmd
@@ -231,7 +241,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
 			theme := theme
-			img, err := LoadImage(currentImgOp.ImageInput)
+			img, err := imageio.LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
 				return
@@ -252,7 +262,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 			}
 
 			// Save the image
-			err = SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format)
+			err = imageio.SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format)
 			if err != nil {
 				errChan <- fmt.Errorf("while saving image: %w in %s", err, currentImgOp.ImageOutput)
 				return

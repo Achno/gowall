@@ -4,11 +4,9 @@ Copyright © 2025 Achno <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -121,7 +119,7 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	// 	VisionLLMPrompt:   "X",
 	// 	Language:          "en",
 	// })
-	_, err = imageio.DetermineImageOperations(shared, args, cmd)
+	ops, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
 	n, err := providers.NewOCRProvider(cfg)
@@ -131,47 +129,50 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 
 	// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Documents/WEB_EX.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
 	// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
-	imagePaths := args
+	// imagePaths := args
 
 	// load the images from the imagePaths
 	utils.Spinner.Start()
 	utils.Spinner.Message("uploading data")
-	imgs := []providers.OCRInput{}
-	for _, path := range imagePaths {
 
-		// check if the path has a .pdf or .png or .jpg or .jpeg .webp
-		ext := strings.ToLower(filepath.Ext(path))
-		if ext == ".pdf" {
-			pdf, err := imageio.LoadFileBytes(imageio.FileReader{Path: path})
-			utils.HandleError(err)
-			imgs = append(imgs, providers.OCRInput{
-				Type:     providers.InputTypePDF,
-				PDFData:  pdf,
-				Filename: path,
-			})
-		} else if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" {
-			img, err := imageio.LoadImage(imageio.FileReader{Path: path})
-			utils.HandleError(err)
-			imgs = append(imgs, providers.OCRInput{
-				Type:     providers.InputTypeImage,
-				Image:    img,
-				Filename: path,
-			})
-		}
-	}
-	// can you pass the names of the images in the context?
-	// res, err := n.OCRBatchImages(context.Background(), imgs)
-	// res, err := n.OCR(context.Background(), imgs[0])
-	res, err := n.OCRBatch(context.Background(), imgs)
-	utils.HandleError(err)
-	utils.Spinner.Stop()
+	err = providers.ProcessOCR(ops, n)
+	utils.HandleError(err, "Error")
+	// imgs := []providers.OCRInput{}
+	// for _, path := range imagePaths {
 
-	// fmt.Println(res.Text)
+	// 	// check if the path has a .pdf or .png or .jpg or .jpeg .webp
+	// 	ext := strings.ToLower(filepath.Ext(path))
+	// 	if ext == ".pdf" {
+	// 		pdf, err := imageio.LoadFileBytes(imageio.FileReader{Path: path})
+	// 		utils.HandleError(err)
+	// 		imgs = append(imgs, providers.OCRInput{
+	// 			Type:     providers.InputTypePDF,
+	// 			PDFData:  pdf,
+	// 			Filename: path,
+	// 		})
+	// 	} else if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" {
+	// 		img, err := imageio.LoadImage(imageio.FileReader{Path: path})
+	// 		utils.HandleError(err)
+	// 		imgs = append(imgs, providers.OCRInput{
+	// 			Type:     providers.InputTypeImage,
+	// 			Image:    img,
+	// 			Filename: path,
+	// 		})
+	// 	}
+	// }
+	// // can you pass the names of the images in the context?
+	// // res, err := n.OCRBatchImages(context.Background(), imgs)
+	// // res, err := n.OCR(context.Background(), imgs[0])
+	// res, err := n.OCRBatch(context.Background(), imgs)
+	// utils.HandleError(err)
+	// utils.Spinner.Stop()
 
-	for _, item := range res {
-		fmt.Println(item.Text)
-		fmt.Println("###################")
-	}
+	// // fmt.Println(res.Text)
+
+	// for _, item := range res {
+	// 	fmt.Println(item.Text)
+	// 	fmt.Println("###################")
+	// }
 }
 
 func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {

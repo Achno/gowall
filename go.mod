@@ -8,6 +8,7 @@ require (
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/joho/godotenv v1.5.1
 	github.com/openai/openai-go v0.1.0-beta.10
+	github.com/reugn/go-streams v0.13.0
 	github.com/spf13/cobra v1.8.1
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/image v0.22.0

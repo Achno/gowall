@@ -75,6 +75,8 @@ github.com/openai/openai-go v0.1.0-beta.10 h1:CknhGXe8aXQMRuqg255PFnWzgRY9nEryMx
 github.com/openai/openai-go v0.1.0-beta.10/go.mod h1:g461MYGXEXBVdV5SaR/5tNzNbSfwTBBefwc+LlDCK0Y=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
+github.com/reugn/go-streams v0.13.0 h1:v0qMO0/9hxy5OwDGH56SGjp9wfG8xnFgPc3iW90kXj0=
+github.com/reugn/go-streams v0.13.0/go.mod h1:dnXv6QgVTW62gEpILoLHRjI95Es7ECK2/+j9h17aIN8=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=

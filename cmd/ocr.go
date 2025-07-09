@@ -11,7 +11,7 @@ import (
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/providers"
-	rLimit "github.com/Achno/gowall/internal/providers/rateLimit"
+	rLimit "github.com/Achno/gowall/internal/providers"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"

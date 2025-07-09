@@ -89,3 +89,22 @@ func SaveUrlAsImg(url string) (string, error) {
 
 	return path, nil
 }
+
+func SaveText(text string, output ImageWriter) error {
+	if text == "" {
+		return nil
+	}
+
+	file, err := output.Create()
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(text)
+	if err != nil {
+		return fmt.Errorf("failed to write text to file: %w", err)
+	}
+
+	return nil
+}

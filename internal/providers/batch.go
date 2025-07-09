@@ -4,261 +4,142 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"sync"
 	"sync/atomic"
+	"time"
 
-	"github.com/Achno/gowall/internal/pdf"
 	"github.com/Achno/gowall/utils"
+	ext "github.com/reugn/go-streams/extension"
+	"github.com/reugn/go-streams/flow"
 	"golang.org/x/time/rate"
 )
 
-const defaultImageBatchSize = 10
+const defaultConcurrency = 10
 
-// ocrFunc is a function type that matches the signature of a single OCR operation
-type ocrFunc func(ctx context.Context, img OCRInput) (*OCRResult, error)
+// ocrFunc is a function type that matches the signature of a single OCR operation.
+type ocrFunc func(ctx context.Context, input OCRInput) (*OCRResult, error)
 
-// expandedItem tracks the mapping between original inputs and expanded items (ex. A pdf expanded to images)
-type expandedItem struct {
-	input         OCRInput // The original input either a PDF or an image
-	originalIndex int
-	pageIndex     int // -1 for non-PDF items
+// BatchResult holds the processed result and its corresponding input item,
+// which is crucial for stitching results back together (e.g., PDF pages).
+type BatchResult struct {
+	Item   *PipelineItem
+	Result *OCRResult
+	Error  error
 }
 
-// processBatchConcurrently processes a batch of OCR tasks concurrently
-func processBatchConcurrently(ctx context.Context, items []expandedItem, singleOcr ocrFunc, providerName string, limiter *rate.Limiter, originalTotal int) ([]*OCRResult, error) {
-	results := make([]*OCRResult, len(items))
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var errs []error
+// ProcessBatch processes a collection of pipeline items concurrently using a go-streams pipeline.
+// It offers high throughput via a worker pool and supports rate limiting.
+func ProcessBatch(
+	ctx context.Context,
+	items []*PipelineItem, // Input items, potentially expanded from original files.
+	ocrFunc ocrFunc, // The function to execute for each item, e.g., provider.OCR
+	providerName string,
+	limiter *rate.Limiter,
+	concurrency int,
+) ([]*BatchResult, error) {
 
-	var completed, failed int64
+	startTime := time.Now()
+	totalItems := len(items)
+	if totalItems == 0 {
+		return []*BatchResult{}, nil
+	}
 
-	originalCompleted := make(map[int]bool)
-	originalFailed := make(map[int]bool)
+	if concurrency <= 0 {
+		concurrency = defaultConcurrency
+	}
 
+	fmt.Printf(
+		"Starting batch OCR for %d items using provider '%s' with %d workers.\n",
+		totalItems, providerName, concurrency,
+	)
+
+	// --- Progress Tracking ---
+	var completed, failed atomic.Int64
 	updateProgress := func() {
-		mu.Lock()
-		defer mu.Unlock()
+		c := completed.Load()
+		f := failed.Load()
+		processing := int64(totalItems) - c - f
 
-		// Count unique original items that are completed or failed
-		completedCount := len(originalCompleted)
-		failedCount := len(originalFailed)
-		computing := originalTotal - completedCount - failedCount
-
-		utils.Spinner.Message(fmt.Sprintf("%d/%d computing, %d/%d completed, %d/%d failed",
-			computing, originalTotal, completedCount, originalTotal, failedCount, originalTotal))
+		utils.Spinner.Message(fmt.Sprintf(
+			"[%s] OCR Progress: %d computing, %d completed, %d failed (Total Items: %d)",
+			providerName, processing, c, f, totalItems,
+		))
 	}
+	updateProgress()
 
-	updateProgress() // Initial message
+	// --- Pipeline Setup ---
+	source := ext.NewChanSource(pipelineItemsToAnyChan(items))
 
-	for i, item := range items {
-		wg.Add(1)
-		go func(idx int, currentItem expandedItem) {
-			defer wg.Done()
+	// The ocrFlow is a map operation that acts as our worker pool.
+	ocrFlow := flow.NewMap(func(itemAny any) any {
+		item := itemAny.(*PipelineItem)
+		itemStart := time.Now()
 
-			// Rate limiting
-			if limiter != nil {
-				if err := limiter.Wait(ctx); err != nil {
-					mu.Lock()
-					errs = append(errs, fmt.Errorf("rate limiter wait interrupted: %w", err))
-					originalFailed[currentItem.originalIndex] = true
-					mu.Unlock()
-					updateProgress()
-					return
-				}
-			}
-
-			result, err := singleOcr(ctx, currentItem.input)
-			if err != nil {
-				processingErr := fmt.Errorf("error processing %s with %s: %w",
-					currentItem.input.Filename, providerName, err)
-
-				mu.Lock()
-				errs = append(errs, processingErr)
-				originalFailed[currentItem.originalIndex] = true
-				mu.Unlock()
-
-				atomic.AddInt64(&failed, 1)
+		// 1. Rate Limiting: Blocks until the limiter allows proceeding.
+		if limiter != nil {
+			if err := limiter.Wait(ctx); err != nil {
+				failed.Add(1)
 				updateProgress()
-				return
+				return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}
 			}
+		}
 
-			results[idx] = result
-			atomic.AddInt64(&completed, 1)
+		// 2. OCR Execution: Calls the provider's OCR function.
+		result, err := ocrFunc(ctx, *item.Input)
 
-			// Mark original as completed only when we have a successful result
-			mu.Lock()
-			originalCompleted[currentItem.originalIndex] = true
-			mu.Unlock()
-
+		// 3. Result Wrapping & Progress Update
+		if err != nil {
+			processingErr := fmt.Errorf("error processing '%s' with %s (took %v): %w",
+				item.Input.Filename, providerName, time.Since(itemStart), err)
+			failed.Add(1)
 			updateProgress()
-		}(i, item)
+			return &BatchResult{Item: item, Error: processingErr}
+		}
+
+		completed.Add(1)
+		updateProgress()
+		return &BatchResult{Item: item, Result: result}
+
+	}, concurrency)
+
+	resultsChan := make(chan any, totalItems)
+	sink := ext.NewChanSink(resultsChan)
+
+	// --- Run Pipeline ---
+	source.Via(ocrFlow).To(sink)
+
+	// --- Collect Results & Errors ---
+	finalResults := make([]*BatchResult, 0, totalItems)
+	var allErrors []error
+	for resAny := range resultsChan {
+		if res, ok := resAny.(*BatchResult); ok {
+			finalResults = append(finalResults, res)
+			if res.Error != nil {
+				allErrors = append(allErrors, res.Error)
+			}
+		}
 	}
 
-	wg.Wait()
+	totalDuration := time.Since(startTime)
+	// Clear spinner and print final status
+	utils.Spinner.Stop()
+	fmt.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed.Load(), failed.Load())
 
 	var aggregatedError error
-	if len(errs) > 0 {
-		aggregatedError = errors.New(utils.FormatErrors(errs))
-	}
-
-	return results, aggregatedError
-}
-
-func ProcessBatchWithPDFFallback(ctx context.Context, provider OCRProvider, singleOcr ocrFunc, inputs []OCRInput, providerName string, limiter *rate.Limiter) ([]*OCRResult, error) {
-	batchSize := defaultImageBatchSize
-
-	originalTotal := len(inputs)
-
-	// 1. Expand inputs and create mapping
-	var expandedItems []expandedItem
-
-	for originalIndex, input := range inputs {
-		if input.Type == InputTypePDF {
-			pdfCapable, ok := provider.(PDFCapable)
-			if !ok || !pdfCapable.SupportsPDF() {
-
-				images, err := pdf.ConvertPDFToImages(input.PDFData, pdf.DefaultOptions())
-				if err != nil {
-					return nil, fmt.Errorf("failed to convert PDF '%s' to images: %w", input.Filename, err)
-				}
-
-				// Add each page as a separate item
-				for pageIndex, img := range images {
-					imageInput := OCRInput{
-						Type:     InputTypeImage,
-						Image:    img,
-						Filename: fmt.Sprintf("%s-page-%d", input.Filename, pageIndex+1),
-					}
-					expandedItems = append(expandedItems, expandedItem{
-						input:         imageInput,
-						originalIndex: originalIndex,
-						pageIndex:     pageIndex,
-					})
-				}
-				continue
-			}
-		}
-
-		expandedItems = append(expandedItems, expandedItem{
-			input:         input,
-			originalIndex: originalIndex,
-			pageIndex:     -1, // Not a PDF page
-		})
-	}
-
-	// 2. Process all expanded items in batches
-	var allResults []*OCRResult
-	var allErrors []error
-
-	for i := 0; i < len(expandedItems); i += batchSize {
-		end := min(i+batchSize, len(expandedItems))
-		batchItems := expandedItems[i:end]
-
-		results, err := processBatchConcurrently(ctx, batchItems, singleOcr, providerName, limiter, originalTotal)
-		allResults = append(allResults, results...)
-		if err != nil {
-			allErrors = append(allErrors, err)
-		}
-	}
-
-	// 3. Stitch results back together
-	finalResults := stitchResults(inputs, allResults, expandedItems)
-
-	var finalError error
 	if len(allErrors) > 0 {
-		finalError = errors.New(utils.FormatErrors(allErrors))
+		aggregatedError = errors.New(utils.FormatErrors(allErrors))
 	}
 
-	return finalResults, finalError
+	return finalResults, aggregatedError
 }
 
-// stitchResults combines results from expanded items back into original structure
-func stitchResults(originalInputs []OCRInput, expandedResults []*OCRResult, expandedItems []expandedItem) []*OCRResult {
-	finalResults := make([]*OCRResult, len(originalInputs))
-
-	// Group results by original index
-	resultGroups := make(map[int][]*OCRResult)
-	pageGroups := make(map[int][]int)
-
-	for i, result := range expandedResults {
-		if result == nil {
-			continue // Skip failed items
+// pipelineItemsToAnyChan converts a slice of PipelineItem pointers to a channel for the go-streams source.
+func pipelineItemsToAnyChan(items []*PipelineItem) chan any {
+	out := make(chan any, len(items))
+	go func() {
+		for _, item := range items {
+			out <- item
 		}
-
-		item := expandedItems[i]
-		originalIndex := item.originalIndex
-
-		if resultGroups[originalIndex] == nil {
-			resultGroups[originalIndex] = make([]*OCRResult, 0)
-			pageGroups[originalIndex] = make([]int, 0)
-		}
-
-		resultGroups[originalIndex] = append(resultGroups[originalIndex], result)
-		pageGroups[originalIndex] = append(pageGroups[originalIndex], item.pageIndex)
-	}
-
-	// Combine results for each original input
-	for originalIndex, results := range resultGroups {
-		if len(results) == 0 {
-			continue
-		}
-
-		// For single results (non-PDF or direct PDF processing)
-		if len(results) == 1 {
-			finalResults[originalIndex] = results[0]
-			continue
-		}
-
-		// For multiple results (expanded PDF) stitch them together
-		var textParts []string
-		var combinedImages OCRImage
-		var combinedMetadata map[string]string
-
-		pageIndices := pageGroups[originalIndex]
-		sortedResults := make([]*OCRResult, len(results))
-
-		for i, pageIndex := range pageIndices {
-			if pageIndex >= 0 && pageIndex < len(results) {
-				sortedResults[pageIndex] = results[i]
-			}
-		}
-
-		// Handle unsorted results (fallback)
-		sortedIndex := 0
-		for i, result := range sortedResults {
-			if result == nil && sortedIndex < len(results) {
-				sortedResults[i] = results[sortedIndex]
-				sortedIndex++
-			}
-		}
-
-		// Combine all text and metadata
-		for _, result := range sortedResults {
-			if result == nil {
-				continue
-			}
-
-			textParts = append(textParts, result.Text)
-
-			// Combine images
-			if len(result.Images.MistralImages) > 0 {
-				combinedImages.MistralImages = append(combinedImages.MistralImages, result.Images.MistralImages...)
-			}
-
-			// Use metadata from first successful result
-			if combinedMetadata == nil {
-				combinedMetadata = result.Metadata
-			}
-		}
-
-		finalResults[originalIndex] = &OCRResult{
-			Text:     strings.Join(textParts, "\n\n"), // <-- Add new lines for Page breaks
-			Images:   combinedImages,
-			Metadata: combinedMetadata,
-		}
-	}
-
-	return finalResults
+		close(out)
+	}()
+	return out
 }

@@ -36,10 +36,6 @@ func (p *TesseractProvider) HOCRImage(ctx context.Context, input OCRInput) (*OCR
 	return nil, nil
 }
 
-func (p *TesseractProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, p, p.OCR, images, "tesseract", nil)
-}
-
 type TesseractClient struct{}
 
 func (c *TesseractClient) OCRImageCmd(ctx context.Context, image image.Image, lang string) (*OCRResult, error) {

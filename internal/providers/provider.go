@@ -33,10 +33,17 @@ type OCRImage struct {
 	MistralImages []MistralOcrImage
 }
 
-// Core OCR interface
+// PipelineItem tracks an item through the processing pipeline.
+// It maps expanded items (like PDF pages) back to their original source file.
+type PipelineItem struct {
+	Input         *OCRInput
+	OriginalIndex int
+	PageIndex     int // -1 for non-PDF pages or single-page docs
+}
+
+// Core OCR interface (simplified)
 type OCRProvider interface {
 	OCR(ctx context.Context, input OCRInput) (*OCRResult, error)
-	OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error)
 }
 
 // Capability interfaces
@@ -58,9 +65,10 @@ type Config struct {
 	// OCR output options
 	EnableMarkdown bool `yaml:"markdown"`
 
-	// Rate limiting
-	RateLimitRPS   float64 `yaml:"rps"`   // requests per second
-	RateLimitBurst int     `yaml:"burst"` // burst size
+	// Concurrency and Rate limiting
+	Concurrency    int     `yaml:"concurrency"` // Worker pool size
+	RateLimitRPS   float64 `yaml:"rps"`         // requests per second
+	RateLimitBurst int     `yaml:"burst"`       // burst size
 
 	// Provider-specific settings
 	SupportsPDF bool `yaml:"supports_pdf"`

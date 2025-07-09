@@ -117,10 +117,6 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	return result, nil
 }
 
-func (o *OllamaProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, images, "ollama", nil)
-}
-
 func (o *OllamaProvider) SupportsPDF() bool {
 	return false
 }

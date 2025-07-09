@@ -141,10 +141,6 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	}, nil
 }
 
-func (p *DoclingProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, p, p.OCR, images, "docling", nil)
-}
-
 func (p *DoclingProvider) waitForTask(ctx context.Context, taskID string) (*DoclingConvertDocumentResponse, error) {
 	pollCtx, cancel := context.WithTimeout(ctx, defaultOverallPollTimeout)
 	defer cancel()

@@ -97,11 +97,21 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 			"RawJSON2": chatCompletion.Usage.PromptTokensDetails.RawJSON(),
 		},
 	}, nil
-
 }
 
+// OCRBatch is now handled by the pipeline - this is kept for interface compatibility
 func (o *OpenAIProvider) OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, o, o.OCR, inputs, "openai", nil)
+	// This should not be called anymore - OCR is now handled in the pipeline
+	// But kept for interface compatibility
+	results := make([]*OCRResult, len(inputs))
+	for i, input := range inputs {
+		result, err := o.OCR(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
 }
 
 func (o *OpenAIProvider) SupportsPDF() bool {
@@ -170,5 +180,4 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 	default:
 		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
 	}
-
 }

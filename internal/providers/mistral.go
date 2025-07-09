@@ -135,10 +135,6 @@ func (m *MistralProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	return MistralToOCRResult(&respData)
 }
 
-func (m *MistralProvider) OCRBatch(ctx context.Context, images []OCRInput) ([]*OCRResult, error) {
-	return ProcessBatchWithPDFFallback(ctx, m, m.OCR, images, "mistral", nil)
-}
-
 func (m *MistralProvider) SupportsPDF() bool {
 	return true
 }

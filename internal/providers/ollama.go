@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	cf "github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
 // OllamaProvider implements the Provider Interface
@@ -54,7 +55,7 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 }
 
 func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
-	imgBase64, err := imageToBase64(input.Image)
+	imgBase64, err := imageio.ImageToBase64(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert image to base64: %w", err)
 	}

@@ -1,12 +1,9 @@
 package providers
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"image"
-	"image/jpeg"
 )
 
 type InputType int
@@ -98,24 +95,4 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	return provider(config)
-}
-
-func imageToBase64(img image.Image) (string, error) {
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, nil); err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
-}
-
-func bytesToBase64(bytes []byte) (string, error) {
-	return base64.StdEncoding.EncodeToString(bytes), nil
-}
-
-func imageToBytes(img image.Image) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, nil); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }

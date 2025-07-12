@@ -13,6 +13,7 @@ import (
 	"time"
 
 	cf "github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
 const (
@@ -100,7 +101,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 		ocrEngine = p.Config.VisionLLMModel
 	}
 
-	imageBytes, err := imageToBytes(input.Image)
+	imageBytes, err := imageio.ImageToBytes(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
 	}

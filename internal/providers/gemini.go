@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	cf "github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 	"google.golang.org/genai"
 )
 
@@ -39,7 +40,7 @@ func NewGeminiProvider(config Config) (OCRProvider, error) {
 
 func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
-	bytes, err := imageToBytes(input.Image)
+	bytes, err := imageio.ImageToBytes(input.Image)
 	if err != nil {
 		return nil, fmt.Errorf("while converting img to base64 : %w", err)
 	}

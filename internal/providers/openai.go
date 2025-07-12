@@ -7,6 +7,7 @@ import (
 
 	cf "github.com/Achno/gowall/config"
 
+	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -195,7 +196,7 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 
 	switch input.Type {
 	case InputTypeImage:
-		base64, err := imageToBase64(input.Image)
+		base64, err := imageio.ImageToBase64(input.Image)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +204,7 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 	case InputTypePDF:
 		// If the provider supports PDF's directly, just send the pdf
 		if o.SupportsPDF() {
-			base64, err := bytesToBase64(input.PDFData)
+			base64, err := imageio.BytesToBase64(input.PDFData)
 			if err != nil {
 				return nil, err
 			}

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	cf "github.com/Achno/gowall/config"
+	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
 const (
@@ -148,7 +149,7 @@ func (m *MistralProvider) InputToMessages(input OCRInput) (MistralOcrResquest, e
 
 	switch input.Type {
 	case InputTypeImage:
-		base64Image, err := imageToBase64(input.Image)
+		base64Image, err := imageio.ImageToBase64(input.Image)
 		if err != nil {
 			return MistralOcrResquest{}, err
 		}
@@ -159,7 +160,7 @@ func (m *MistralProvider) InputToMessages(input OCRInput) (MistralOcrResquest, e
 		}, nil
 	case InputTypePDF:
 		if m.SupportsPDF() {
-			base64PDF, err := bytesToBase64(input.PDFData)
+			base64PDF, err := imageio.BytesToBase64(input.PDFData)
 			if err != nil {
 				return MistralOcrResquest{}, err
 			}

@@ -11,7 +11,6 @@ import (
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/providers"
-	rLimit "github.com/Achno/gowall/internal/providers"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -125,54 +124,13 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	n, err := providers.NewOCRProvider(cfg)
 	utils.HandleError(err, "Error")
 
-	n = rLimit.WithRateLimit(n, 0, 12)
+	n = providers.WithRateLimit(n, 0, 12)
 
-	// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Documents/WEB_EX.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
-	// imagePaths := []string{"/home/achno/Documents/1_Proodos_2025.pdf", "/home/achno/Pictures/2024-07-19_23-17.png"}
-	// imagePaths := args
-
-	// load the images from the imagePaths
 	utils.Spinner.Start()
-	utils.Spinner.Message("uploading data")
+	utils.Spinner.Message("Starting OCR...")
 
-	err = providers.ProcessOCR(ops, n)
+	err = providers.StartOCRPipeline(ops, n)
 	utils.HandleError(err, "Error")
-	// imgs := []providers.OCRInput{}
-	// for _, path := range imagePaths {
-
-	// 	// check if the path has a .pdf or .png or .jpg or .jpeg .webp
-	// 	ext := strings.ToLower(filepath.Ext(path))
-	// 	if ext == ".pdf" {
-	// 		pdf, err := imageio.LoadFileBytes(imageio.FileReader{Path: path})
-	// 		utils.HandleError(err)
-	// 		imgs = append(imgs, providers.OCRInput{
-	// 			Type:     providers.InputTypePDF,
-	// 			PDFData:  pdf,
-	// 			Filename: path,
-	// 		})
-	// 	} else if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" {
-	// 		img, err := imageio.LoadImage(imageio.FileReader{Path: path})
-	// 		utils.HandleError(err)
-	// 		imgs = append(imgs, providers.OCRInput{
-	// 			Type:     providers.InputTypeImage,
-	// 			Image:    img,
-	// 			Filename: path,
-	// 		})
-	// 	}
-	// }
-	// // can you pass the names of the images in the context?
-	// // res, err := n.OCRBatchImages(context.Background(), imgs)
-	// // res, err := n.OCR(context.Background(), imgs[0])
-	// res, err := n.OCRBatch(context.Background(), imgs)
-	// utils.HandleError(err)
-	// utils.Spinner.Stop()
-
-	// // fmt.Println(res.Text)
-
-	// for _, item := range res {
-	// 	fmt.Println(item.Text)
-	// 	fmt.Println("###################")
-	// }
 }
 
 func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
@@ -260,7 +218,8 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 	}
 
 	//TODO remove this later when you find a centralized prompt
-	cfg.VisionLLMPrompt = "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated"
+	// cfg.VisionLLMPrompt = "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated"
+	cfg.VisionLLMPrompt = "Extract all visible text from this image and format the output as markdown. Follow these rules: 1) Include only the text content with no explanations. 3) If text appears to be a continuation of content (not starting a new major topic), use the sub-heading ##. 4) Preserve the exact text content. 5) If the image is empty, return an empty string."
 
 	return cfg, nil
 }

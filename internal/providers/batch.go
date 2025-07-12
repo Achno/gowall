@@ -8,34 +8,28 @@ import (
 	"time"
 
 	"github.com/Achno/gowall/utils"
-	ext "github.com/reugn/go-streams/extension"
-	"github.com/reugn/go-streams/flow"
+	"github.com/synoptiq/go-fluxus"
 	"golang.org/x/time/rate"
 )
 
 const defaultConcurrency = 10
 
-// ocrFunc is a function type that matches the signature of a single OCR operation.
+// ocrFunc is a function type that matches the signature of the OCR function of the provider.
 type ocrFunc func(ctx context.Context, input OCRInput) (*OCRResult, error)
 
 // BatchResult holds the processed result and its corresponding input item,
-// which is crucial for stitching results back together (e.g., PDF pages).
+// used for stitching results back together in case of PDF files.
 type BatchResult struct {
 	Item   *PipelineItem
 	Result *OCRResult
 	Error  error
 }
 
-// ProcessBatch processes a collection of pipeline items concurrently using a go-streams pipeline.
-// It offers high throughput via a worker pool and supports rate limiting.
-func ProcessBatch(
-	ctx context.Context,
-	items []*PipelineItem, // Input items, potentially expanded from original files.
-	ocrFunc ocrFunc, // The function to execute for each item, e.g., provider.OCR
-	providerName string,
-	limiter *rate.Limiter,
-	concurrency int,
-) ([]*BatchResult, error) {
+// ProcessBatch processes a collection of pipeline items concurrently using a go-fluxus pipeline,has progress tracking built in.
+// 'concurrency' arg controls the throughput of the worker pool
+// 'limiter' arg is used to rate limit the OCR calls
+// 'ocrFunc' arg is a given function to execute for each item
+func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, limiter *rate.Limiter, concurrency int) ([]*BatchResult, error) {
 
 	startTime := time.Now()
 	totalItems := len(items)
@@ -47,82 +41,84 @@ func ProcessBatch(
 		concurrency = defaultConcurrency
 	}
 
-	fmt.Printf(
-		"Starting batch OCR for %d items using provider '%s' with %d workers.\n",
-		totalItems, providerName, concurrency,
-	)
-
 	// --- Progress Tracking ---
 	var completed, failed atomic.Int64
-	updateProgress := func() {
-		c := completed.Load()
-		f := failed.Load()
-		processing := int64(totalItems) - c - f
 
-		utils.Spinner.Message(fmt.Sprintf(
-			"[%s] OCR Progress: %d computing, %d completed, %d failed (Total Items: %d)",
-			providerName, processing, c, f, totalItems,
-		))
-	}
-	updateProgress()
+	// Start a ticker for periodic progress updates
+	progressTicker := time.NewTicker(500 * time.Millisecond)
+	defer progressTicker.Stop()
 
-	// --- Pipeline Setup ---
-	source := ext.NewChanSource(pipelineItemsToAnyChan(items))
+	progressCtx, progressCancel := context.WithCancel(ctx)
+	defer progressCancel()
 
-	// The ocrFlow is a map operation that acts as our worker pool.
-	ocrFlow := flow.NewMap(func(itemAny any) any {
-		item := itemAny.(*PipelineItem)
-		itemStart := time.Now()
+	go func() {
+		for {
+			select {
+			case <-progressCtx.Done():
+				return
+			case <-progressTicker.C:
+				c := completed.Load()
+				f := failed.Load()
+				processing := int64(totalItems) - c - f
 
-		// 1. Rate Limiting: Blocks until the limiter allows proceeding.
-		if limiter != nil {
-			if err := limiter.Wait(ctx); err != nil {
-				failed.Add(1)
-				updateProgress()
-				return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}
+				utils.Spinner.Message(fmt.Sprintf("OCR Progress: %d computing, %d completed, %d failed (Total Items: %d)", processing, c, f, totalItems))
 			}
 		}
+	}()
 
-		// 2. OCR Execution: Calls the provider's OCR function.
-		result, err := ocrFunc(ctx, *item.Input)
+	// --- Create OCR Processing Stage ---
+	// ocrStage := fluxus.StageFunc[*PipelineItem, *BatchResult](func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
+	// 	itemStart := time.Now()
 
-		// 3. Result Wrapping & Progress Update
-		if err != nil {
-			processingErr := fmt.Errorf("error processing '%s' with %s (took %v): %w",
-				item.Input.Filename, providerName, time.Since(itemStart), err)
-			failed.Add(1)
-			updateProgress()
-			return &BatchResult{Item: item, Error: processingErr}
-		}
+	// 	// 1. Rate Limit each call
+	// 	if limiter != nil {
+	// 		if err := limiter.Wait(ctx); err != nil {
+	// 			failed.Add(1)
+	// 			return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}, nil
+	// 		}
+	// 	}
 
-		completed.Add(1)
-		updateProgress()
-		return &BatchResult{Item: item, Result: result}
+	// 	// 2. Call the OCR function of the provider & update progress
+	// 	result, err := ocrFunc(ctx, *item.Input)
+	// 	if err != nil {
+	// 		processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
+	// 		failed.Add(1)
+	// 		return &BatchResult{Item: item, Error: processingErr}, nil
+	// 	}
 
-	}, concurrency)
+	// 	completed.Add(1)
+	// 	return &BatchResult{Item: item, Result: result}, nil
+	// })
 
-	resultsChan := make(chan any, totalItems)
-	sink := ext.NewChanSink(resultsChan)
+	ocrStage := NewSingleInputOCRStage(ocrFunc, limiter, &failed, &completed)
 
-	// --- Run Pipeline ---
-	source.Via(ocrFlow).To(sink)
+	// --- Create Map Stage for Concurrent Processing ---
+	ocrMap := fluxus.NewMap(ocrStage).
+		WithConcurrency(concurrency).
+		WithCollectErrors(true) // Collect all errors instead of stopping at first error
 
-	// --- Collect Results & Errors ---
-	finalResults := make([]*BatchResult, 0, totalItems)
-	var allErrors []error
-	for resAny := range resultsChan {
-		if res, ok := resAny.(*BatchResult); ok {
-			finalResults = append(finalResults, res)
-			if res.Error != nil {
-				allErrors = append(allErrors, res.Error)
-			}
-		}
+	pipeline := fluxus.NewPipeline(ocrMap)
+
+	finalResults, err := pipeline.Process(ctx, items)
+
+	// Stop progress updates
+	progressCancel()
+
+	if err != nil {
+		return nil, fmt.Errorf("pipeline execution failed: %w", err)
 	}
 
 	totalDuration := time.Since(startTime)
-	// Clear spinner and print final status
 	utils.Spinner.Stop()
 	fmt.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed.Load(), failed.Load())
+
+	// Collect errors from results
+	var allErrors []error
+	for _, res := range finalResults {
+		if res.Error != nil {
+			allErrors = append(allErrors, res.Error)
+		}
+	}
 
 	var aggregatedError error
 	if len(allErrors) > 0 {
@@ -132,14 +128,27 @@ func ProcessBatch(
 	return finalResults, aggregatedError
 }
 
-// pipelineItemsToAnyChan converts a slice of PipelineItem pointers to a channel for the go-streams source.
-func pipelineItemsToAnyChan(items []*PipelineItem) chan any {
-	out := make(chan any, len(items))
-	go func() {
-		for _, item := range items {
-			out <- item
+func NewSingleInputOCRStage(ocrFunc ocrFunc, limiter *rate.Limiter, failed *atomic.Int64, completed *atomic.Int64) fluxus.StageFunc[*PipelineItem, *BatchResult] {
+	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
+		itemStart := time.Now()
+
+		// 1. Rate Limit each call
+		if limiter != nil {
+			if err := limiter.Wait(ctx); err != nil {
+				failed.Add(1)
+				return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}, nil
+			}
 		}
-		close(out)
-	}()
-	return out
+
+		// 2. Call the OCR function of the provider & update progress
+		result, err := ocrFunc(ctx, *item.Input)
+		if err != nil {
+			processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
+			failed.Add(1)
+			return &BatchResult{Item: item, Error: processingErr}, nil
+		}
+
+		completed.Add(1)
+		return &BatchResult{Item: item, Result: result}, nil
+	}
 }

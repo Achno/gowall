@@ -149,6 +149,10 @@ func directoryIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]Imag
 	var operations []ImageIO
 	dir := config.GowallConfig.OutputFolder
 
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
+
 	// --output - multiple files
 	if flags.OutputDestination != "" {
 		dir = filepath.Join(flags.OutputDestination)
@@ -175,6 +179,10 @@ func directoryIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]Imag
 func batchIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) []ImageIO {
 	var operations []ImageIO
 	dir := config.GowallConfig.OutputFolder
+
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
 
 	// --output - multiple files
 	if flags.OutputDestination != "" {
@@ -220,7 +228,7 @@ func determineInput(args []string) ImageReader {
 	return FileReader{Path: f[0]}
 }
 
-// determineOutput resolves the output destination and format
+// determineOutput resolves the output destination and format for SingleIO
 func determineOutput(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (ImageWriter, string, error) {
 	// Check if output should be stdout
 	if IsStdoutOutput(flags, args) {
@@ -247,6 +255,11 @@ func determineOutput(flags config.GlobalSubCommandFlags, args []string, input Im
 // resolveOutputPath determines the final output path based on flags and args
 func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (string, error) {
 	dir := config.GowallConfig.OutputFolder
+
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
+
 	name, err := generateFileName(flags, args, input, cmd)
 	if err != nil {
 		return "", err

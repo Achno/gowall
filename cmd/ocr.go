@@ -219,7 +219,7 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 
 	//TODO remove this later when you find a centralized prompt
 	// cfg.VisionLLMPrompt = "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated"
-	cfg.VisionLLMPrompt = "Extract all visible text from this image and format the output as markdown. Follow these rules: 1) Include only the text content with no explanations. 3) If text appears to be a continuation of content (not starting a new major topic), use the sub-heading ##. 4) Preserve the exact text content. 5) If the image is empty, return an empty string."
+	cfg.VisionLLMPrompt = "Extract all visible text from this image and format the output as markdown. Follow these rules: 1) Include only the text content with no explanations. 3) If text appears to be a continuation of content (not starting a new major topic), use the sub-heading ##. 4) Preserve the exact text content. Preserve spaces/formatting if it is code. 5) If the image is empty, return an empty string."
 
 	return cfg, nil
 }

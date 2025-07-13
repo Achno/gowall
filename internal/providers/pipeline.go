@@ -11,6 +11,7 @@ import (
 
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/internal/pdf"
 	"github.com/Achno/gowall/utils"
 
@@ -21,7 +22,7 @@ import (
 // StartOCRPipeline orchestrates the OCR workflow. Accepts the an OCR provider and a list of imageIO operations.
 func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	startTime := time.Now()
-	fmt.Printf("Starting OCR processing for %d files.\n", len(ops))
+	logger.Printf("Starting OCR processing for %d files.\n", len(ops))
 
 	// 1. Load files concurrently from imageIO operations : maintain order and mapping
 	originalInputs, inputToOpsMapping, err := buildOCRInputsWithMapping(ops)
@@ -40,13 +41,13 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 
 	// 2. Run Pre-processing Pipeline
 	pipelineStart := time.Now()
-	utils.Spinner.Message("Pre-processing...")
+	utils.Spinner.Message("Pre-processing items...")
 	processedItems, err := runPreprocessingPipeline(initialItems, provider)
 	if err != nil {
 		return fmt.Errorf("pre-processing pipeline failed: %w", err)
 	}
 	pipelineDuration := time.Since(pipelineStart)
-	fmt.Printf("Pre-processing pipeline completed in %v, produced %d items for OCR.\n", pipelineDuration, len(processedItems))
+	logger.Printf("Pre-processing pipeline completed in %v, produced %d items for OCR.\n", pipelineDuration, len(processedItems))
 
 	// 3. Run OCR Batch Processing
 	var limiter *rate.Limiter
@@ -61,28 +62,28 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 
 	// 4. Stitch Results
 	stitchStart := time.Now()
-	fmt.Println("Stitching results...")
+	logger.Printf("Stitching results...")
 	finalResults := stitchPipelineResults(originalInputs, batchResults)
 	stitchDuration := time.Since(stitchStart)
-	fmt.Printf("Result stitching completed in %v.\n", stitchDuration)
+	logger.Printf("Result stitching completed in %v.\n", stitchDuration)
 
 	// 5. Use the mapping to save the results to the correct files
 	for i, item := range finalResults {
 		if opsIndex, exists := inputToOpsMapping[i]; exists {
-			fmt.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
+			logger.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
 			if item != nil {
-				fmt.Println(item.Text)
+				// fmt.Println(item.Text)
 				imageio.SaveText(item.Text, ops[opsIndex].ImageOutput)
-				fmt.Println("Saved to", ops[opsIndex].ImageOutput)
+				logger.Printf("Saved to %s\n", ops[opsIndex].ImageOutput)
 			} else {
-				fmt.Println("Processing failed for this file.")
+				logger.Printf("Processing failed for this file.")
 			}
-			fmt.Println("###################")
+			logger.Printf("###################")
 		}
 	}
 
 	totalDuration := time.Since(startTime)
-	fmt.Printf("\nTotal OCR processing completed in %v.\n", totalDuration)
+	logger.Printf("\nTotal OCR processing completed in %v.\n", totalDuration)
 
 	return nil
 }

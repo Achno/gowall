@@ -71,11 +71,6 @@ func LoadConfig() {
 		return
 	}
 
-	// err = os.MkdirAll(configFolder, 0755)
-	// if err != nil {
-	// 	log.Fatalf("Error: Could not create config directory: %v", err)
-	// }
-
 	defaultDir, err := CreateDirectory()
 	if err != nil {
 		log.Fatalf("Error: Could not create output directories: %v", err)
@@ -84,18 +79,6 @@ func LoadConfig() {
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		return
 	}
-
-	// data, err = os.ReadFile(configPath)
-	// if err != nil {
-	// 	log.Printf("Error reading config file: %v", err)
-	// 	return
-	// }
-
-	// err = yaml.Unmarshal(data, &GowallConfig)
-	// if err != nil {
-	// 	log.Printf("Error unmarshalling config file: %v", err)
-	// 	return
-	// }
 
 	EnvConfig := GetEnvConfig(filepath.Join(configDir, GowallConfig.EnvFilePath))
 	GowallConfig.EnvConfig = EnvConfig

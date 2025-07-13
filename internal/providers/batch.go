@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/synoptiq/go-fluxus"
 	"golang.org/x/time/rate"
@@ -66,30 +67,6 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 		}
 	}()
 
-	// --- Create OCR Processing Stage ---
-	// ocrStage := fluxus.StageFunc[*PipelineItem, *BatchResult](func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
-	// 	itemStart := time.Now()
-
-	// 	// 1. Rate Limit each call
-	// 	if limiter != nil {
-	// 		if err := limiter.Wait(ctx); err != nil {
-	// 			failed.Add(1)
-	// 			return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}, nil
-	// 		}
-	// 	}
-
-	// 	// 2. Call the OCR function of the provider & update progress
-	// 	result, err := ocrFunc(ctx, *item.Input)
-	// 	if err != nil {
-	// 		processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
-	// 		failed.Add(1)
-	// 		return &BatchResult{Item: item, Error: processingErr}, nil
-	// 	}
-
-	// 	completed.Add(1)
-	// 	return &BatchResult{Item: item, Result: result}, nil
-	// })
-
 	ocrStage := NewSingleInputOCRStage(ocrFunc, limiter, &failed, &completed)
 
 	// --- Create Map Stage for Concurrent Processing ---
@@ -101,7 +78,6 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 
 	finalResults, err := pipeline.Process(ctx, items)
 
-	// Stop progress updates
 	progressCancel()
 
 	if err != nil {
@@ -110,7 +86,7 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 
 	totalDuration := time.Since(startTime)
 	utils.Spinner.Stop()
-	fmt.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed.Load(), failed.Load())
+	logger.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed.Load(), failed.Load())
 
 	// Collect errors from results
 	var allErrors []error

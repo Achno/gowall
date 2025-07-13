@@ -94,7 +94,7 @@ func CreateGif(files []imageio.ImageIO, opts ...GifOption) error {
 	if options.outputName == "" {
 		timestamp := time.Now().Format(time.DateTime)
 		fileName = fmt.Sprintf("gif-%s", timestamp)
-		fileName = filepath.Join(config.GowallConfig.OutputFolder, fileName)
+		fileName = filepath.Join(config.GowallConfig.OutputFolder, "gifs", fileName)
 	}
 
 	err = imageio.SaveGif(*newGif, fileName)
@@ -114,10 +114,7 @@ func resizeImage(img image.Image, width, height int) image.Image {
 	heightRatio := float64(height) / float64(srcHeight)
 
 	// Use the smaller ratio to ensure the image fits within the target dimensions
-	ratio := widthRatio
-	if heightRatio < widthRatio {
-		ratio = heightRatio
-	}
+	ratio := min(heightRatio, widthRatio)
 	newWidth := int(float64(srcWidth) * ratio)
 	newHeight := int(float64(srcHeight) * ratio)
 	dstRect := image.Rect(0, 0, newWidth, newHeight)

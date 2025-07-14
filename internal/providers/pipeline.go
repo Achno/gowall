@@ -130,7 +130,9 @@ func NewExpandSinglePdfStage(provider OCRProvider) fluxus.StageFunc[*PipelineIte
 
 		if item.Input.Type == InputTypePDF {
 			if pdfCapable, ok := provider.(PDFCapable); !ok || !pdfCapable.SupportsPDF() {
-				images, err := pdf.ConvertPDFToImages(item.Input.PDFData, pdf.DefaultOptions())
+				cfg := provider.GetConfig()
+
+				images, err := pdf.ConvertPDFToImages(item.Input.PDFData, pdf.ConvertOptions{MaxPages: 0, SkipFirstNPages: 0, DPI: cfg.DPI})
 				if err != nil {
 					return []*PipelineItem{}, fmt.Errorf("expanding PDF stage failed to convert PDF '%s' to images: %w", item.Input.Filename, err)
 				}

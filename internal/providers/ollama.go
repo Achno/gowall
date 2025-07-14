@@ -23,6 +23,7 @@ type OllamaRequest struct {
 	Model    string          `json:"model"`
 	Messages []OllamaMessage `json:"messages"`
 	Stream   bool            `json:"stream"`
+	Options  map[string]any  `json:"options"`
 }
 
 type OllamaMessage struct {
@@ -66,7 +67,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		prompt = o.config.VisionLLMPrompt
 	}
 
-	if o.config.EnableMarkdown {
+	if o.config.Format == "markdown" {
 		prompt += "the output format should be Markdown"
 	}
 
@@ -116,6 +117,10 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	}
 
 	return result, nil
+}
+
+func (o *OllamaProvider) GetConfig() Config {
+	return o.config
 }
 
 func (o *OllamaProvider) SupportsPDF() bool {

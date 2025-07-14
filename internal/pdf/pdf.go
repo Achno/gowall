@@ -14,12 +14,16 @@ type ConvertOptions struct {
 
 	// SkipFirstNPages skips the first N pages
 	SkipFirstNPages int
+
+	// DPI is the resolution of the image
+	DPI float64
 }
 
 func DefaultOptions() ConvertOptions {
 	return ConvertOptions{
 		MaxPages:        0,
 		SkipFirstNPages: 0,
+		DPI:             120.0,
 	}
 }
 
@@ -58,7 +62,7 @@ func ConvertPDFToImages(pdf []byte, opts ConvertOptions) ([]image.Image, error) 
 	images := make([]image.Image, 0, pagesToProcess)
 
 	for i := startPage; i < endPage; i++ {
-		img, err := doc.Image(i)
+		img, err := doc.ImageDPI(i, opts.DPI)
 		if err != nil {
 			return nil, fmt.Errorf("failed to render page %d: %w", i+1, err)
 		}

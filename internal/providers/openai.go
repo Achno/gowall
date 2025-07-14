@@ -101,6 +101,10 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	}, nil
 }
 
+func (o *OpenAIProvider) GetConfig() Config {
+	return o.config
+}
+
 // OCRBatch is now handled by the pipeline - this is kept for interface compatibility
 func (o *OpenAIProvider) OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error) {
 	// This should not be called anymore - OCR is now handled in the pipeline
@@ -158,7 +162,7 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 	}
 
 	// Add output format instructions
-	if o.config.EnableMarkdown {
+	if o.config.Format == "markdown" {
 		prompt += " Format the output in Markdown."
 	}
 

@@ -136,6 +136,10 @@ func (m *MistralProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	return MistralToOCRResult(&respData)
 }
 
+func (m *MistralProvider) GetConfig() Config {
+	return m.config
+}
+
 func (m *MistralProvider) SupportsPDF() bool {
 	return true
 }

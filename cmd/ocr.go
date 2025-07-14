@@ -10,6 +10,7 @@ import (
 
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/pdf"
 	"github.com/Achno/gowall/internal/providers"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
@@ -42,12 +43,20 @@ func BuildOCRCmd() *cobra.Command {
 		uprompt  string
 		language string
 		schema   string
+		dpi      float64
+		rps      float64
+		burst    int
+		format   string
 	)
 	flags.StringVarP(&provider, "provider", "p", "", "Provider to use for OCR")
 	flags.StringVarP(&model, "model", "m", "", "Model to use for OCR")
 	flags.StringVarP(&uprompt, "uprompt", "u", "", "User prompt to use for OCR")
 	flags.StringVarP(&language, "language", "l", "", "Language to use for OCR")
+	flags.Float64VarP(&dpi, "dpi", "d", 120.0, "DPI in pdf->images conversion")
+	flags.Float64VarP(&rps, "rps", "r", 0, "Rate limit : requests per second")
+	flags.IntVarP(&burst, "burst", "b", 5, "Rate limit burst requests")
 	flags.StringVarP(&schema, "schema", "s", "", "The schema name to use for OCR")
+	flags.StringVarP(&format, "format", "f", "", "Output format: 'markdown' or 'text'")
 
 	addGlobalFlags(cmd)
 
@@ -124,7 +133,7 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	n, err := providers.NewOCRProvider(cfg)
 	utils.HandleError(err, "Error")
 
-	n = providers.WithRateLimit(n, 0, 12)
+	n = providers.WithRateLimit(n, cfg.RateLimitRPS, cfg.RateLimitBurst)
 
 	utils.Spinner.Start()
 	utils.Spinner.Message("Starting OCR...")
@@ -133,6 +142,8 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 }
 
+// Loads default config, overrrides with schema file and if  fields are set, keeps the default values for unset fields.
+// Overrides with flags if they are set
 func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 
 	type Schema struct {
@@ -144,7 +155,7 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 		Schemas []Schema `yaml:"schemas"`
 	}
 
-	var cfg providers.Config
+	cfg := setDefaultOCRConfig()
 	flags := cmd.Flags()
 
 	// If schema flag is set, load from schema file
@@ -173,7 +184,34 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 		schemaFound := false
 		for _, schema := range ocrConfig.Schemas {
 			if schema.Name == schemaName {
-				cfg = schema.Config
+				// Merge schema config with default config (schema values override defaults)
+				if schema.Config.VisionLLMProvider != "" {
+					cfg.VisionLLMProvider = schema.Config.VisionLLMProvider
+				}
+				if schema.Config.VisionLLMModel != "" {
+					cfg.VisionLLMModel = schema.Config.VisionLLMModel
+				}
+				if schema.Config.VisionLLMPrompt != "" {
+					cfg.VisionLLMPrompt = schema.Config.VisionLLMPrompt
+				}
+				if schema.Config.Language != "" {
+					cfg.Language = schema.Config.Language
+				}
+				if schema.Config.Format != "" {
+					cfg.Format = schema.Config.Format
+				}
+				if schema.Config.DPI != 0 {
+					cfg.DPI = schema.Config.DPI
+				}
+				if schema.Config.RateLimitRPS != 0 {
+					cfg.RateLimitRPS = schema.Config.RateLimitRPS
+				}
+				if schema.Config.RateLimitBurst != 0 {
+					cfg.RateLimitBurst = schema.Config.RateLimitBurst
+				}
+				if schema.Config.Concurrency != 0 {
+					cfg.Concurrency = schema.Config.Concurrency
+				}
 				schemaFound = true
 				break
 			}
@@ -182,9 +220,6 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 			return providers.Config{}, fmt.Errorf("schema name '%s' not found in config file", schemaName)
 		}
 
-	} else {
-		// If no schema, start with empty config
-		cfg = providers.Config{}
 	}
 
 	// Overwrite the config with the flags if they are set,otherwise keep default values
@@ -216,10 +251,59 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 		}
 		cfg.Language = v
 	}
+	if flags.Changed("dpi") {
+		v, err := flags.GetFloat64("dpi")
+		if err != nil {
+			return providers.Config{}, err
+		}
+		cfg.DPI = v
+	}
+	if flags.Changed("rps") {
+		v, err := flags.GetFloat64("rps")
+		if err != nil {
+			return providers.Config{}, err
+		}
+		cfg.RateLimitRPS = v
+	}
+	if flags.Changed("burst") {
+		v, err := flags.GetInt("burst")
+		if err != nil {
+			return providers.Config{}, err
+		}
+		cfg.RateLimitBurst = v
+	}
+	if flags.Changed("format") {
+		v, err := flags.GetString("format")
+		if err != nil {
+			return providers.Config{}, err
+		}
+		cfg.Format = v
+	}
 
-	//TODO remove this later when you find a centralized prompt
-	// cfg.VisionLLMPrompt = "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated"
-	cfg.VisionLLMPrompt = "Extract all visible text from this image and format the output as markdown. Follow these rules: 1) Include only the text content with no explanations. 3) If text appears to be a continuation of content (not starting a new major topic), use the sub-heading ##. 4) Preserve the exact text content. Preserve spaces/formatting if it is code. 5) If the image is empty, return an empty string."
+	// Print all config fields
+	// fmt.Println("=== OCR Config ===")
+	// fmt.Printf("VisionLLMProvider: %s\n", cfg.VisionLLMProvider)
+	// fmt.Printf("VisionLLMModel: %s\n", cfg.VisionLLMModel)
+	// fmt.Printf("VisionLLMPrompt: %s\n", cfg.VisionLLMPrompt)
+	// fmt.Printf("Language: %s\n", cfg.Language)
+	// fmt.Printf("DPI: %f\n", cfg.DPI)
+	// fmt.Printf("RateLimitRPS: %f\n", cfg.RateLimitRPS)
+	// fmt.Printf("RateLimitBurst: %d\n", cfg.RateLimitBurst)
+	// fmt.Printf("Concurrency: %d\n", cfg.Concurrency)
+	// fmt.Printf("Format: %s\n", cfg.Format)
+	// fmt.Println("==================")
 
 	return cfg, nil
+}
+
+func setDefaultOCRConfig() providers.Config {
+	pdfOpts := pdf.DefaultOptions()
+	return providers.Config{
+		DPI:             pdfOpts.DPI,
+		RateLimitRPS:    0,
+		RateLimitBurst:  12,
+		Concurrency:     10,
+		Format:          "markdown",
+		VisionLLMPrompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+	}
 }

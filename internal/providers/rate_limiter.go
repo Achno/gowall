@@ -31,6 +31,10 @@ func (r *RateLimitedProvider) OCR(ctx context.Context, input OCRInput) (*OCRResu
 	return r.provider.OCR(ctx, input)
 }
 
+func (r *RateLimitedProvider) GetConfig() Config {
+	return r.provider.GetConfig()
+}
+
 // Implements "PDFCapable" interface and return the result of the wrapped provider otherwise false
 func (r *RateLimitedProvider) SupportsPDF() bool {
 	if pdfCapable, ok := r.provider.(PDFCapable); ok {

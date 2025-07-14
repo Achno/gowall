@@ -74,3 +74,7 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		},
 	}, nil
 }
+
+func (g *GeminiProvider) GetConfig() Config {
+	return g.config
+}

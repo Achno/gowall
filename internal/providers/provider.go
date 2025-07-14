@@ -41,6 +41,7 @@ type PipelineItem struct {
 // Core OCR interface (simplified)
 type OCRProvider interface {
 	OCR(ctx context.Context, input OCRInput) (*OCRResult, error)
+	GetConfig() Config
 }
 
 // Capability interfaces
@@ -57,10 +58,10 @@ type Config struct {
 	VisionLLMProvider string `yaml:"provider"` // "openai", "openrouter", "mistral", "vllm" ...
 	VisionLLMModel    string `yaml:"model"`
 	VisionLLMPrompt   string `yaml:"prompt"`
-	Language          string `yaml:"language"` // depends on the provider
+	Language          string `yaml:"language"` // depends on provider,llms don't need it, docling & tesseract do
 
 	// OCR output options
-	EnableMarkdown bool `yaml:"markdown"`
+	Format string `yaml:"format"`
 
 	// Concurrency and Rate limiting
 	Concurrency    int     `yaml:"concurrency"` // Worker pool size
@@ -68,7 +69,8 @@ type Config struct {
 	RateLimitBurst int     `yaml:"burst"`       // burst size
 
 	// Provider-specific settings
-	SupportsPDF bool `yaml:"supports_pdf"`
+	DPI         float64 `yaml:"dpi"` // DPI affects the image resolution in pdf->images conversion
+	SupportsPDF bool    `yaml:"supports_pdf"`
 	Settings    map[string]any
 }
 

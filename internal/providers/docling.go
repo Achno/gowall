@@ -113,7 +113,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 		"do_ocr":       "true",
 	}
 	filename := "image.jpg"
-	if p.Config.EnableMarkdown {
+	if p.Config.Format == "markdown" {
 		filename = "image.md"
 	}
 
@@ -140,6 +140,10 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 			"DoclingStatus":    result.Status,
 		},
 	}, nil
+}
+
+func (p *DoclingProvider) GetConfig() Config {
+	return p.Config
 }
 
 func (p *DoclingProvider) waitForTask(ctx context.Context, taskID string) (*DoclingConvertDocumentResponse, error) {

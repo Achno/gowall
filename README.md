@@ -119,6 +119,14 @@ sudo dnf copr enable achno/gowall
 sudo dnf install gowall
 ```
 
+### X-CMD
+
+If you're an [x-cmd](https://x-cmd.com/install/gowall) user, you can install it with the following command:
+
+```sh
+x install gowall
+```
+
 ### NixOS - ( Maintainer : [Emily Trau](https://github.com/emilytrau))
 
 ```yaml

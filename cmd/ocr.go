@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"maps"
+
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/pdf"
@@ -213,6 +215,12 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.Concurrency != 0 {
 					cfg.Concurrency = schema.Config.Concurrency
 				}
+				if len(schema.Config.ProviderOptions) > 0 {
+					if cfg.ProviderOptions == nil {
+						cfg.ProviderOptions = make(map[string]string)
+					}
+					maps.Copy(cfg.ProviderOptions, schema.Config.ProviderOptions)
+				}
 				schemaFound = true
 				break
 			}
@@ -282,17 +290,18 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 	}
 
 	// Print all config fields
-	// fmt.Println("=== OCR Config ===")
-	// fmt.Printf("VisionLLMProvider: %s\n", cfg.VisionLLMProvider)
-	// fmt.Printf("VisionLLMModel: %s\n", cfg.VisionLLMModel)
-	// fmt.Printf("VisionLLMPrompt: %s\n", cfg.VisionLLMPrompt)
-	// fmt.Printf("Language: %s\n", cfg.Language)
-	// fmt.Printf("DPI: %f\n", cfg.DPI)
-	// fmt.Printf("RateLimitRPS: %f\n", cfg.RateLimitRPS)
-	// fmt.Printf("RateLimitBurst: %d\n", cfg.RateLimitBurst)
-	// fmt.Printf("Concurrency: %d\n", cfg.Concurrency)
-	// fmt.Printf("Format: %s\n", cfg.Format)
-	// fmt.Println("==================")
+	fmt.Println("=== OCR Config ===")
+	fmt.Printf("VisionLLMProvider: %s\n", cfg.VisionLLMProvider)
+	fmt.Printf("VisionLLMModel: %s\n", cfg.VisionLLMModel)
+	fmt.Printf("VisionLLMPrompt: %s\n", cfg.VisionLLMPrompt)
+	fmt.Printf("Language: %s\n", cfg.Language)
+	fmt.Printf("DPI: %f\n", cfg.DPI)
+	fmt.Printf("RateLimitRPS: %f\n", cfg.RateLimitRPS)
+	fmt.Printf("RateLimitBurst: %d\n", cfg.RateLimitBurst)
+	fmt.Printf("Concurrency: %d\n", cfg.Concurrency)
+	fmt.Printf("Format: %s\n", cfg.Format)
+	fmt.Printf("ProviderOptions: %v\n", cfg.ProviderOptions)
+	fmt.Println("==================")
 
 	return cfg, nil
 }

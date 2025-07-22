@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"maps"
 )
 
 type InputType int
@@ -60,8 +61,7 @@ type Config struct {
 	VisionLLMPrompt   string `yaml:"prompt"`
 	Language          string `yaml:"language"` // depends on provider,llms don't need it, docling & tesseract do
 
-	// OCR output options
-	Format string `yaml:"format"`
+	Format string `yaml:"format"` // "markdown", "text"
 
 	// Concurrency and Rate limiting
 	Concurrency    int     `yaml:"concurrency"` // Worker pool size
@@ -71,7 +71,9 @@ type Config struct {
 	// Provider-specific settings
 	DPI         float64 `yaml:"dpi"` // DPI affects the image resolution in pdf->images conversion
 	SupportsPDF bool    `yaml:"supports_pdf"`
-	Settings    map[string]any
+
+	// Provider-specific options
+	ProviderOptions map[string]string `yaml:"provider_options"`
 }
 
 func NewOCRProvider(config Config) (OCRProvider, error) {
@@ -97,4 +99,19 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	return provider(config)
+}
+
+// mergeConfigOptions merges default options with schema-provided options
+func mergeConfigOptions(defaults map[string]string, config Config) map[string]string {
+	merged := make(map[string]string)
+
+	// Copy defaults
+	maps.Copy(merged, defaults)
+
+	// Override with schema options
+	if config.ProviderOptions != nil {
+		maps.Copy(merged, config.ProviderOptions)
+	}
+
+	return merged
 }

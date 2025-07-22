@@ -72,7 +72,7 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 		if opsIndex, exists := inputToOpsMapping[i]; exists {
 			logger.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
 			if item != nil {
-				fmt.Println(item.Text)
+				// fmt.Println(item.Text)
 				fmt.Printf("Saving to %s\n", ops[opsIndex].ImageOutput.String())
 				imageio.SaveText(item.Text, ops[opsIndex].ImageOutput)
 				logger.Printf("Saved to %s\n", ops[opsIndex].ImageOutput)

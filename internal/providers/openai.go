@@ -105,21 +105,6 @@ func (o *OpenAIProvider) GetConfig() Config {
 	return o.config
 }
 
-// OCRBatch is now handled by the pipeline - this is kept for interface compatibility
-func (o *OpenAIProvider) OCRBatch(ctx context.Context, inputs []OCRInput) ([]*OCRResult, error) {
-	// This should not be called anymore - OCR is now handled in the pipeline
-	// But kept for interface compatibility
-	results := make([]*OCRResult, len(inputs))
-	for i, input := range inputs {
-		result, err := o.OCR(ctx, input)
-		if err != nil {
-			return nil, err
-		}
-		results[i] = result
-	}
-	return results, nil
-}
-
 func (o *OpenAIProvider) SupportsPDF() bool {
 	bMap := map[string]bool{
 		"openai":     false,

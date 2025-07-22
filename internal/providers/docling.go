@@ -9,10 +9,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	cf "github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 )
 
 const (
@@ -24,8 +28,9 @@ const (
 
 // DoclingProvider implements the OCRProvider interface
 type DoclingProvider struct {
-	Client *DoclingClient
-	Config Config
+	Client    *DoclingClient
+	CliClient *DoclingCliClient
+	Config    Config
 }
 
 type DoclingHealthResponse struct {
@@ -54,6 +59,12 @@ type DoclingConvertDocumentResponse struct {
 	Timings        map[string]any          `json:"timings"`
 }
 
+// DoclingCliClient holds the docling CLI information
+type DoclingCliClient struct {
+	Available  bool
+	BinaryPath string
+}
+
 func NewDoclingProvider(config Config) (OCRProvider, error) {
 
 	baseURL := cf.GowallConfig.EnvConfig.DOCLING_BASE_URL
@@ -63,10 +74,18 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 	baseURL = strings.TrimRight(baseURL, "/")
 
 	client := NewDoclingClient(WithDoclingBaseURL(baseURL))
+	cliClient := NewDoclingCliClient()
 
 	provider := &DoclingProvider{
-		Client: client,
-		Config: config,
+		Client:    client,
+		CliClient: cliClient,
+		Config:    config,
+	}
+
+	// Try CLI first, fallback to REST API if not found
+	if cliClient.Available {
+		logger.Printf("Docling CLI found, using CLI instead of REST API")
+		return provider, nil
 	}
 
 	if err := provider.Client.HealthCheck(context.Background()); err != nil {
@@ -78,9 +97,6 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 
 func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 	ocrEngine := defaultDoclingOCREngine
-	if env := os.Getenv("DOCLING_OCR_ENGINE"); env != "" {
-		ocrEngine = env
-	}
 	if p.Config.VisionLLMModel != "" {
 		ocrEngine = p.Config.VisionLLMModel
 	}
@@ -128,7 +144,6 @@ func (p *DoclingProvider) WithImage(ctx context.Context, input OCRInput) (*Docli
 		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
 	}
 
-	// Submit file and get result synchronously
 	options := map[string]string{
 		"to_formats":   "md",
 		"from_formats": "image",
@@ -136,7 +151,6 @@ func (p *DoclingProvider) WithImage(ctx context.Context, input OCRInput) (*Docli
 		"force_ocr":    "true",
 	}
 
-	// Adjust output format based on config
 	if p.Config.Format == "markdown" {
 		options["to_formats"] = "md"
 	} else {
@@ -144,8 +158,16 @@ func (p *DoclingProvider) WithImage(ctx context.Context, input OCRInput) (*Docli
 	}
 
 	filename := "image.jpg"
-	if p.Config.Format == "markdown" {
-		filename = "image.md"
+
+	if p.CliClient.IsAvailable() {
+		// Create temporary output directory because docling CLI doesn't support reading from stdin
+		tempOutputDir, err := os.MkdirTemp("", "docling-output-*")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temp output directory: %w", err)
+		}
+		defer os.RemoveAll(tempOutputDir)
+
+		return p.CliClient.ProcessFile(ctx, imageBytes, filename, options, tempOutputDir)
 	}
 
 	return p.Client.ProcessFile(ctx, imageBytes, filename, options)
@@ -156,7 +178,6 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 		return nil, fmt.Errorf("PDF data is nil")
 	}
 
-	// Submit PDF file and get result synchronously
 	options := map[string]string{
 		"to_formats":   "md",
 		"from_formats": "pdf",
@@ -164,7 +185,6 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 		"force_ocr":    "true",
 	}
 
-	// Adjust output format based on config
 	if p.Config.Format == "markdown" {
 		options["to_formats"] = "md"
 	} else {
@@ -172,6 +192,17 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 	}
 
 	filename := "document.pdf"
+
+	if p.CliClient.IsAvailable() {
+		// Create temporary output directory because docling CLI doesn't support reading from stdin
+		tempOutputDir, err := os.MkdirTemp("", "docling-output-*")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temp output directory: %w", err)
+		}
+		defer os.RemoveAll(tempOutputDir)
+
+		return p.CliClient.ProcessFile(ctx, input.PDFData, filename, options, tempOutputDir)
+	}
 
 	return p.Client.ProcessFile(ctx, input.PDFData, filename, options)
 }
@@ -295,4 +326,155 @@ func (d *DoclingClient) ProcessFile(ctx context.Context, imageBytes []byte, file
 	}
 
 	return &convertResponse, nil
+}
+
+// NewDoclingCliClient creates a new CLI client and checks if docling CLI is available
+func NewDoclingCliClient() *DoclingCliClient {
+	client := &DoclingCliClient{
+		Available: false,
+	}
+
+	// Check if docling CLI is available
+	path, err := exec.LookPath("docling")
+	if err != nil {
+		return client
+	}
+
+	client.BinaryPath = path
+	client.Available = true
+	return client
+}
+
+// IsAvailable returns whether the  docling CLI is available
+func (c *DoclingCliClient) IsAvailable() bool {
+	return c.Available
+}
+
+// optionsToCliArgs maps the docling REST API options to the docling CLI flags
+func (c *DoclingCliClient) optionsToCliArgs(options map[string]string) []string {
+	var args []string
+
+	for key, value := range options {
+		switch key {
+		case "to_formats":
+			if value != "" {
+				args = append(args, "--to", value)
+			}
+		case "from_formats":
+			if value != "" {
+				args = append(args, "--from", value)
+			}
+		case "do_ocr":
+			if value == "true" {
+				args = append(args, "--ocr")
+			} else {
+				args = append(args, "--no-ocr")
+			}
+		case "force_ocr":
+			if value == "true" {
+				args = append(args, "--force-ocr")
+			} else {
+				args = append(args, "--no-force-ocr")
+			}
+		case "ocr_engine":
+			if value != "" {
+				args = append(args, "--ocr-engine", value)
+			}
+		case "pipeline":
+			if value != "" {
+				args = append(args, "--pipeline", value)
+			}
+		case "vlm_model":
+			if value != "" {
+				args = append(args, "--vlm-model", value)
+			}
+		case "image_export_mode":
+			if value != "" {
+				args = append(args, "--image-export-mode", value)
+			}
+		}
+	}
+
+	return args
+}
+
+// ProcessFile processes a file using the  docling CLI
+func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, filename string, options map[string]string, outputDir string) (*DoclingConvertDocumentResponse, error) {
+	if !c.Available {
+		return nil, fmt.Errorf("docling CLI is not available")
+	}
+
+	// Create temporary file because docling CLI doesn't support reading from stdin
+	tempDir, err := os.MkdirTemp("", "docling-input-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	tempFile := filepath.Join(tempDir, filename)
+	if err := os.WriteFile(tempFile, fileBytes, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write temp file: %w", err)
+	}
+
+	args := []string{tempFile}
+	args = append(args, c.optionsToCliArgs(options)...)
+	args = append(args, "--output", outputDir)
+
+	cmd := exec.CommandContext(ctx, c.BinaryPath, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				return nil, fmt.Errorf("docling CLI failed with exit code %d: %s", status.ExitStatus(), stderr.String())
+			}
+		}
+		return nil, fmt.Errorf("docling CLI execution failed: %w, stderr: %s", err, stderr.String())
+	}
+
+	outputFormat := options["to_formats"]
+	if outputFormat == "" {
+		outputFormat = "md"
+	}
+
+	var outputFilename string
+	baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
+	switch outputFormat {
+	case "md":
+		outputFilename = baseName + ".md"
+	case "text":
+		outputFilename = baseName + ".txt"
+	default:
+		outputFilename = baseName + ".md"
+	}
+
+	outputPath := filepath.Join(outputDir, outputFilename)
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CLI output file %s: %w", outputPath, err)
+	}
+
+	// Create response compatible with REST API response
+	response := &DoclingConvertDocumentResponse{
+		Document: DoclingDocumentResponse{
+			Filename: filename,
+		},
+		Status: "success",
+	}
+
+	switch outputFormat {
+	case "md":
+		response.Document.MDContent = string(content)
+		response.Document.TextContent = string(content)
+	case "text":
+		response.Document.TextContent = string(content)
+	default:
+		response.Document.MDContent = string(content)
+		response.Document.TextContent = string(content)
+	}
+
+	return response, nil
 }

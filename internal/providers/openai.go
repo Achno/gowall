@@ -47,7 +47,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	apiKey, ok := apiMap[config.VisionLLMProvider]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.VisionLLMProvider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL,OPENAI_API_COMPATIBLE_SERVICE_API_KEY envs", config.VisionLLMProvider)
 	}
 
 	if apiKey == "" {

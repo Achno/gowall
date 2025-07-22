@@ -142,8 +142,9 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 }
 
-// Loads default config, overrrides with schema file and if  fields are set, keeps the default values for unset fields.
-// Overrides with flags if they are set
+// (1) Loads default config
+// (2) Merges the schema file if the schema flag is set and overrides the fields that are set
+// (3) Overwrites the config with the flags if they are set
 func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 
 	type Schema struct {

@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -21,8 +20,8 @@ import (
 
 // StartOCRPipeline orchestrates the OCR workflow. Accepts the an OCR provider and a list of imageIO operations.
 func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
-	startTime := time.Now()
-	logger.Printf("Starting OCR processing for %d files.\n", len(ops))
+	// startTime := time.Now()
+	// logger.Printf("Starting OCR processing for %d files.\n", len(ops))
 
 	// 1. Load files concurrently from imageIO operations : maintain order and mapping
 	originalInputs, inputToOpsMapping, err := buildOCRInputsWithMapping(ops)
@@ -40,14 +39,14 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	}
 
 	// 2. Run Pre-processing Pipeline
-	pipelineStart := time.Now()
+	// pipelineStart := time.Now()
 	utils.Spinner.Message("Pre-processing items...")
 	processedItems, err := runPreprocessingPipeline(initialItems, provider)
 	if err != nil {
 		return fmt.Errorf("pre-processing pipeline failed: %w", err)
 	}
-	pipelineDuration := time.Since(pipelineStart)
-	logger.Printf("Pre-processing pipeline completed in %v, produced %d items for OCR.\n", pipelineDuration, len(processedItems))
+	// pipelineDuration := time.Since(pipelineStart)
+	// logger.Printf("Pre-processing pipeline completed in %v, produced %d items for OCR.\n", pipelineDuration, len(processedItems))
 
 	// 3. Run OCR Batch Processing
 	var limiter *rate.Limiter
@@ -61,11 +60,11 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	}
 
 	// 4. Stitch Results
-	stitchStart := time.Now()
-	logger.Printf("Stitching results...")
+	// stitchStart := time.Now()
+	// logger.Printf("Stitching results...")
 	finalResults := stitchPipelineResults(originalInputs, batchResults)
-	stitchDuration := time.Since(stitchStart)
-	logger.Printf("Result stitching completed in %v.\n", stitchDuration)
+	// stitchDuration := time.Since(stitchStart)
+	// logger.Printf("Result stitching completed in %v.\n", stitchDuration)
 
 	// 5. Use the mapping to save the results to the correct files
 	for i, item := range finalResults {
@@ -83,8 +82,8 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 		}
 	}
 
-	totalDuration := time.Since(startTime)
-	logger.Printf("\nTotal OCR processing completed in %v.\n", totalDuration)
+	// totalDuration := time.Since(startTime)
+	// logger.Printf("\nTotal OCR processing completed in %v.\n", totalDuration)
 
 	return nil
 }

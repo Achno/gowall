@@ -163,40 +163,29 @@ func (c *DoclingCliClient) IsAvailable() bool {
 	return c.Available
 }
 
-// optionsToCliArgs maps the docling REST API options to the docling CLI flags
+// optionsToCliArgs converts options map to CLI arguments generically
 func (c *DoclingCliClient) optionsToCliArgs(options map[string]string) []string {
 	var args []string
 
 	for key, value := range options {
-		switch key {
-		case "do_ocr":
-			if value == "true" {
-				args = append(args, "--ocr")
-			} else {
+		if value == "" {
+			continue // Skip empty values
+		}
+
+		// add -- prefix to the keys and replace any _ with -
+		flagName := "--" + strings.ToLower(strings.ReplaceAll(key, "_", "-"))
+
+		if value == "true" {
+			args = append(args, flagName)
+		} else if value == "false" {
+			if key == "ocr" {
 				args = append(args, "--no-ocr")
 			}
-		case "force_ocr":
-			if value == "true" {
-				args = append(args, "--force-ocr")
-			} else {
+			if key == "force_ocr" {
 				args = append(args, "--no-force-ocr")
 			}
-		case "ocr_engine":
-			if value != "" {
-				args = append(args, "--ocr-engine", value)
-			}
-		case "pipeline":
-			if value != "" {
-				args = append(args, "--pipeline", value)
-			}
-		case "vlm_model":
-			if value != "" {
-				args = append(args, "--vlm-model", value)
-			}
-		case "image_export_mode":
-			if value != "" {
-				args = append(args, "--image-export-mode", value)
-			}
+		} else {
+			args = append(args, flagName, value)
 		}
 	}
 

@@ -9,7 +9,6 @@ import (
 
 	cf "github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
-	"github.com/Achno/gowall/internal/logger"
 )
 
 const (
@@ -78,7 +77,6 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 
 	// Try CLI first, fallback to REST API if not found
 	if cliClient.Available {
-		logger.Printf("Docling CLI found, using CLI instead of REST API")
 		return provider, nil
 	}
 
@@ -90,11 +88,6 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 }
 
 func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
-	ocrEngine := defaultDoclingOCREngine
-	if p.Config.VisionLLMModel != "" {
-		ocrEngine = p.Config.VisionLLMModel
-	}
-
 	var payload *DoclingProcessPayload
 	var err error
 
@@ -147,8 +140,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	return &OCRResult{
 		Text: text,
 		Metadata: map[string]string{
-			"DoclingOCREngine": ocrEngine,
-			"DoclingStatus":    result.Status,
+			"DoclingStatus": result.Status,
 		},
 	}, nil
 }
@@ -159,21 +151,28 @@ func (p *DoclingProvider) WithImage(ctx context.Context, input OCRInput) (*Docli
 		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
 	}
 
-	options := mergeConfigOptions(p.getDefaultOptions(), p.Config)
-
-	// Remove 'from_formats' to let docling auto-detect the input format
-	delete(options, "from_formats")
-
-	if p.Config.Format == "markdown" {
-		options["to_formats"] = "md"
+	// Safely handle nil DoclingOptions
+	var doclingOptions *DoclingOptions
+	if p.Config.DoclingOptions != nil {
+		doclingOptions = p.Config.DoclingOptions
 	} else {
-		options["to_formats"] = "text"
+		doclingOptions = &DoclingOptions{}
+	}
+
+	options, err := doclingOptions.Apply(p.getDefaultDoclingOptions(), p.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply schema options: %w", err)
+	}
+
+	optionsMap, ok := options.(map[string]string)
+	if !ok {
+		return nil, fmt.Errorf("options are not a map[string]string")
 	}
 
 	return &DoclingProcessPayload{
 		FileBytes: imageBytes,
 		Filename:  "image.jpg",
-		Options:   options,
+		Options:   optionsMap,
 	}, nil
 }
 
@@ -182,21 +181,27 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 		return nil, fmt.Errorf("PDF data is nil")
 	}
 
-	options := mergeConfigOptions(p.getDefaultOptions(), p.Config)
-
-	// Remove 'from_formats' to let docling auto-detect the input format
-	delete(options, "from_formats")
-
-	if p.Config.Format == "markdown" {
-		options["to_formats"] = "md"
+	var doclingOptions *DoclingOptions
+	if p.Config.DoclingOptions != nil {
+		doclingOptions = p.Config.DoclingOptions
 	} else {
-		options["to_formats"] = "text"
+		doclingOptions = &DoclingOptions{}
+	}
+
+	options, err := doclingOptions.Apply(p.getDefaultDoclingOptions(), p.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply schema options: %w", err)
+	}
+
+	optionsMap, ok := options.(map[string]string)
+	if !ok {
+		return nil, fmt.Errorf("options are not a map[string]string")
 	}
 
 	return &DoclingProcessPayload{
 		FileBytes: input.PDFData,
 		Filename:  "document.pdf",
-		Options:   options,
+		Options:   optionsMap,
 	}, nil
 }
 
@@ -208,11 +213,11 @@ func (p *DoclingProvider) GetConfig() Config {
 	return p.Config
 }
 
-// getDefaultOptions returns the default Docling options map
-func (p *DoclingProvider) getDefaultOptions() map[string]string {
-	options := map[string]string{
-		"do_ocr":    "true",
-		"force_ocr": "true",
+func (p *DoclingProvider) getDefaultDoclingOptions() *DoclingOptions {
+	// Using pointer to bool for 3 states: non-existent (nil), or a pointer to true/false value
+	trueValue := true
+	return &DoclingOptions{
+		OCR:       &trueValue,
+		Force_OCR: &trueValue,
 	}
-	return options
 }

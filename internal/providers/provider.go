@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"image"
-	"maps"
 )
 
 type InputType int
@@ -54,6 +53,12 @@ type RateLimited interface {
 	SetRateLimit(rps float64, burst int)
 }
 
+// ProviderOptionsInterface allows each provider to define their own options struct
+type ProviderOptionsInterface interface {
+	// Apply merges default options with schema options and returns a config type the provider can use.
+	Apply(defaults any, config Config) (any, error)
+}
+
 // Configuration for providers
 type Config struct {
 	VisionLLMProvider string `yaml:"provider"` // "openai", "openrouter", "mistral", "vllm" ...
@@ -68,12 +73,12 @@ type Config struct {
 	RateLimitRPS   float64 `yaml:"rps"`         // requests per second
 	RateLimitBurst int     `yaml:"burst"`       // burst size
 
-	// Provider-specific settings
+	// Pipeline settings
 	DPI         float64 `yaml:"dpi"` // DPI affects the image resolution in pdf->images conversion
 	SupportsPDF bool    `yaml:"supports_pdf"`
 
 	// Provider-specific options
-	ProviderOptions map[string]string `yaml:"provider_options"`
+	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
 }
 
 func NewOCRProvider(config Config) (OCRProvider, error) {
@@ -99,19 +104,4 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	return provider(config)
-}
-
-// mergeConfigOptions merges default options with schema-provided options
-func mergeConfigOptions(defaults map[string]string, config Config) map[string]string {
-	merged := make(map[string]string)
-
-	// Copy defaults
-	maps.Copy(merged, defaults)
-
-	// Override with schema options
-	if config.ProviderOptions != nil {
-		maps.Copy(merged, config.ProviderOptions)
-	}
-
-	return merged
 }

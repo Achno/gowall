@@ -3,6 +3,7 @@ module github.com/Achno/gowall
 go 1.24.0
 
 require (
+	dario.cat/mergo v1.0.2
 	github.com/HugoSmits86/nativewebp v0.9.3
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/gen2brain/go-fitz v1.24.15

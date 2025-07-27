@@ -1,32 +1,114 @@
 name: Release Workflow
-
 on:
   push:
     tags:
-      - 'v*.*.*' # Trigger workflow on tags that start with 'v'
+      - 'v*.*.*'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  goreleaser:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        os: [windows, darwin, linux]
+        exclude:
+          - arch: arm64
+            os: linux # Remove arm64-linux has issues with gofitz
+      fail-fast: false
+    runs-on: ${{ fromJson('{"windows":"windows-latest","darwin":"macos-latest","linux":"ubuntu-latest"}')[matrix.os] }}
+    env:
+      GOOS: ${{ matrix.os }}
+      GOARCH: ${{ matrix.arch }}
+      ZIG_ARCH: ${{ fromJson('{"arm64":"aarch64","amd64":"x86_64"}')[matrix.arch] }}
+      ZIG_OS: ${{ fromJson('{"linux":"linux-gnu","darwin":"linux-musl","windows":"windows-gnu"}')[matrix.os] }}
+      CGO_ENABLED: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: stable
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+          
+      - name: Set up Zig (only for linux and windows on arm64)
+        if: ${{ matrix.arch == 'arm64' && (matrix.os == 'linux' || matrix.os == 'windows') }}
+        uses: mlugg/setup-zig@v2
         with:
-          distribution: goreleaser
-          version: latest
-          args: release  --clean
+          version: master
+          
+      - name: Build Binary With Zig (for linux or windows on arm64)
+        shell: bash
+        if: ${{ matrix.arch == 'arm64' && (matrix.os == 'linux' || matrix.os == 'windows') }}
+        run: |
+          CC="zig cc -target ${{ env.ZIG_ARCH }}-${{ env.ZIG_OS }}" \
+          go build -ldflags="-s -w" -o gowall${{ matrix.os == 'windows' && '.exe' || '' }}
+          
+      - name: Build Binary Without Zig (for other targets)
+        shell: bash
+        if: ${{ matrix.arch == 'amd64' || (matrix.arch =='arm64' && matrix.os == 'darwin') }}
+        run: |
+          go build -ldflags="-s -w" -o gowall${{ matrix.os == 'windows' && '.exe' || '' }}
+          
+      - name: Create Archive
+        shell: bash
+        run: |
+          # Create directory for the release
+          mkdir -p release
+          
+          # Set the binary name with extension for Windows
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            BINARY_NAME="gowall.exe"
+          else
+            BINARY_NAME="gowall"
+          fi
+          
+          # Create tar.gz archive (tar is available on all GitHub runners)
+          ARCHIVE_NAME="gowall-${{ matrix.arch }}-${{ matrix.os }}.tar.gz"
+          tar -czf "release/${ARCHIVE_NAME}" "${BINARY_NAME}"
+          
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gowall-${{ matrix.arch }}-${{ matrix.os }}
+          path: release/${{ env.ARCHIVE_NAME }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          
+      - name: Upload Release Assets
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find and upload all tar.gz files
+          find ./artifacts -name "*.tar.gz" -type f | while read -r file; do
+            filename=$(basename "$file")
+            echo "Uploading $filename"
+            gh release upload ${{ github.ref_name }} "$file" --clobber
+          done

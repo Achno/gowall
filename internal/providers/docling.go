@@ -88,25 +88,10 @@ func NewDoclingProvider(config Config) (OCRProvider, error) {
 }
 
 func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
-	var payload *DoclingProcessPayload
-	var err error
 
-	switch input.Type {
-	case InputTypeImage:
-		payload, err = p.WithImage(ctx, input)
-		if err != nil {
-			return nil, fmt.Errorf("docling: failed to prepare image: %w", err)
-		}
-	case InputTypePDF:
-		if !p.SupportsPDF() {
-			return nil, fmt.Errorf("docling provider doesn't support PDF processing")
-		}
-		payload, err = p.WithPDF(ctx, input)
-		if err != nil {
-			return nil, fmt.Errorf("docling: failed to prepare PDF: %w", err)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	payload, err := p.InputToMessages(input, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("docling: failed to prepare input: %w", err)
 	}
 
 	// Process the payload using CLI or REST API
@@ -203,6 +188,29 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 		Filename:  "document.pdf",
 		Options:   optionsMap,
 	}, nil
+}
+
+func (p *DoclingProvider) InputToMessages(input OCRInput, ctx context.Context) (*DoclingProcessPayload, error) {
+
+	switch input.Type {
+	case InputTypeImage:
+		payload, err := p.WithImage(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("docling: failed to prepare image: %w", err)
+		}
+		return payload, nil
+	case InputTypePDF:
+		if !p.SupportsPDF() {
+			return nil, fmt.Errorf("docling provider doesn't support PDF processing")
+		}
+		payload, err := p.WithPDF(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("docling: failed to prepare PDF: %w", err)
+		}
+		return payload, nil
+	default:
+		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	}
 }
 
 func (p *DoclingProvider) SupportsPDF() bool {

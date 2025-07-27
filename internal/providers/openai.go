@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	cf "github.com/Achno/gowall/config"
 
@@ -141,47 +140,14 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 
 func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 
-	prompt := "Extract all text from this image."
-	if o.config.VisionLLMPrompt != "" {
-		prompt = o.config.VisionLLMPrompt
-	}
+	prompt := o.config.VisionLLMPrompt
 
-	// Add output format instructions
 	if o.config.Format == "markdown" {
 		prompt += " Format the output in Markdown."
+		prompt = AddPageContextToPrompt(input.Filename, prompt)
 	}
 
-	// Add page context for multi-page documents
-	if strings.Contains(input.Filename, "-page-") {
-		// Extract page info from filename like "document.pdf-page-2-of-5"
-		parts := strings.Split(input.Filename, "-page-")
-		if len(parts) == 2 {
-			pageInfo := parts[1] // "2-of-5" or just "2"
-
-			var pageNum, totalPages string
-			if strings.Contains(pageInfo, "-of-") {
-				pageParts := strings.Split(pageInfo, "-of-")
-				pageNum = pageParts[0]
-				totalPages = pageParts[1]
-			} else {
-				pageNum = pageInfo
-			}
-
-			if pageNum == "1" {
-				if totalPages != "" {
-					prompt += fmt.Sprintf(" This is the FIRST PAGE of a %s-page document. Use top-level headings (# and ##) as appropriate for a document beginning.", totalPages)
-				} else {
-					prompt += " This is the FIRST PAGE of a multi-page document. Use top-level headings (# and ##) as appropriate for a document beginning."
-				}
-			} else {
-				if totalPages != "" {
-					prompt += fmt.Sprintf(" This is PAGE %s of %s total pages (NOT the first page). Assume this document has already started with main headings on previous pages. Use continuation-level headings (## or ###) unless you see clear evidence this page starts a major new section.", pageNum, totalPages)
-				} else {
-					prompt += fmt.Sprintf(" This is PAGE %s of a multi-page document (NOT the first page). Assume this document has already started with main headings on previous pages. Use continuation-level headings (## or ###) unless you see clear evidence this page starts a major new section.", pageNum)
-				}
-			}
-		}
-	}
+	prompt += " Format the output in plain text"
 
 	switch input.Type {
 	case InputTypeImage:

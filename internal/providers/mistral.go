@@ -146,11 +146,6 @@ func (m *MistralProvider) SupportsPDF() bool {
 
 func (m *MistralProvider) InputToMessages(input OCRInput) (MistralOcrResquest, error) {
 
-	model := model
-	if m.config.VisionLLMModel != "" {
-		model = m.config.VisionLLMModel
-	}
-
 	switch input.Type {
 	case InputTypeImage:
 		base64Image, err := imageio.ImageToBase64(input.Image)

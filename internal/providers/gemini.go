@@ -9,10 +9,6 @@ import (
 	"google.golang.org/genai"
 )
 
-const (
-	geminimodel = "gemini-2.0-flash"
-)
-
 type GeminiProvider struct {
 	config Config
 	client *genai.Client
@@ -40,24 +36,9 @@ func NewGeminiProvider(config Config) (OCRProvider, error) {
 
 func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
 
-	bytes, err := imageio.ImageToBytes(input.Image)
+	parts, err := g.InputToMessages(input)
 	if err != nil {
-		return nil, fmt.Errorf("while converting img to base64 : %w", err)
-	}
-
-	prompt := "Extract all text from this image. Return only the extracted text without any additional descriptions or explanations"
-	if g.config.VisionLLMPrompt != "" {
-		prompt = g.config.VisionLLMPrompt
-	}
-
-	model := geminimodel
-	if g.config.VisionLLMModel != "" {
-		model = g.config.VisionLLMModel
-	}
-
-	parts := []*genai.Part{
-		{Text: prompt},
-		{InlineData: &genai.Blob{Data: bytes, MIMEType: "image/jpeg"}},
+		return nil, err
 	}
 
 	res, err := g.client.Models.GenerateContent(ctx, model, []*genai.Content{{Parts: parts}}, nil)
@@ -77,4 +58,31 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 
 func (g *GeminiProvider) GetConfig() Config {
 	return g.config
+}
+
+func (g *GeminiProvider) InputToMessages(input OCRInput) ([]*genai.Part, error) {
+	prompt := g.config.VisionLLMPrompt
+
+	if g.config.Format == "markdown" {
+		prompt += " Format the output in Markdown."
+		prompt = AddPageContextToPrompt(input.Filename, prompt)
+	}
+
+	prompt += " Format the output in plain text"
+
+	switch input.Type {
+	case InputTypeImage:
+		bytes, err := imageio.ImageToBytes(input.Image)
+		if err != nil {
+			return nil, fmt.Errorf("while converting img to bytes : %w", err)
+		}
+		return []*genai.Part{
+			{Text: prompt},
+			{InlineData: &genai.Blob{Data: bytes, MIMEType: "image/jpeg"}},
+		}, nil
+	case InputTypePDF:
+		return nil, fmt.Errorf("PDF input not supported by Gemini provider")
+	default:
+		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	}
 }

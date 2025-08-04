@@ -103,28 +103,3 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 
 	return finalResults, aggregatedError
 }
-
-func NewSingleInputOCRStage(ocrFunc ocrFunc, limiter *rate.Limiter, failed *atomic.Int64, completed *atomic.Int64) fluxus.StageFunc[*PipelineItem, *BatchResult] {
-	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
-		itemStart := time.Now()
-
-		// 1. Rate Limit each call
-		if limiter != nil {
-			if err := limiter.Wait(ctx); err != nil {
-				failed.Add(1)
-				return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}, nil
-			}
-		}
-
-		// 2. Call the OCR function of the provider & update progress
-		result, err := ocrFunc(ctx, *item.Input)
-		if err != nil {
-			processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
-			failed.Add(1)
-			return &BatchResult{Item: item, Error: processingErr}, nil
-		}
-
-		completed.Add(1)
-		return &BatchResult{Item: item, Result: result}, nil
-	}
-}

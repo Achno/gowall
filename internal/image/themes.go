@@ -48,6 +48,7 @@ var themes = map[string]Theme{
 	"cat-latte":        Latte,
 	"melange-dark":     Melange_Dark,
 	"melange-light":    Melange_Light,
+	"palenight":        PaleNight,
 }
 
 func LoadCustomThemes() {
@@ -914,6 +915,22 @@ var (
 			color.RGBA{R: 75, G: 80, B: 104, A: 255},
 			color.RGBA{R: 149, G: 156, B: 189, A: 255},
 			color.RGBA{R: 52, G: 58, B: 74, A: 255},
+		},
+	}
+
+	PaleNight = Theme{
+		Name: "PaleNight",
+		Colors: []color.Color{
+			color.RGBA{R: 41, G: 45, B: 62, A: 1},    // background   #292d3e
+			color.RGBA{R: 149, G: 157, B: 203, A: 1}, // foreground   #959dcb
+			color.RGBA{R: 103, G: 110, B: 149, A: 1}, // comment      #676e95
+			color.RGBA{R: 195, G: 232, B: 141, A: 1}, // accent       #c3e88d
+			color.RGBA{R: 255, G: 83, B: 112, A: 1},  // redish       #ff5370
+			color.RGBA{R: 247, G: 140, B: 108, A: 1}, // orangish     #f78c6c
+			color.RGBA{R: 255, G: 203, B: 107, A: 1}, // yellowish    #ffcb6b
+			color.RGBA{R: 195, G: 232, B: 141, A: 1}, // greenish     #c3e88d
+			color.RGBA{R: 130, G: 170, B: 255, A: 1}, // bluish       #82aaff
+			color.RGBA{R: 199, G: 146, B: 234, A: 1}, // purplish     #c792ea
 		},
 	}
 )

@@ -93,3 +93,40 @@ func NewSingleInputOCRStage(ocrFunc ocrFunc, limiter *rate.Limiter, failed *atom
 		return &BatchResult{Item: item, Result: result}, nil
 	}
 }
+
+// textCorrectionFunc is a function type that matches the signature of the Complete function of the text processor provider.
+type textCorrectionFunc func(ctx context.Context, text string) (string, error)
+
+// NewTextCorrectionStage creates a text correction stage for post-processing OCR results
+func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc, limiter *rate.Limiter) fluxus.StageFunc[*OCRResult, *OCRResult] {
+	return func(ctx context.Context, result *OCRResult) (*OCRResult, error) {
+		// Skip processing if no result
+		if result == nil {
+			return result, nil
+		}
+
+		//! Make sure the rate limits are  not hit twice
+		if limiter != nil {
+			if err := limiter.Wait(ctx); err != nil {
+				return nil, fmt.Errorf("text correction rate limiter wait interrupted: %w", err)
+			}
+		}
+
+		correctedText, err := textCorrectionFunc(ctx, result.Text)
+		if err != nil {
+			return nil, fmt.Errorf("error correcting text: %w", err)
+		}
+
+		correctedResult := &OCRResult{
+			Text:     correctedText,
+			Images:   result.Images,
+			Metadata: result.Metadata,
+		}
+		if correctedResult.Metadata == nil {
+			correctedResult.Metadata = make(map[string]string)
+		}
+		correctedResult.Metadata["TextCorrectionApplied"] = "true"
+
+		return correctedResult, nil
+	}
+}

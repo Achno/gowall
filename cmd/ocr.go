@@ -213,6 +213,24 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.Concurrency != 0 {
 					cfg.Concurrency = schema.Config.Concurrency
 				}
+				if schema.Config.TextCorrectionEnabled {
+					cfg.TextCorrectionEnabled = schema.Config.TextCorrectionEnabled
+				}
+				if schema.Config.TextCorrectionPrompt != "" {
+					cfg.TextCorrectionPrompt = schema.Config.TextCorrectionPrompt
+				}
+				if schema.Config.TextCorrectionProvider != "" {
+					cfg.TextCorrectionProvider = schema.Config.TextCorrectionProvider
+				}
+				if schema.Config.TextCorrectionModel != "" {
+					cfg.TextCorrectionModel = schema.Config.TextCorrectionModel
+				}
+				if schema.Config.TextCorrectionRPS != 0 {
+					cfg.TextCorrectionRPS = schema.Config.TextCorrectionRPS
+				}
+				if schema.Config.TextCorrectionBurst != 0 {
+					cfg.TextCorrectionBurst = schema.Config.TextCorrectionBurst
+				}
 				if schema.Config.DoclingOptions != nil {
 					cfg.DoclingOptions = schema.Config.DoclingOptions
 				}
@@ -290,11 +308,37 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 func setDefaultOCRConfig() providers.Config {
 	pdfOpts := pdf.DefaultOptions()
 	return providers.Config{
-		DPI:             pdfOpts.DPI,
-		RateLimitRPS:    0,
-		RateLimitBurst:  12,
-		Concurrency:     10,
-		Format:          "markdown",
-		VisionLLMPrompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+		DPI:                   pdfOpts.DPI,
+		RateLimitRPS:          0,
+		RateLimitBurst:        12,
+		Concurrency:           10,
+		Format:                "markdown",
+		VisionLLMPrompt:       "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+		TextCorrectionEnabled: false,
+		TextCorrectionPrompt: `
+			Correct OCR-induced errors in the text, ensuring it flows coherently with the previous context. Follow these guidelines:
+
+			1. Fix OCR-induced typos and errors:
+			- Correct words split across line breaks
+			- Fix common OCR errors (e.g., 'rn' misread as 'm')
+			- Use context and common sense to correct errors
+			- Only fix clear errors, don't alter the content unnecessarily
+			- Do not add extra periods or any unnecessary punctuation
+
+			2. Maintain original structure:
+			- Keep all headings and subheadings intact
+
+			3. Preserve original content:
+			- Keep all important information from the original text
+			- Do not add any new information not present in the original text
+			- Remove unnecessary line breaks within sentences or paragraphs
+			- Maintain paragraph breaks
+			
+			4. Maintain coherence:
+			- Ensure the content connects smoothly with the previous context
+			- Handle text that starts or ends mid-sentence appropriately
+
+			IMPORTANT: Respond ONLY with the corrected text. Preserve all original formatting, including line breaks. Do not include any introduction, explanation, or metadata
+		`,
 	}
 }

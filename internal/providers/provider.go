@@ -44,6 +44,10 @@ type OCRProvider interface {
 	GetConfig() Config
 }
 
+type TextProcessorProvider interface {
+	Complete(ctx context.Context, text string) (string, error)
+}
+
 type PDFCapable interface {
 	SupportsPDF() bool
 }
@@ -76,6 +80,14 @@ type Config struct {
 	DPI         float64 `yaml:"dpi"` // DPI affects the image resolution in pdf->images conversion
 	SupportsPDF bool    `yaml:"supports_pdf"`
 
+	// Used in the post-processing pipeline for the text correction step
+	TextCorrectionEnabled  bool    `yaml:"text_correction_enabled"`
+	TextCorrectionProvider string  `yaml:"text_correction_provider"`
+	TextCorrectionModel    string  `yaml:"text_correction_model"`
+	TextCorrectionPrompt   string  `yaml:"text_correction_prompt"`
+	TextCorrectionRPS      float64 `yaml:"text_correction_rps"`
+	TextCorrectionBurst    int     `yaml:"text_correction_burst"`
+
 	// Provider-specific options
 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
 }
@@ -103,6 +115,58 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 	}
 
 	return provider(config)
+}
+
+func NewTextCorrectionProvider(config Config) (TextProcessorProvider, error) {
+	if !config.TextCorrectionEnabled {
+		return nil, fmt.Errorf("text correction is not enabled")
+	}
+
+	if config.TextCorrectionModel == "" || config.TextCorrectionProvider == "" {
+		return nil, fmt.Errorf("missing text correction model and provider")
+	}
+
+	textCorrectionConfig := Config{
+		VisionLLMProvider: config.TextCorrectionProvider,
+		VisionLLMModel:    config.TextCorrectionModel,
+		VisionLLMPrompt:   config.TextCorrectionPrompt,
+		RateLimitRPS:      config.TextCorrectionRPS,
+		RateLimitBurst:    config.TextCorrectionBurst,
+	}
+
+	providers := map[string]func(config Config) (OCRProvider, error){
+		"ollama":     NewOllamaProvider,
+		"vllm":       NewOpenAIProvider,
+		"openai":     NewOpenAIProvider,
+		"gemini":     NewGeminiProvider,
+		"mistral":    NewMistralProvider,
+		"openrouter": NewOpenAIProvider,
+	}
+
+	providerFunc, ok := providers[config.TextCorrectionProvider]
+	if !ok {
+		return nil, fmt.Errorf("you have not entered a valid text correction provider")
+	}
+
+	baseProvider, err := providerFunc(textCorrectionConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	//! careful with the casting
+	if config.TextCorrectionRPS > 0 {
+		rateLimitedProvider := WithRateLimit(baseProvider, config.TextCorrectionRPS, config.TextCorrectionBurst)
+		if textProcessor, ok := rateLimitedProvider.(TextProcessorProvider); ok {
+			return textProcessor, nil
+		}
+		return nil, fmt.Errorf("rate-limited provider does not implement TextProcessorProvider interface")
+	}
+
+	if textProcessor, ok := baseProvider.(TextProcessorProvider); ok {
+		return textProcessor, nil
+	}
+
+	return nil, fmt.Errorf("provider does not implement TextProcessorProvider interface")
 }
 
 // AddPageContextToPrompt enhances the prompt with page-specific context for multi-page documents.

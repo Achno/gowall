@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/time/rate"
 )
@@ -29,6 +30,19 @@ func (r *RateLimitedProvider) OCR(ctx context.Context, input OCRInput) (*OCRResu
 		return nil, err
 	}
 	return r.provider.OCR(ctx, input)
+}
+
+// Complete implements TextProcessorProvider interface - delegates to the wrapped provider if it supports text processing
+func (r *RateLimitedProvider) Complete(ctx context.Context, text string) (string, error) {
+	if err := r.limiter.Wait(ctx); err != nil {
+		return "", err
+	}
+
+	if textProcessor, ok := r.provider.(TextProcessorProvider); ok {
+		return textProcessor.Complete(ctx, text)
+	}
+
+	return "", fmt.Errorf("wrapped provider does not implement TextProcessorProvider interface")
 }
 
 func (r *RateLimitedProvider) GetConfig() Config {

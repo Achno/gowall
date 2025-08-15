@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	cf "github.com/Achno/gowall/config"
+	"github.com/Achno/gowall/internal/logger"
 
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/openai/openai-go"
@@ -98,6 +99,29 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 			"RawJSON2": chatCompletion.Usage.PromptTokensDetails.RawJSON(),
 		},
 	}, nil
+}
+
+func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, error) {
+	return o.TextCorrection(ctx, text)
+}
+
+func (o *OpenAIProvider) TextCorrection(ctx context.Context, text string) (string, error) {
+	prompt := o.config.VisionLLMPrompt
+
+	messages := []openai.ChatCompletionMessageParamUnion{
+		openai.UserMessage(prompt + "\n\n" + text),
+	}
+
+	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Messages: messages,
+		Model:    o.model,
+	})
+	if err != nil {
+		logger.Warnf("Error correcting text falling back to original: %v", err)
+		return text, err
+	}
+
+	return chatCompletion.Choices[0].Message.Content, nil
 }
 
 func (o *OpenAIProvider) GetConfig() Config {

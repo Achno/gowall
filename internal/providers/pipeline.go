@@ -55,7 +55,18 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	// 4. Stitch Results
 	finalResults := stitchPipelineResults(originalInputs, batchResults)
 
-	// 5. Use the mapping to save the results to the correct files
+	// 5. Run optional Post-processing Pipeline
+	config := provider.GetConfig()
+
+	if config.TextCorrectionEnabled {
+		utils.Spinner.Message("Post-processing with text correction...")
+		finalResults, err = runPostprocessingPipeline(finalResults, config)
+		if err != nil {
+			return fmt.Errorf("post-processing pipeline failed: %w", err)
+		}
+	}
+
+	// 6. Use the mapping to save the results to the correct files
 	for i, item := range finalResults {
 		if opsIndex, exists := inputToOpsMapping[i]; exists {
 			logger.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
@@ -108,6 +119,55 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, provider OCRProvider
 	}
 
 	return result, nil
+}
+
+// runPostprocessingPipeline runs text correction on the stitched OCR results
+func runPostprocessingPipeline(ocrResults []*OCRResult, config Config) ([]*OCRResult, error) {
+	ctx := context.Background()
+
+	// 1. Create text correction provider
+	textProcessor, err := NewTextCorrectionProvider(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create text processor: %w", err)
+	}
+
+	// 2. Set up rate limiting for text correction
+	var textCorrectionLimiter *rate.Limiter
+	if rateLimited, ok := textProcessor.(*RateLimitedProvider); ok {
+		textCorrectionLimiter = rateLimited.GetRateLimiter()
+	}
+
+	// 3. Count valid results for processing
+	validResults := 0
+	for _, result := range ocrResults {
+		if result != nil {
+			validResults++
+		}
+	}
+
+	if validResults == 0 {
+		return ocrResults, nil // Nothing to process
+	}
+
+	// 4. Create text correction stage
+	textCorrectionStage := NewTextCorrectionStage(textProcessor.Complete, textCorrectionLimiter)
+
+	// 5. Create pipeline for text correction
+	textCorrectionMap := fluxus.NewMap(textCorrectionStage).
+		WithConcurrency(5).
+		WithCollectErrors(true)
+
+	pipeline := fluxus.NewPipeline(textCorrectionMap)
+
+	// 6. Process results through text correction
+	correctedResults, err := pipeline.Process(ctx, ocrResults)
+	if err != nil {
+		return nil, fmt.Errorf("text correction pipeline execution failed: %w", err)
+	}
+
+	logger.Printf("Text correction completed. Processed: %d results\n", validResults)
+
+	return correctedResults, nil
 }
 
 // stitchPipelineResults combines results from expanded items (like PDF pages) back into a single result per original file.

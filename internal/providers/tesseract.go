@@ -29,6 +29,10 @@ func (p *TesseractProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult
 		return nil, fmt.Errorf("tesseract is not installed")
 	}
 
+	if p.config.Language == "" {
+		p.config.Language = "eng"
+	}
+
 	return p.client.OCRImageCmd(ctx, input.Image, p.config.Language)
 }
 
@@ -49,6 +53,7 @@ func (c *TesseractClient) OCRImageCmd(ctx context.Context, image image.Image, la
 	}
 
 	cmd := c.ConstructTesseractCommand(ctx, []string{"-l", lang})
+	fmt.Println("COMMAND: ", cmd.String())
 	out, err := c.RunTesseractCommand(ctx, cmd, buf)
 	if err != nil {
 		return nil, err

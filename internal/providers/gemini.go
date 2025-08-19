@@ -61,9 +61,9 @@ func (g *GeminiProvider) GetConfig() Config {
 }
 
 func (g *GeminiProvider) InputToMessages(input OCRInput) ([]*genai.Part, error) {
-	prompt := g.config.VisionLLMPrompt
+	prompt := g.config.OCR.Prompt
 
-	if g.config.Format == "markdown" {
+	if g.config.OCR.Format == "markdown" {
 		prompt += " Format the output in Markdown."
 		prompt = AddPageContextToPrompt(input.Filename, prompt)
 	}

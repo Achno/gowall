@@ -29,11 +29,11 @@ func (p *TesseractProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult
 		return nil, fmt.Errorf("tesseract is not installed")
 	}
 
-	if p.config.Language == "" {
-		p.config.Language = "eng"
+	if p.config.OCR.Language == "" {
+		p.config.OCR.Language = "eng"
 	}
 
-	return p.client.OCRImageCmd(ctx, input.Image, p.config.Language)
+	return p.client.OCRImageCmd(ctx, input.Image, p.config.OCR.Language)
 }
 
 func (p *TesseractProvider) GetConfig() Config {

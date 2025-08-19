@@ -14,11 +14,12 @@ import (
 	"github.com/Achno/gowall/utils"
 
 	"github.com/synoptiq/go-fluxus"
-	"golang.org/x/time/rate"
 )
 
 // StartOCRPipeline orchestrates the OCR workflow. Accepts the an OCR provider and a list of imageIO operations.
-func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
+func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
+	config := service.GetConfig()
+
 	// 1. Load files concurrently from imageIO operations : maintain order and mapping
 	originalInputs, inputToOpsMapping, err := buildOCRInputsWithMapping(ops)
 	if err != nil {
@@ -35,19 +36,19 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	}
 
 	// 2. Run Pre-processing Pipeline
-	utils.Spinner.Message("Pre-processing items...")
-	processedItems, err := runPreprocessingPipeline(initialItems, provider)
+	progress := WithPrefixProgress(len(initialItems), "Pre-Processing...")
+	progress.Start()
+
+	processedItems, err := runPreprocessingPipeline(initialItems, service, progress)
 	if err != nil {
+		progress.Stop("Pre-Processing failed.")
 		return fmt.Errorf("pre-processing pipeline failed: %w", err)
 	}
+	progress.Stop("Pre-Processing completed.")
 
 	// 3. Run OCR Batch Processing
-	var limiter *rate.Limiter
-	if rateLimited, ok := provider.(*RateLimitedProvider); ok {
-		limiter = rateLimited.GetRateLimiter()
-	}
-
-	batchResults, err := ProcessBatch(context.Background(), processedItems, provider.OCR, limiter, 10)
+	ocrProgress := WithPrefixProgress(len(processedItems), "OCR Processing")
+	batchResults, err := ProcessBatch(context.Background(), processedItems, service.OCR, config.Pipeline.OCRConcurrency, ocrProgress)
 	if err != nil {
 		return fmt.Errorf("OCR batch processing failed: %w", err)
 	}
@@ -56,11 +57,8 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 	finalResults := stitchPipelineResults(originalInputs, batchResults)
 
 	// 5. Run optional Post-processing Pipeline
-	config := provider.GetConfig()
-
-	if config.TextCorrectionEnabled {
-		utils.Spinner.Message("Post-processing with text correction...")
-		finalResults, err = runPostprocessingPipeline(finalResults, config)
+	if config.TextCorrection.Enabled {
+		finalResults, err = runPostprocessingPipeline(finalResults, config, service)
 		if err != nil {
 			return fmt.Errorf("post-processing pipeline failed: %w", err)
 		}
@@ -71,14 +69,11 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 		if opsIndex, exists := inputToOpsMapping[i]; exists {
 			logger.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
 			if item != nil {
-				// fmt.Println(item.Text)
-				fmt.Printf("Saving to %s\n", ops[opsIndex].ImageOutput.String())
 				imageio.SaveText(item.Text, ops[opsIndex].ImageOutput)
-				logger.Printf("Saved to %s\n", ops[opsIndex].ImageOutput)
+				logger.Printf("Saved to %s\n", ops[opsIndex].ImageOutput.String())
 			} else {
 				logger.Printf("Processing failed for this file.")
 			}
-			logger.Printf("###################")
 		}
 	}
 
@@ -86,10 +81,11 @@ func StartOCRPipeline(ops []imageio.ImageIO, provider OCRProvider) error {
 }
 
 // runPreprocessingPipeline runs the given items through a pipeline of various stages.
-func runPreprocessingPipeline(initialItems []*PipelineItem, provider OCRProvider) ([]*PipelineItem, error) {
+func runPreprocessingPipeline(initialItems []*PipelineItem, service *ProviderService, progress *ProgressTracker) ([]*PipelineItem, error) {
 	ctx := context.Background()
+	config := service.GetConfig()
 
-	pdfExpandStage := NewExpandSinglePdfStage(provider)
+	pdfExpandStage := NewExpandSinglePdfStage(service)
 	grayScaleStage := NewGrayScaleStage(image.GrayScaleProcessor{})
 
 	flattenStage := fluxus.StageFunc[[]*PipelineItem, []*PipelineItem](func(ctx context.Context, items []*PipelineItem) ([]*PipelineItem, error) {
@@ -101,15 +97,21 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, provider OCRProvider
 			}
 			result = append(result, expanded...)
 		}
+
+		progress.SetTotal(int64(len(result)))
 		return result, nil
 	})
 
-	grayScaleMap := fluxus.NewMap(grayScaleStage).WithConcurrency(5)
+	grayScaleMap := fluxus.NewMap(grayScaleStage).WithConcurrency(config.Pipeline.Concurrency)
+	lastStageMap := fluxus.NewMap(NewLastStageProgressStage(progress)).WithConcurrency(config.Pipeline.Concurrency)
 
 	pipeline := fluxus.NewPipeline(
 		fluxus.Chain(
 			flattenStage,
-			grayScaleMap,
+			fluxus.Chain(
+				grayScaleMap,
+				lastStageMap,
+			),
 		),
 	)
 
@@ -122,20 +124,8 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, provider OCRProvider
 }
 
 // runPostprocessingPipeline runs text correction on the stitched OCR results
-func runPostprocessingPipeline(ocrResults []*OCRResult, config Config) ([]*OCRResult, error) {
+func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *ProviderService) ([]*OCRResult, error) {
 	ctx := context.Background()
-
-	// 1. Create text correction provider
-	textProcessor, err := NewTextCorrectionProvider(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create text processor: %w", err)
-	}
-
-	// 2. Set up rate limiting for text correction
-	var textCorrectionLimiter *rate.Limiter
-	if rateLimited, ok := textProcessor.(*RateLimitedProvider); ok {
-		textCorrectionLimiter = rateLimited.GetRateLimiter()
-	}
 
 	// 3. Count valid results for processing
 	validResults := 0
@@ -150,11 +140,11 @@ func runPostprocessingPipeline(ocrResults []*OCRResult, config Config) ([]*OCRRe
 	}
 
 	// 4. Create text correction stage
-	textCorrectionStage := NewTextCorrectionStage(textProcessor.Complete, textCorrectionLimiter)
+	textCorrectionStage := NewTextCorrectionStage(service.Complete)
 
 	// 5. Create pipeline for text correction
 	textCorrectionMap := fluxus.NewMap(textCorrectionStage).
-		WithConcurrency(5).
+		WithConcurrency(config.Pipeline.Concurrency).
 		WithCollectErrors(true)
 
 	pipeline := fluxus.NewPipeline(textCorrectionMap)

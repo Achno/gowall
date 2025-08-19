@@ -33,9 +33,9 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 		"oc":         cf.GowallConfig.EnvConfig.OPENAI_BASE_URL,
 	}
 
-	baseURL, ok := urlMap[config.VisionLLMProvider]
+	baseURL, ok := urlMap[config.OCR.Provider]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.VisionLLMProvider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.OCR.Provider)
 	}
 
 	apiMap := map[string]string{
@@ -45,9 +45,9 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 		"oc":         cf.GowallConfig.EnvConfig.OPENAI_API_COMPATIBLE_SERVICE_API_KEY,
 	}
 
-	apiKey, ok := apiMap[config.VisionLLMProvider]
+	apiKey, ok := apiMap[config.OCR.Provider]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL,OPENAI_API_COMPATIBLE_SERVICE_API_KEY envs", config.VisionLLMProvider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL,OPENAI_API_COMPATIBLE_SERVICE_API_KEY envs", config.OCR.Provider)
 	}
 
 	if apiKey == "" {
@@ -56,8 +56,8 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 	retries := cf.GowallConfig.EnvConfig.OPENAI_MAX_RETRIES
 
 	model := defaultOpenAIModel
-	if config.VisionLLMModel != "" {
-		model = config.VisionLLMModel
+	if config.OCR.Model != "" {
+		model = config.OCR.Model
 	}
 
 	opts := []option.RequestOption{
@@ -106,7 +106,7 @@ func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, err
 }
 
 func (o *OpenAIProvider) TextCorrection(ctx context.Context, text string) (string, error) {
-	prompt := o.config.VisionLLMPrompt
+	prompt := o.config.TextCorrection.Provider.Prompt
 
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.UserMessage(prompt + "\n\n" + text),
@@ -133,9 +133,9 @@ func (o *OpenAIProvider) SupportsPDF() bool {
 		"openai":     false,
 		"openrouter": false,
 		"vllm":       false,
-		"oc":         o.config.SupportsPDF,
+		"oc":         o.config.OCR.SupportsPDF,
 	}
-	supported, ok := bMap[o.config.VisionLLMProvider]
+	supported, ok := bMap[o.config.OCR.Provider]
 	if !ok {
 		return false
 	}
@@ -164,9 +164,9 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 
 func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 
-	prompt := o.config.VisionLLMPrompt
+	prompt := o.config.OCR.Prompt
 
-	if o.config.Format == "markdown" {
+	if o.config.OCR.Format == "markdown" {
 		prompt += " Format the output in Markdown."
 		prompt = AddPageContextToPrompt(input.Filename, prompt)
 	}

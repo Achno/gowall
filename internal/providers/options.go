@@ -8,6 +8,58 @@ import (
 	"github.com/Achno/gowall/utils"
 )
 
+// 	TextCorrectionEnabled  bool    `yaml:"text_correction_enabled"`
+// 	TextCorrectionProvider string  `yaml:"text_correction_provider"`
+// 	TextCorrectionModel    string  `yaml:"text_correction_model"`
+// 	TextCorrectionPrompt   string  `yaml:"text_correction_prompt"`
+// 	TextCorrectionRPS      float64 `yaml:"text_correction_rps"`
+// 	TextCorrectionBurst    int     `yaml:"text_correction_burst"`
+
+// 	// Provider-specific options
+// 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
+// }
+
+// Core provider configuration
+type ProviderConfig struct {
+	Provider    string `yaml:"provider"`
+	Model       string `yaml:"model"`
+	Prompt      string `yaml:"prompt"`
+	Language    string `yaml:"language"`
+	Format      string `yaml:"format"` // "markdown", "text"
+	SupportsPDF bool   `yaml:"supports_pdf"`
+}
+
+// Pipeline configuration
+type PipelineConfig struct {
+	DPI            float64 `yaml:"dpi"`
+	Concurrency    int     `yaml:"concurrency"`
+	OCRConcurrency int     `yaml:"ocr_concurrency"`
+}
+
+// Rate limiting configuration
+type RateLimitConfig struct {
+	RPS   float64 `yaml:"rps"`
+	Burst int     `yaml:"burst"`
+}
+
+// Text correction configuration
+type TextCorrectionConfig struct {
+	Enabled   bool            `yaml:"enabled"`
+	Provider  ProviderConfig  `yaml:"provider"`
+	RateLimit RateLimitConfig `yaml:"rate_limit"`
+}
+
+// Main configuration that composes others
+type Config struct {
+	OCR            ProviderConfig       `yaml:"ocr"`
+	Pipeline       PipelineConfig       `yaml:"pipeline"`
+	RateLimit      RateLimitConfig      `yaml:"rate_limit"`
+	TextCorrection TextCorrectionConfig `yaml:"text_correction"`
+
+	// Provider-specific options
+	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
+}
+
 // DoclingOptions 3 state bool to overcome go unset,specified false bool fields.
 type DoclingOptions struct {
 	OCR       *bool `yaml:"do_ocr,omitempty"`
@@ -50,29 +102,29 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 	optionsMap["device"] = merged.Device
 	optionsMap["verbose"] = merged.Verbose
 
-	if config.Format == "markdown" {
+	if config.OCR.Format == "markdown" {
 		optionsMap["to"] = "md"
-	} else if config.Format == "text" {
+	} else if config.OCR.Format == "text" {
 		optionsMap["to"] = "text"
 	}
 
-	if config.VisionLLMModel != "" {
+	if config.OCR.Model != "" {
 		// Check if it's a VLM model
-		if config.VisionLLMModel == "smoldocling" ||
-			config.VisionLLMModel == "granite_vision" ||
-			config.VisionLLMModel == "granite_vision_ollama" {
+		if config.OCR.Model == "smoldocling" ||
+			config.OCR.Model == "granite_vision" ||
+			config.OCR.Model == "granite_vision_ollama" {
 
-			optionsMap["vlm_model"] = config.VisionLLMModel
+			optionsMap["vlm_model"] = config.OCR.Model
 			optionsMap["pipeline"] = "vlm"
 			delete(optionsMap, "ocr_engine")
 
 		} else {
-			optionsMap["ocr_engine"] = config.VisionLLMModel
+			optionsMap["ocr_engine"] = config.OCR.Model
 		}
 	}
 
-	if config.Language != "" {
-		optionsMap["ocr_lang"] = config.Language
+	if config.OCR.Language != "" {
+		optionsMap["ocr_lang"] = config.OCR.Language
 	}
 
 	// let docling auto-detect

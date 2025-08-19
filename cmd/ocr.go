@@ -132,13 +132,9 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 
 	n, err := providers.NewOCRProvider(cfg)
 	utils.HandleError(err, "Error")
+	service := providers.NewProviderService(n, cfg)
 
-	n = providers.WithRateLimit(n, cfg.RateLimitRPS, cfg.RateLimitBurst)
-
-	utils.Spinner.Start()
-	utils.Spinner.Message("Starting OCR...")
-
-	err = providers.StartOCRPipeline(ops, n)
+	err = providers.StartOCRPipeline(ops, service)
 	utils.HandleError(err, "Error")
 }
 
@@ -186,50 +182,53 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 		for _, schema := range ocrConfig.Schemas {
 			if schema.Name == schemaName {
 				// Merge schema config with default config (schema values override defaults)
-				if schema.Config.VisionLLMProvider != "" {
-					cfg.VisionLLMProvider = schema.Config.VisionLLMProvider
+				if schema.Config.OCR.Provider != "" {
+					cfg.OCR.Provider = schema.Config.OCR.Provider
 				}
-				if schema.Config.VisionLLMModel != "" {
-					cfg.VisionLLMModel = schema.Config.VisionLLMModel
+				if schema.Config.OCR.Model != "" {
+					cfg.OCR.Model = schema.Config.OCR.Model
 				}
-				if schema.Config.VisionLLMPrompt != "" {
-					cfg.VisionLLMPrompt = schema.Config.VisionLLMPrompt
+				if schema.Config.OCR.Prompt != "" {
+					cfg.OCR.Prompt = schema.Config.OCR.Prompt
 				}
-				if schema.Config.Language != "" {
-					cfg.Language = schema.Config.Language
+				if schema.Config.OCR.Language != "" {
+					cfg.OCR.Language = schema.Config.OCR.Language
 				}
-				if schema.Config.Format != "" {
-					cfg.Format = schema.Config.Format
+				if schema.Config.OCR.Format != "" {
+					cfg.OCR.Format = schema.Config.OCR.Format
 				}
-				if schema.Config.DPI != 0 {
-					cfg.DPI = schema.Config.DPI
+				if schema.Config.Pipeline.DPI != 0 {
+					cfg.Pipeline.DPI = schema.Config.Pipeline.DPI
 				}
-				if schema.Config.RateLimitRPS != 0 {
-					cfg.RateLimitRPS = schema.Config.RateLimitRPS
+				if schema.Config.RateLimit.RPS != 0 {
+					cfg.RateLimit.RPS = schema.Config.RateLimit.RPS
 				}
-				if schema.Config.RateLimitBurst != 0 {
-					cfg.RateLimitBurst = schema.Config.RateLimitBurst
+				if schema.Config.RateLimit.Burst != 0 {
+					cfg.RateLimit.Burst = schema.Config.RateLimit.Burst
 				}
-				if schema.Config.Concurrency != 0 {
-					cfg.Concurrency = schema.Config.Concurrency
+				if schema.Config.Pipeline.Concurrency != 0 {
+					cfg.Pipeline.Concurrency = schema.Config.Pipeline.Concurrency
 				}
-				if schema.Config.TextCorrectionEnabled {
-					cfg.TextCorrectionEnabled = schema.Config.TextCorrectionEnabled
+				if schema.Config.Pipeline.OCRConcurrency != 0 {
+					cfg.Pipeline.OCRConcurrency = schema.Config.Pipeline.OCRConcurrency
 				}
-				if schema.Config.TextCorrectionPrompt != "" {
-					cfg.TextCorrectionPrompt = schema.Config.TextCorrectionPrompt
+				if schema.Config.TextCorrection.Enabled {
+					cfg.TextCorrection.Enabled = schema.Config.TextCorrection.Enabled
 				}
-				if schema.Config.TextCorrectionProvider != "" {
-					cfg.TextCorrectionProvider = schema.Config.TextCorrectionProvider
+				if schema.Config.TextCorrection.Provider.Provider != "" {
+					cfg.TextCorrection.Provider.Provider = schema.Config.TextCorrection.Provider.Provider
 				}
-				if schema.Config.TextCorrectionModel != "" {
-					cfg.TextCorrectionModel = schema.Config.TextCorrectionModel
+				if schema.Config.TextCorrection.Provider.Model != "" {
+					cfg.TextCorrection.Provider.Model = schema.Config.TextCorrection.Provider.Model
 				}
-				if schema.Config.TextCorrectionRPS != 0 {
-					cfg.TextCorrectionRPS = schema.Config.TextCorrectionRPS
+				if schema.Config.TextCorrection.Provider.Prompt != "" {
+					cfg.TextCorrection.Provider.Prompt = schema.Config.TextCorrection.Provider.Prompt
 				}
-				if schema.Config.TextCorrectionBurst != 0 {
-					cfg.TextCorrectionBurst = schema.Config.TextCorrectionBurst
+				if schema.Config.TextCorrection.RateLimit.RPS != 0 {
+					cfg.TextCorrection.RateLimit.RPS = schema.Config.TextCorrection.RateLimit.RPS
+				}
+				if schema.Config.TextCorrection.RateLimit.Burst != 0 {
+					cfg.TextCorrection.RateLimit.Burst = schema.Config.TextCorrection.RateLimit.Burst
 				}
 				if schema.Config.DoclingOptions != nil {
 					cfg.DoclingOptions = schema.Config.DoclingOptions
@@ -250,56 +249,56 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.VisionLLMProvider = v
+		cfg.OCR.Provider = v
 	}
 	if flags.Changed("model") {
 		v, err := flags.GetString("model")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.VisionLLMModel = v
+		cfg.OCR.Model = v
 	}
 	if flags.Changed("uprompt") {
 		v, err := flags.GetString("uprompt")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.VisionLLMPrompt = v
+		cfg.OCR.Prompt = v
 	}
 	if flags.Changed("language") {
 		v, err := flags.GetString("language")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.Language = v
+		cfg.OCR.Language = v
 	}
 	if flags.Changed("dpi") {
 		v, err := flags.GetFloat64("dpi")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.DPI = v
+		cfg.Pipeline.DPI = v
 	}
 	if flags.Changed("rps") {
 		v, err := flags.GetFloat64("rps")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.RateLimitRPS = v
+		cfg.RateLimit.RPS = v
 	}
 	if flags.Changed("burst") {
 		v, err := flags.GetInt("burst")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.RateLimitBurst = v
+		cfg.RateLimit.Burst = v
 	}
 	if flags.Changed("format") {
 		v, err := flags.GetString("format")
 		if err != nil {
 			return providers.Config{}, err
 		}
-		cfg.Format = v
+		cfg.OCR.Format = v
 	}
 
 	return cfg, nil
@@ -308,37 +307,48 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 func setDefaultOCRConfig() providers.Config {
 	pdfOpts := pdf.DefaultOptions()
 	return providers.Config{
-		DPI:                   pdfOpts.DPI,
-		RateLimitRPS:          0,
-		RateLimitBurst:        12,
-		Concurrency:           10,
-		Format:                "markdown",
-		VisionLLMPrompt:       "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
-		TextCorrectionEnabled: false,
-		TextCorrectionPrompt: `
-			Correct OCR-induced errors in the text, ensuring it flows coherently with the previous context. Follow these guidelines:
-
-			1. Fix OCR-induced typos and errors:
-			- Correct words split across line breaks
-			- Fix common OCR errors (e.g., 'rn' misread as 'm')
-			- Use context and common sense to correct errors
-			- Only fix clear errors, don't alter the content unnecessarily
-			- Do not add extra periods or any unnecessary punctuation
-
-			2. Maintain original structure:
-			- Keep all headings and subheadings intact
-
-			3. Preserve original content:
-			- Keep all important information from the original text
-			- Do not add any new information not present in the original text
-			- Remove unnecessary line breaks within sentences or paragraphs
-			- Maintain paragraph breaks
-			
-			4. Maintain coherence:
-			- Ensure the content connects smoothly with the previous context
-			- Handle text that starts or ends mid-sentence appropriately
-
-			IMPORTANT: Respond ONLY with the corrected text. Preserve all original formatting, including line breaks. Do not include any introduction, explanation, or metadata
-		`,
+		Pipeline: providers.PipelineConfig{
+			DPI:            pdfOpts.DPI,
+			Concurrency:    5,
+			OCRConcurrency: 10,
+		},
+		RateLimit: providers.RateLimitConfig{
+			RPS:   0,
+			Burst: 12,
+		},
+		OCR: providers.ProviderConfig{
+			Format: "markdown",
+			Prompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+		},
+		TextCorrection: providers.TextCorrectionConfig{
+			Enabled: false,
+			Provider: providers.ProviderConfig{
+				Prompt: `
+				Correct OCR-induced errors in the text, ensuring it flows coherently with the previous context. Follow these guidelines:
+	
+				1. Fix OCR-induced typos and errors:
+				- Correct words split across line breaks
+				- Fix common OCR errors (e.g., 'rn' misread as 'm')
+				- Use context and common sense to correct errors
+				- Only fix clear errors, don't alter the content unnecessarily
+				- Do not add extra periods or any unnecessary punctuation
+	
+				2. Maintain original structure:
+				- Keep all headings and subheadings intact
+	
+				3. Preserve original content:
+				- Keep all important information from the original text
+				- Do not add any new information not present in the original text
+				- Remove unnecessary line breaks within sentences or paragraphs
+				- Maintain paragraph breaks
+				
+				4. Maintain coherence:
+				- Ensure the content connects smoothly with the previous context
+				- Handle text that starts or ends mid-sentence appropriately
+	
+				IMPORTANT: Respond ONLY with the corrected text. Preserve all original formatting, including line breaks. Do not include any introduction, explanation, or metadata
+			`,
+			},
+		},
 	}
 }

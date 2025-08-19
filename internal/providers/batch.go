@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/synoptiq/go-fluxus"
-	"golang.org/x/time/rate"
 )
 
 const defaultConcurrency = 10
@@ -30,7 +28,7 @@ type BatchResult struct {
 // 'concurrency' arg controls the throughput of the worker pool
 // 'limiter' arg is used to rate limit the OCR calls
 // 'ocrFunc' arg is a given function to execute for each item
-func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, limiter *rate.Limiter, concurrency int) ([]*BatchResult, error) {
+func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, concurrency int, progress *ProgressTracker) ([]*BatchResult, error) {
 
 	startTime := time.Now()
 	totalItems := len(items)
@@ -42,32 +40,12 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 		concurrency = defaultConcurrency
 	}
 
-	// --- Progress Tracking ---
-	var completed, failed atomic.Int64
+	// Set up progress tracker for OCR processing
+	progress.SetTotal(int64(totalItems))
+	progress.SetPrefix("OCR Processing")
+	progress.Start()
 
-	// Start a ticker for periodic progress updates
-	progressTicker := time.NewTicker(500 * time.Millisecond)
-	defer progressTicker.Stop()
-
-	progressCtx, progressCancel := context.WithCancel(ctx)
-	defer progressCancel()
-
-	go func() {
-		for {
-			select {
-			case <-progressCtx.Done():
-				return
-			case <-progressTicker.C:
-				c := completed.Load()
-				f := failed.Load()
-				processing := int64(totalItems) - c - f
-
-				utils.Spinner.Message(fmt.Sprintf("OCR Progress: %d computing, %d completed, %d failed (Total Items: %d)", processing, c, f, totalItems))
-			}
-		}
-	}()
-
-	ocrStage := NewSingleInputOCRStage(ocrFunc, limiter, &failed, &completed)
+	ocrStage := NewSingleInputOCRStageWithProgress(ocrFunc, progress)
 
 	// --- Create Map Stage for Concurrent Processing ---
 	ocrMap := fluxus.NewMap(ocrStage).
@@ -78,15 +56,15 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, l
 
 	finalResults, err := pipeline.Process(ctx, items)
 
-	progressCancel()
-
 	if err != nil {
+		progress.Stop("OCR Processing failed.")
 		return nil, fmt.Errorf("pipeline execution failed: %w", err)
 	}
 
 	totalDuration := time.Since(startTime)
-	utils.Spinner.Stop()
-	logger.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed.Load(), failed.Load())
+	_, completed, failed, _ := progress.GetCounters()
+	progress.Stop("OCR Processing completed.")
+	logger.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed, failed)
 
 	// Collect errors from results
 	var allErrors []error

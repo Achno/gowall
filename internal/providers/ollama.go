@@ -63,16 +63,16 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 
 	// Create request payload
 	prompt := "Extract all text from this image."
-	if o.config.VisionLLMPrompt != "" {
-		prompt = o.config.VisionLLMPrompt
+	if o.config.OCR.Prompt != "" {
+		prompt = o.config.OCR.Prompt
 	}
 
-	if o.config.Format == "markdown" {
+	if o.config.OCR.Format == "markdown" {
 		prompt += "the output format should be Markdown"
 	}
 
 	req := OllamaRequest{
-		Model: o.config.VisionLLMModel,
+		Model: o.config.OCR.Model,
 		Messages: []OllamaMessage{
 			{
 				Role:    "user",
@@ -111,7 +111,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		Text: ollamaResp.Message.Content,
 		Metadata: map[string]string{
 			"provider":       "ollama",
-			"model":          o.config.VisionLLMModel,
+			"model":          o.config.OCR.Model,
 			"total_duration": fmt.Sprintf("%d", ollamaResp.TotalDuration),
 		},
 	}

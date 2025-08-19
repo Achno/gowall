@@ -10,18 +10,17 @@ import (
 	"github.com/Achno/gowall/internal/image"
 	"github.com/Achno/gowall/internal/pdf"
 	"github.com/synoptiq/go-fluxus"
-	"golang.org/x/time/rate"
 )
 
 // NewExpandSinglePdfStage creates a PDF expansion stage with the given provider
-func NewExpandSinglePdfStage(provider OCRProvider) fluxus.StageFunc[*PipelineItem, []*PipelineItem] {
+func NewExpandSinglePdfStage(service *ProviderService) fluxus.StageFunc[*PipelineItem, []*PipelineItem] {
 	return func(ctx context.Context, item *PipelineItem) ([]*PipelineItem, error) {
 
 		if item.Input.Type == InputTypePDF {
-			if pdfCapable, ok := provider.(PDFCapable); !ok || !pdfCapable.SupportsPDF() {
-				cfg := provider.GetConfig()
+			if !service.SupportsPDF() {
+				dpi := service.GetConfig().Pipeline.DPI
 
-				images, err := pdf.ConvertPDFToImages(item.Input.PDFData, pdf.ConvertOptions{MaxPages: 0, SkipFirstNPages: 0, DPI: cfg.DPI})
+				images, err := pdf.ConvertPDFToImages(item.Input.PDFData, pdf.ConvertOptions{MaxPages: 0, SkipFirstNPages: 0, DPI: dpi})
 				if err != nil {
 					return []*PipelineItem{}, fmt.Errorf("expanding PDF stage failed to convert PDF '%s' to images: %w", item.Input.Filename, err)
 				}
@@ -69,17 +68,9 @@ func NewGrayScaleStage(processor image.GrayScaleProcessor) fluxus.StageFunc[*Pip
 	}
 }
 
-func NewSingleInputOCRStage(ocrFunc ocrFunc, limiter *rate.Limiter, failed *atomic.Int64, completed *atomic.Int64) fluxus.StageFunc[*PipelineItem, *BatchResult] {
+func NewSingleInputOCRStage(ocrFunc ocrFunc, failed *atomic.Int64, completed *atomic.Int64) fluxus.StageFunc[*PipelineItem, *BatchResult] {
 	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
 		itemStart := time.Now()
-
-		// 1. Rate Limit each call
-		if limiter != nil {
-			if err := limiter.Wait(ctx); err != nil {
-				failed.Add(1)
-				return &BatchResult{Item: item, Error: fmt.Errorf("rate limiter wait interrupted: %w", err)}, nil
-			}
-		}
 
 		// 2. Call the OCR function of the provider & update progress
 		result, err := ocrFunc(ctx, *item.Input)
@@ -94,22 +85,32 @@ func NewSingleInputOCRStage(ocrFunc ocrFunc, limiter *rate.Limiter, failed *atom
 	}
 }
 
+func NewSingleInputOCRStageWithProgress(ocrFunc ocrFunc, progress *ProgressTracker) fluxus.StageFunc[*PipelineItem, *BatchResult] {
+	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
+		itemStart := time.Now()
+
+		// Call the OCR function of the provider & update progress
+		result, err := ocrFunc(ctx, *item.Input)
+		if err != nil {
+			processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
+			progress.IncrementFailed()
+			return &BatchResult{Item: item, Error: processingErr}, nil
+		}
+
+		progress.IncrementCompleted()
+		return &BatchResult{Item: item, Result: result}, nil
+	}
+}
+
 // textCorrectionFunc is a function type that matches the signature of the Complete function of the text processor provider.
 type textCorrectionFunc func(ctx context.Context, text string) (string, error)
 
 // NewTextCorrectionStage creates a text correction stage for post-processing OCR results
-func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc, limiter *rate.Limiter) fluxus.StageFunc[*OCRResult, *OCRResult] {
+func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc) fluxus.StageFunc[*OCRResult, *OCRResult] {
 	return func(ctx context.Context, result *OCRResult) (*OCRResult, error) {
 		// Skip processing if no result
 		if result == nil {
 			return result, nil
-		}
-
-		//! Make sure the rate limits are  not hit twice
-		if limiter != nil {
-			if err := limiter.Wait(ctx); err != nil {
-				return nil, fmt.Errorf("text correction rate limiter wait interrupted: %w", err)
-			}
 		}
 
 		correctedText, err := textCorrectionFunc(ctx, result.Text)
@@ -128,5 +129,12 @@ func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc, limiter *rate
 		correctedResult.Metadata["TextCorrectionApplied"] = "true"
 
 		return correctedResult, nil
+	}
+}
+
+func NewLastStageProgressStage(progress *ProgressTracker) fluxus.StageFunc[*PipelineItem, *PipelineItem] {
+	return func(ctx context.Context, item *PipelineItem) (*PipelineItem, error) {
+		progress.IncrementCompleted()
+		return item, nil
 	}
 }

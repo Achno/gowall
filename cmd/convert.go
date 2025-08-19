@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -17,6 +18,9 @@ import (
 var (
 	colorPair []string
 	theme     string
+	backend   string
+	nearest   int
+	power     float64
 )
 
 var convertCmd = &cobra.Command{
@@ -24,6 +28,17 @@ var convertCmd = &cobra.Command{
 	Short: "Convert an img's color scheme",
 	Long:  `Convert an img's color scheme or its format ie from webp to png etc`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		
+		// Validate Shepard-specific flags
+		if backend != config.BackendShepard {
+			if cmd.Flags().Changed("nearest") {
+				return fmt.Errorf("--nearest is only valid with --backend shepard")
+			}
+			if cmd.Flags().Changed("power") {
+				return fmt.Errorf("--power is only valid with --backend shepard")
+			}
+		}
+
 		err := validateInput(shared, args)
 		if err != nil {
 			return err
@@ -35,6 +50,21 @@ var convertCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var processor image.ImageProcessor
+
+		// Update backend if flag was provided
+		if cmd.Flags().Changed("backend") {
+			config.GowallConfig.ColorCorrectionBackend = backend
+		}
+
+		// Only update Shepard options if using Shepard backend
+		if config.GowallConfig.ColorCorrectionBackend == config.BackendShepard {
+			if cmd.Flags().Changed("nearest") {
+				config.GowallConfig.ShepardOptions.Nearest = nearest
+			}
+			if cmd.Flags().Changed("power") {
+				config.GowallConfig.ShepardOptions.Power = power
+			}
+		}
 
 		// Determine which processor to use
 		if len(theme) > 0 {
@@ -88,6 +118,10 @@ func init() {
 	convertCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName] or [PATH to Json file containing theme]")
 	convertCmd.Flags().StringVarP(&shared.Format, "format", "f", "", "Usage : --format [image format] png,webp,jpg,jpeg")
 	convertCmd.Flags().StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
+	convertCmd.Flags().StringVarP(&backend, "backend", "b", config.BackendRBF, "Color correction backend: nn, rbf, shepard")
+	convertCmd.Flags().IntVarP(&nearest, "nearest", "n", config.ShepardOptionsDefault.Nearest, "Number of nearest colors for Shepard's method")
+	convertCmd.Flags().Float64VarP(&power, "power", "p", config.ShepardOptionsDefault.Power, "Power parameter for Shepard's method")
 	convertCmd.RegisterFlagCompletionFunc("theme", themeCompletion)
+
 	addGlobalFlags(convertCmd)
 }

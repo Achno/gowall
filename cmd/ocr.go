@@ -317,7 +317,8 @@ func setDefaultOCRConfig() providers.Config {
 		},
 		OCR: providers.ProviderConfig{
 			Format: "markdown",
-			Prompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+			// Prompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
+			Prompt: "Extract all visible text from this image and format the output as markdown. Include only the text content; no explanations or additional text should be included. If the image is empty, return an empty string. Fix any formatting issues or inconsistencies found in the extracted content",
 		},
 		TextCorrection: providers.TextCorrectionConfig{
 			Enabled: false,

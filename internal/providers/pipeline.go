@@ -201,7 +201,7 @@ func stitchPipelineResults(originalInputs []*OCRInput, batchResults []*BatchResu
 		}
 
 		finalResults[originalIndex] = &OCRResult{
-			Text:     strings.Join(textParts, "\n\n"), // <---  page break
+			Text:     strings.Join(textParts, "\n\n --- \n\n"), // <---  page break
 			Images:   combinedImages,
 			Metadata: combinedMetadata,
 		}

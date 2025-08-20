@@ -41,7 +41,7 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		return nil, err
 	}
 
-	res, err := g.client.Models.GenerateContent(ctx, model, []*genai.Content{{Parts: parts}}, nil)
+	res, err := g.client.Models.GenerateContent(ctx, g.config.OCR.Model, []*genai.Content{{Parts: parts}}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error from Gemini API: %w", err)
 	}
@@ -63,12 +63,12 @@ func (g *GeminiProvider) GetConfig() Config {
 func (g *GeminiProvider) InputToMessages(input OCRInput) ([]*genai.Part, error) {
 	prompt := g.config.OCR.Prompt
 
+	// prompt += " Format the output in plain text"
+
 	if g.config.OCR.Format == "md" {
 		prompt += " Format the output in Markdown."
 		prompt = AddPageContextToPrompt(input.Filename, prompt)
 	}
-
-	prompt += " Format the output in plain text"
 
 	switch input.Type {
 	case InputTypeImage:

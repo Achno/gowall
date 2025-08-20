@@ -25,7 +25,7 @@ type ProviderConfig struct {
 	Model       string `yaml:"model"`
 	Prompt      string `yaml:"prompt"`
 	Language    string `yaml:"language"`
-	Format      string `yaml:"format"` // "markdown", "text"
+	Format      string `yaml:"format"`
 	SupportsPDF bool   `yaml:"supports_pdf"`
 }
 
@@ -102,7 +102,7 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 	optionsMap["device"] = merged.Device
 	optionsMap["verbose"] = merged.Verbose
 
-	if config.OCR.Format == "markdown" {
+	if config.OCR.Format == "md" {
 		optionsMap["to"] = "md"
 	} else if config.OCR.Format == "text" {
 		optionsMap["to"] = "text"

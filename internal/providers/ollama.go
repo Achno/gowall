@@ -67,7 +67,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		prompt = o.config.OCR.Prompt
 	}
 
-	if o.config.OCR.Format == "markdown" {
+	if o.config.OCR.Format == "md" {
 		prompt += "the output format should be Markdown"
 	}
 

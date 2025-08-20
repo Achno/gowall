@@ -233,7 +233,7 @@ func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, fi
 		return nil, fmt.Errorf("docling CLI execution failed: %w, stderr: %s", err, stderr.String())
 	}
 
-	outputFormat := options["to_formats"]
+	outputFormat := options["to"]
 	if outputFormat == "" {
 		outputFormat = "md"
 	}

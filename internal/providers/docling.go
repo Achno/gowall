@@ -116,7 +116,7 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 	}
 
 	text := ""
-	if p.Config.OCR.Format == "markdown" {
+	if p.Config.OCR.Format == "md" {
 		text = result.Document.MDContent
 	} else {
 		text = result.Document.TextContent

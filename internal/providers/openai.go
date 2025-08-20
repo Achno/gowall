@@ -166,7 +166,7 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 
 	prompt := o.config.OCR.Prompt
 
-	if o.config.OCR.Format == "markdown" {
+	if o.config.OCR.Format == "md" {
 		prompt += " Format the output in Markdown."
 		prompt = AddPageContextToPrompt(input.Filename, prompt)
 	}

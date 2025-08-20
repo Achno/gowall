@@ -46,7 +46,6 @@ func BuildOCRCmd() *cobra.Command {
 		dpi      float64
 		rps      float64
 		burst    int
-		format   string
 	)
 	flags.StringVarP(&provider, "provider", "p", "", "Provider to use for OCR")
 	flags.StringVarP(&model, "model", "m", "", "Model to use for OCR")
@@ -56,7 +55,7 @@ func BuildOCRCmd() *cobra.Command {
 	flags.Float64VarP(&rps, "rps", "r", 0, "Rate limit : requests per second")
 	flags.IntVarP(&burst, "burst", "b", 5, "Rate limit burst requests")
 	flags.StringVarP(&schema, "schema", "s", "", "The schema name to use for OCR")
-	flags.StringVarP(&format, "format", "f", "", "Output format: 'markdown' or 'text'")
+	flags.StringVarP(&shared.Format, "format", "f", "", "Output format: 'md' or 'txt'")
 
 	addGlobalFlags(cmd)
 

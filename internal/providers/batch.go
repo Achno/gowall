@@ -11,8 +11,6 @@ import (
 	"github.com/synoptiq/go-fluxus"
 )
 
-const defaultConcurrency = 10
-
 // ocrFunc is a function type that matches the signature of the OCR function of the provider.
 type ocrFunc func(ctx context.Context, input OCRInput) (*OCRResult, error)
 
@@ -36,18 +34,12 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, c
 		return []*BatchResult{}, nil
 	}
 
-	if concurrency <= 0 {
-		concurrency = defaultConcurrency
-	}
-
-	// Set up progress tracker for OCR processing
 	progress.SetTotal(int64(totalItems))
 	progress.SetPrefix("OCR Processing")
 	progress.Start()
 
 	ocrStage := NewSingleInputOCRStageWithProgress(ocrFunc, progress)
 
-	// --- Create Map Stage for Concurrent Processing ---
 	ocrMap := fluxus.NewMap(ocrStage).
 		WithConcurrency(concurrency).
 		WithCollectErrors(true) // Collect all errors instead of stopping at first error
@@ -55,7 +47,6 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, c
 	pipeline := fluxus.NewPipeline(ocrMap)
 
 	finalResults, err := pipeline.Process(ctx, items)
-
 	if err != nil {
 		progress.Stop("OCR Processing failed.")
 		return nil, fmt.Errorf("pipeline execution failed: %w", err)
@@ -64,9 +55,8 @@ func ProcessBatch(ctx context.Context, items []*PipelineItem, ocrFunc ocrFunc, c
 	totalDuration := time.Since(startTime)
 	_, completed, failed, _ := progress.GetCounters()
 	progress.Stop("OCR Processing completed.")
-	logger.Printf("\nBatch processing finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed, failed)
+	logger.Printf(fmt.Sprintf(utils.BlueColor+"\n 🡲 OCR finished in %v. Completed: %d, Failed: %d\n", totalDuration, completed, failed) + utils.ResetColor)
 
-	// Collect errors from results
 	var allErrors []error
 	for _, res := range finalResults {
 		if res.Error != nil {

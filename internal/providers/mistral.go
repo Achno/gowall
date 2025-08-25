@@ -12,11 +12,7 @@ import (
 	imageio "github.com/Achno/gowall/internal/image_io"
 )
 
-const (
-	model = "mistral-ocr-latest"
-)
-
-// OllamaProvider implements the Provider Interface
+// MistralProvider implements the Provider Interface
 type MistralProvider struct {
 	config  Config
 	client  *http.Client
@@ -68,19 +64,6 @@ type MistralOcrDimensions struct {
 	DPI    int `json:"dpi"`
 	Height int `json:"height"`
 	Width  int `json:"width"`
-}
-
-type MistralBatchJob struct {
-	ID                string `json:"id"`
-	Status            string `json:"status"`
-	TotalRequests     int    `json:"total_requests"`
-	FailedRequests    int    `json:"failed_requests"`
-	SucceededRequests int    `json:"succeeded_requests"`
-	OutputFile        string `json:"output_file"`
-}
-
-type MistralBatchFile struct {
-	ID string `json:"id"`
 }
 
 func NewMistralProvider(config Config) (OCRProvider, error) {
@@ -153,7 +136,7 @@ func (m *MistralProvider) InputToMessages(input OCRInput) (MistralOcrResquest, e
 			return MistralOcrResquest{}, err
 		}
 		return MistralOcrResquest{
-			Model:              model,
+			Model:              m.config.OCR.Model,
 			Document:           MistralOcrDocument{Type: "image_url", ImageURL: fmt.Sprintf("data:image/jpeg;base64,%s", base64Image)},
 			IncludeImageBase64: true,
 		}, nil
@@ -164,7 +147,7 @@ func (m *MistralProvider) InputToMessages(input OCRInput) (MistralOcrResquest, e
 				return MistralOcrResquest{}, err
 			}
 			return MistralOcrResquest{
-				Model:              model,
+				Model:              m.config.OCR.Model,
 				Document:           MistralOcrDocument{Type: "document_url", DocumentURL: fmt.Sprintf("data:application/pdf;base64,%s", base64PDF), DocumentName: input.Filename},
 				IncludeImageBase64: true,
 			}, nil

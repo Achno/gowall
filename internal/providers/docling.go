@@ -29,11 +29,6 @@ type DoclingHealthResponse struct {
 	Status string `json:"status"`
 }
 
-type DoclingErrorResponse struct {
-	Detail string `json:"detail"`
-	Error  string `json:"error"`
-}
-
 type DoclingDocumentResponse struct {
 	Filename       string          `json:"filename"`
 	MDContent      string          `json:"md_content"`
@@ -51,7 +46,6 @@ type DoclingConvertDocumentResponse struct {
 	Timings        map[string]any          `json:"timings"`
 }
 
-// DoclingProcessPayload contains the data needed to process a file with docling
 type DoclingProcessPayload struct {
 	FileBytes []byte
 	Filename  string
@@ -100,18 +94,18 @@ func (p *DoclingProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 		// Create temporary output directory for CLI
 		tempOutputDir, err := os.MkdirTemp("", "docling-output-*")
 		if err != nil {
-			return nil, fmt.Errorf("failed to create temp output directory: %w", err)
+			return nil, fmt.Errorf("docling: failed to create temp output directory: %w", err)
 		}
 		defer os.RemoveAll(tempOutputDir)
 
 		result, err = p.CliClient.ProcessFile(ctx, payload.FileBytes, payload.Filename, payload.Options, tempOutputDir)
 		if err != nil {
-			return nil, fmt.Errorf("docling CLI processing failed: %w", err)
+			return nil, fmt.Errorf("docling CLI: %w", err)
 		}
 	} else {
 		result, err = p.Client.ProcessFile(ctx, payload.FileBytes, payload.Filename, payload.Options)
 		if err != nil {
-			return nil, fmt.Errorf("docling REST processing failed: %w", err)
+			return nil, fmt.Errorf("docling REST: %w", err)
 		}
 	}
 
@@ -196,16 +190,16 @@ func (p *DoclingProvider) InputToMessages(input OCRInput, ctx context.Context) (
 	case InputTypeImage:
 		payload, err := p.WithImage(ctx, input)
 		if err != nil {
-			return nil, fmt.Errorf("docling: failed to prepare image: %w", err)
+			return nil, fmt.Errorf("failed WithImage: %w", err)
 		}
 		return payload, nil
 	case InputTypePDF:
 		if !p.SupportsPDF() {
-			return nil, fmt.Errorf("docling provider doesn't support PDF processing")
+			return nil, fmt.Errorf("provider doesn't support PDF processing")
 		}
 		payload, err := p.WithPDF(ctx, input)
 		if err != nil {
-			return nil, fmt.Errorf("docling: failed to prepare PDF: %w", err)
+			return nil, fmt.Errorf("failed WithPDF: %w", err)
 		}
 		return payload, nil
 	default:

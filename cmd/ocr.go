@@ -71,68 +71,13 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	cfg, err := LoadOCRConfig(cmd)
 	utils.HandleError(err, "Error")
 
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	ProviderName:      "ollama",
-	// 	VisionLLMProvider: "ollama",
-	// 	VisionLLMModel:    "minicpm-v",
-	// 	VisionLLMPrompt:   "Extract the text in this image, DO not infer programming languages syntax, just write whatever you see, DO NOT WRITE ANYTHING ELSE BUT THE CONTENT inside the image,also keep the format, if they have a new line then write the content in the new line ect...",
-	// })
-	//? VLLM
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "vllm",
-	// 	VisionLLMModel:    "ds4sd/SmolDocling-256M-preview",
-	// 	// VisionLLMPrompt: "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-	// 	VisionLLMPrompt: "turn code to text",
-	// })
-	//? OPENAI
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "openai",
-	// 	VisionLLMModel:    "gpt-4-vision-preview",
-	// 	// VisionLLMPrompt: "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-	// 	VisionLLMPrompt: "turn code to text",
-	// })
-	//? Gemini
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "gemini",
-	// 	VisionLLMModel:    "gemini-2.5-pro-exp-03-25",
-	// 	VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-	// 	// VisionLLMPrompt: "turn code to text",
-	// })
-	//? Mistral
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "mistral",
-	// 	VisionLLMModel:    "mistral-ocr-latest",
-	// 	VisionLLMPrompt:   "Extract all visible text from this pdf,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-	// 	// VisionLLMPrompt: "turn code to text",
-	// })
-	//? Openrouter
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "openrouter",
-	// 	VisionLLMModel:    "qwen/qwen2.5-vl-72b-instruct:free",
-	// 	VisionLLMPrompt:   "Extract all visible text from this image in english,Do not summarize, paraphrase, or infer missing text,Retain all spacing, punctuation, and formatting exactly as in the image,Include all text, even if it seems irrelevant or repeated.",
-	// 	// VisionLLMPrompt: "turn code to text",
-	// })
-	//? Tesseract
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "tesseract",
-	// 	VisionLLMModel:    "tesseract",
-	// 	VisionLLMPrompt:   "X",
-	// 	Language:          "eng",
-	// })
-	//? Docling
-	// n, err := providers.NewOCRProvider(providers.Config{
-	// 	VisionLLMProvider: "docling",
-	// 	VisionLLMModel:    "easyocr",
-	// 	VisionLLMPrompt:   "X",
-	// 	Language:          "en",
-	// })
 	ops, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
 	n, err := providers.NewOCRProvider(cfg)
 	utils.HandleError(err, "Error")
-	service := providers.NewProviderService(n, cfg)
 
+	service := providers.NewProviderService(n, cfg)
 	err = providers.StartOCRPipeline(ops, service)
 	utils.HandleError(err, "Error")
 }
@@ -316,7 +261,7 @@ func setDefaultOCRConfig() providers.Config {
 			Burst: 12,
 		},
 		OCR: providers.ProviderConfig{
-			Format: "markdown",
+			Format: "md",
 			// Prompt: "Extract all visible text from this image **without any changes**. Do not summarize, paraphrase, or infer missing text. Retain all spacing, punctuation, and formatting exactly as in the image. If text is unclear or partially visible, extract as much as possible without guessing. Include all text, even if it seems irrelevant or repeated.",
 			Prompt: "Extract all visible text from this image and format the output as markdown. Include only the text content; no explanations or additional text should be included. If the image is empty, return an empty string. Fix any formatting issues or inconsistencies found in the extracted content",
 		},

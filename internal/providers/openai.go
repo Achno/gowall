@@ -12,10 +12,6 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-const (
-	defaultOpenAIModel = "gpt-4o"
-)
-
 // OpenAIProvider implements the OCRProvider interface
 type OpenAIProvider struct {
 	client *openai.Client
@@ -35,7 +31,7 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	baseURL, ok := urlMap[config.OCR.Provider]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL env", config.OCR.Provider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` with the OPENAI_BASE_URL env", config.OCR.Provider)
 	}
 
 	apiMap := map[string]string{
@@ -47,18 +43,15 @@ func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
 	apiKey, ok := apiMap[config.OCR.Provider]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` alongside the OPENAI_BASE_URL,OPENAI_API_COMPATIBLE_SERVICE_API_KEY envs", config.OCR.Provider)
+		return nil, fmt.Errorf("%s is not a valid provider,use [vllm,openrouter,openai] or `oc` with the OPENAI_BASE_URL,OPENAI_API_COMPATIBLE_SERVICE_API_KEY envs", config.OCR.Provider)
 	}
 
 	if apiKey == "" {
-		return nil, fmt.Errorf("your [OpenAI/OpenRouter or OpenAI Compatible] API key env is not set, check that your .env file location is correct inside config.yml or you are properly providing the env's")
+		return nil, fmt.Errorf("the [OpenAI/OpenRouter or OpenAI Compatible] API key env is not set, check that your .env file location is correct inside config.yml and you are properly providing the env's")
 	}
 	retries := cf.GowallConfig.EnvConfig.OPENAI_MAX_RETRIES
 
-	model := defaultOpenAIModel
-	if config.OCR.Model != "" {
-		model = config.OCR.Model
-	}
+	model := config.OCR.Model
 
 	opts := []option.RequestOption{
 		option.WithAPIKey(apiKey),
@@ -102,10 +95,6 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, error) {
-	return o.TextCorrection(ctx, text)
-}
-
-func (o *OpenAIProvider) TextCorrection(ctx context.Context, text string) (string, error) {
 	prompt := o.config.TextCorrection.Provider.Prompt
 
 	messages := []openai.ChatCompletionMessageParamUnion{
@@ -165,13 +154,7 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 
 	prompt := o.config.OCR.Prompt
-
-	if o.config.OCR.Format == "md" {
-		prompt += " Format the output in Markdown."
-		prompt = AddPageContextToPrompt(input.Filename, prompt)
-	}
-
-	prompt += " Format the output in plain text"
+	prompt = BuildPrompt(prompt, input.Filename, o.config.OCR.Format)
 
 	switch input.Type {
 	case InputTypeImage:

@@ -53,10 +53,10 @@ func (c *TesseractClient) OCRImageCmd(ctx context.Context, image image.Image, la
 	}
 
 	cmd := c.ConstructTesseractCommand(ctx, []string{"-l", lang})
-	fmt.Println("COMMAND: ", cmd.String())
+	// DEBUG:  fmt.Println("COMMAND: ", cmd.String())
 	out, err := c.RunTesseractCommand(ctx, cmd, buf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while running tesseract: %w", err)
 	}
 
 	text := strings.TrimSpace(out)
@@ -84,7 +84,7 @@ func (c *TesseractClient) RunTesseractCommand(ctx context.Context, cmd *exec.Cmd
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("tesseract error: %v, stderr: %s", err, stderr.String())
+		return "", fmt.Errorf("%v, stderr: %s", err, stderr.String())
 	}
 
 	return out.String(), nil

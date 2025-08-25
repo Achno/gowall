@@ -21,9 +21,9 @@ func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
 	config := service.GetConfig()
 
 	// 1. Load files concurrently from imageIO operations : maintain order and mapping
-	originalInputs, inputToOpsMapping, err := buildOCRInputsWithMapping(ops)
+	originalInputs, inputToOpsMapping, err := MapToOCRInput(ops)
 	if err != nil {
-		return err
+		return fmt.Errorf("imageIO mapping failed: %w", err)
 	}
 
 	initialItems := make([]*PipelineItem, len(originalInputs))
@@ -42,7 +42,7 @@ func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
 	processedItems, err := runPreprocessingPipeline(initialItems, service, progress)
 	if err != nil {
 		progress.Stop("Pre-Processing failed.")
-		return fmt.Errorf("pre-processing pipeline failed: %w", err)
+		return fmt.Errorf("pre-processing failed: %w", err)
 	}
 	progress.Stop("Pre-Processing completed.")
 
@@ -50,7 +50,7 @@ func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
 	ocrProgress := WithPrefixProgress(len(processedItems), "OCR Processing")
 	batchResults, err := ProcessBatch(context.Background(), processedItems, service.OCR, config.Pipeline.OCRConcurrency, ocrProgress)
 	if err != nil {
-		return fmt.Errorf("OCR batch processing failed: %w", err)
+		return fmt.Errorf("OCR processing failed: %w", err)
 	}
 
 	// 4. Stitch Results
@@ -60,19 +60,17 @@ func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
 	if config.TextCorrection.Enabled {
 		finalResults, err = runPostprocessingPipeline(finalResults, config, service)
 		if err != nil {
-			return fmt.Errorf("post-processing pipeline failed: %w", err)
+			return fmt.Errorf("post-processing failed: %w", err)
 		}
 	}
 
 	// 6. Use the mapping to save the results to the correct files
 	for i, item := range finalResults {
 		if opsIndex, exists := inputToOpsMapping[i]; exists {
-			logger.Printf("\n--- Result for: %s ---\n", originalInputs[i].Filename)
 			if item != nil {
 				imageio.SaveText(item.Text, ops[opsIndex].ImageOutput)
-				logger.Printf("Saved to %s\n", ops[opsIndex].ImageOutput.String())
-			} else {
-				logger.Printf("Processing failed for this file.")
+				logger.Printf(fmt.Sprintf(utils.BlueColor+"● Saved to %s\n", ops[opsIndex].ImageOutput.String()+utils.ResetColor))
+
 			}
 		}
 	}
@@ -117,7 +115,7 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, service *ProviderSer
 
 	result, err := pipeline.Process(ctx, initialItems)
 	if err != nil {
-		return nil, fmt.Errorf("pipeline processing failed: %w", err)
+		return nil, fmt.Errorf("pipeline: %w", err)
 	}
 
 	return result, nil
@@ -127,7 +125,6 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, service *ProviderSer
 func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *ProviderService) ([]*OCRResult, error) {
 	ctx := context.Background()
 
-	// 3. Count valid results for processing
 	validResults := 0
 	for _, result := range ocrResults {
 		if result != nil {
@@ -136,26 +133,21 @@ func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *
 	}
 
 	if validResults == 0 {
-		return ocrResults, nil // Nothing to process
+		return ocrResults, nil
 	}
 
-	// 4. Create text correction stage
 	textCorrectionStage := NewTextCorrectionStage(service.Complete)
 
-	// 5. Create pipeline for text correction
 	textCorrectionMap := fluxus.NewMap(textCorrectionStage).
 		WithConcurrency(config.Pipeline.Concurrency).
 		WithCollectErrors(true)
 
 	pipeline := fluxus.NewPipeline(textCorrectionMap)
 
-	// 6. Process results through text correction
 	correctedResults, err := pipeline.Process(ctx, ocrResults)
 	if err != nil {
-		return nil, fmt.Errorf("text correction pipeline execution failed: %w", err)
+		return nil, fmt.Errorf("pipeline: %w", err)
 	}
-
-	logger.Printf("Text correction completed. Processed: %d results\n", validResults)
 
 	return correctedResults, nil
 }
@@ -164,6 +156,7 @@ func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *
 func stitchPipelineResults(originalInputs []*OCRInput, batchResults []*BatchResult) []*OCRResult {
 	finalResults := make([]*OCRResult, len(originalInputs))
 	resultGroups := make(map[int][]*BatchResult)
+	pageBreaker := "\n\n --- \n\n"
 
 	// Group successful results by their original file index
 	for _, br := range batchResults {
@@ -173,7 +166,6 @@ func stitchPipelineResults(originalInputs []*OCRInput, batchResults []*BatchResu
 		}
 	}
 
-	// Process each group
 	for originalIndex, group := range resultGroups {
 		// If single item (image or direct PDF), just take the result
 		if len(group) == 1 {
@@ -201,7 +193,7 @@ func stitchPipelineResults(originalInputs []*OCRInput, batchResults []*BatchResu
 		}
 
 		finalResults[originalIndex] = &OCRResult{
-			Text:     strings.Join(textParts, "\n\n --- \n\n"), // <---  page break
+			Text:     strings.Join(textParts, pageBreaker),
 			Images:   combinedImages,
 			Metadata: combinedMetadata,
 		}
@@ -210,8 +202,8 @@ func stitchPipelineResults(originalInputs []*OCRInput, batchResults []*BatchResu
 	return finalResults
 }
 
-// buildOCRInputsWithMapping loads files from the given imageIO operations and returns a list of OCRInputs and a mapping between the OCRInputs and the original imageIO operations.
-func buildOCRInputsWithMapping(ops []imageio.ImageIO) ([]*OCRInput, map[int]int, error) {
+// MapToOCRInput loads files from the given imageIO operations and returns a list of OCRInputs and a mapping between the OCRInputs and the original imageIO operations.
+func MapToOCRInput(ops []imageio.ImageIO) ([]*OCRInput, map[int]int, error) {
 	var inputs []*OCRInput
 	inputToOpsMapping := make(map[int]int)
 	var wg sync.WaitGroup
@@ -230,14 +222,14 @@ func buildOCRInputsWithMapping(ops []imageio.ImageIO) ([]*OCRInput, map[int]int,
 			case ".pdf":
 				pdf, err := imageio.LoadFileBytes(op.ImageInput)
 				if err != nil {
-					utils.HandleError(fmt.Errorf("failed to load PDF %s: %w", path, err))
+					utils.HandleError(fmt.Errorf("loading PDF %s: %w", path, err))
 					return
 				}
 				input = &OCRInput{Type: InputTypePDF, PDFData: pdf, Filename: path}
 			case ".png", ".jpg", ".jpeg", ".webp":
 				img, err := imageio.LoadImage(op.ImageInput)
 				if err != nil {
-					utils.HandleError(fmt.Errorf("failed to load image %s: %w", path, err))
+					utils.HandleError(fmt.Errorf("loading image %s: %w", path, err))
 					return
 				}
 				input = &OCRInput{Type: InputTypeImage, Image: img, Filename: path}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
 	"github.com/Achno/gowall/internal/image"
@@ -22,7 +21,7 @@ func NewExpandSinglePdfStage(service *ProviderService) fluxus.StageFunc[*Pipelin
 
 				images, err := pdf.ConvertPDFToImages(item.Input.PDFData, pdf.ConvertOptions{MaxPages: 0, SkipFirstNPages: 0, DPI: dpi})
 				if err != nil {
-					return []*PipelineItem{}, fmt.Errorf("expanding PDF stage failed to convert PDF '%s' to images: %w", item.Input.Filename, err)
+					return []*PipelineItem{}, fmt.Errorf("expanding PDF stage > converting PDF '%s' to images: %w", item.Input.Filename, err)
 				}
 
 				var expandedItems []*PipelineItem
@@ -60,7 +59,7 @@ func NewGrayScaleStage(processor image.GrayScaleProcessor) fluxus.StageFunc[*Pip
 
 		img, err := processor.Process(item.Input.Image, "")
 		if err != nil {
-			return item, fmt.Errorf("grayscale stage %s failed: %w", item.Input.Filename, err)
+			return item, fmt.Errorf("grayscale stage > %s : %w", item.Input.Filename, err)
 		}
 
 		item.Input.Image = img
@@ -68,31 +67,13 @@ func NewGrayScaleStage(processor image.GrayScaleProcessor) fluxus.StageFunc[*Pip
 	}
 }
 
-func NewSingleInputOCRStage(ocrFunc ocrFunc, failed *atomic.Int64, completed *atomic.Int64) fluxus.StageFunc[*PipelineItem, *BatchResult] {
-	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
-		itemStart := time.Now()
-
-		// 2. Call the OCR function of the provider & update progress
-		result, err := ocrFunc(ctx, *item.Input)
-		if err != nil {
-			processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
-			failed.Add(1)
-			return &BatchResult{Item: item, Error: processingErr}, nil
-		}
-
-		completed.Add(1)
-		return &BatchResult{Item: item, Result: result}, nil
-	}
-}
-
 func NewSingleInputOCRStageWithProgress(ocrFunc ocrFunc, progress *ProgressTracker) fluxus.StageFunc[*PipelineItem, *BatchResult] {
 	return func(ctx context.Context, item *PipelineItem) (*BatchResult, error) {
 		itemStart := time.Now()
 
-		// Call the OCR function of the provider & update progress
 		result, err := ocrFunc(ctx, *item.Input)
 		if err != nil {
-			processingErr := fmt.Errorf("error processing '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
+			processingErr := fmt.Errorf("ocr stage > '%s' (took %v): %w", item.Input.Filename, time.Since(itemStart), err)
 			progress.IncrementFailed()
 			return &BatchResult{Item: item, Error: processingErr}, nil
 		}
@@ -108,14 +89,13 @@ type textCorrectionFunc func(ctx context.Context, text string) (string, error)
 // NewTextCorrectionStage creates a text correction stage for post-processing OCR results
 func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc) fluxus.StageFunc[*OCRResult, *OCRResult] {
 	return func(ctx context.Context, result *OCRResult) (*OCRResult, error) {
-		// Skip processing if no result
 		if result == nil {
 			return result, nil
 		}
 
 		correctedText, err := textCorrectionFunc(ctx, result.Text)
 		if err != nil {
-			return nil, fmt.Errorf("error correcting text: %w", err)
+			return nil, fmt.Errorf("text correction stage > %w", err)
 		}
 
 		correctedResult := &OCRResult{

@@ -18,7 +18,6 @@ type OllamaProvider struct {
 	host   string
 }
 
-// Ollama chat with images API request structure
 type OllamaRequest struct {
 	Model    string          `json:"model"`
 	Messages []OllamaMessage `json:"messages"`
@@ -61,15 +60,8 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		return nil, fmt.Errorf("failed to convert image to base64: %w", err)
 	}
 
-	// Create request payload
-	prompt := "Extract all text from this image."
-	if o.config.OCR.Prompt != "" {
-		prompt = o.config.OCR.Prompt
-	}
-
-	if o.config.OCR.Format == "md" {
-		prompt += "the output format should be Markdown"
-	}
+	prompt := o.config.OCR.Prompt
+	prompt = BuildPrompt(prompt, input.Filename, o.config.OCR.Format)
 
 	req := OllamaRequest{
 		Model: o.config.OCR.Model,

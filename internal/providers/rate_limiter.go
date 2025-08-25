@@ -6,7 +6,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiter handles all rate limiting logic
 type RateLimiter struct {
 	limiter *rate.Limiter
 	enabled bool

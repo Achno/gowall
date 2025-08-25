@@ -8,18 +8,6 @@ import (
 	"github.com/Achno/gowall/utils"
 )
 
-// 	TextCorrectionEnabled  bool    `yaml:"text_correction_enabled"`
-// 	TextCorrectionProvider string  `yaml:"text_correction_provider"`
-// 	TextCorrectionModel    string  `yaml:"text_correction_model"`
-// 	TextCorrectionPrompt   string  `yaml:"text_correction_prompt"`
-// 	TextCorrectionRPS      float64 `yaml:"text_correction_rps"`
-// 	TextCorrectionBurst    int     `yaml:"text_correction_burst"`
-
-// 	// Provider-specific options
-// 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
-// }
-
-// Core provider configuration
 type ProviderConfig struct {
 	Provider    string `yaml:"provider"`
 	Model       string `yaml:"model"`
@@ -29,34 +17,30 @@ type ProviderConfig struct {
 	SupportsPDF bool   `yaml:"supports_pdf"`
 }
 
-// Pipeline configuration
 type PipelineConfig struct {
 	DPI            float64 `yaml:"dpi"`
 	Concurrency    int     `yaml:"concurrency"`
 	OCRConcurrency int     `yaml:"ocr_concurrency"`
 }
 
-// Rate limiting configuration
 type RateLimitConfig struct {
 	RPS   float64 `yaml:"rps"`
 	Burst int     `yaml:"burst"`
 }
 
-// Text correction configuration
 type TextCorrectionConfig struct {
 	Enabled   bool            `yaml:"enabled"`
 	Provider  ProviderConfig  `yaml:"provider"`
 	RateLimit RateLimitConfig `yaml:"rate_limit"`
 }
 
-// Main configuration that composes others
 type Config struct {
 	OCR            ProviderConfig       `yaml:"ocr"`
 	Pipeline       PipelineConfig       `yaml:"pipeline"`
 	RateLimit      RateLimitConfig      `yaml:"rate_limit"`
 	TextCorrection TextCorrectionConfig `yaml:"text_correction"`
 
-	// Provider-specific options
+	// Provider-specific options that implement the ProviderOptionsInterface
 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
 }
 
@@ -86,7 +70,7 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 	merged := *defaultOptions
 	if d != nil {
 		if err := mergo.Merge(&merged, d, mergo.WithoutDereference, mergo.WithSliceDeepCopy); err != nil {
-			return nil, fmt.Errorf("failed to merge DoclingOptions: %w", err)
+			return nil, fmt.Errorf("while merging DoclingOptions: %w", err)
 		}
 	}
 

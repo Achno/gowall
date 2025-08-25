@@ -46,7 +46,7 @@ func NewDoclingClient(opts ...func(*DoclingClient)) *DoclingClient {
 func (d *DoclingClient) HealthCheck(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.BaseURL+doclingHealthPath, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create health check request: %w", err)
+		return fmt.Errorf("while creating health req: %w", err)
 	}
 
 	resp, err := d.Client.Do(req)
@@ -62,11 +62,11 @@ func (d *DoclingClient) HealthCheck(ctx context.Context) error {
 
 	var healthResponse DoclingHealthResponse
 	if err := json.NewDecoder(resp.Body).Decode(&healthResponse); err != nil {
-		return fmt.Errorf("failed to decode health check response: %w", err)
+		return fmt.Errorf("while decoding health check response: %w", err)
 	}
 
 	if healthResponse.Status != "ok" {
-		return fmt.Errorf("docling service not healthy, status: %s", healthResponse.Status)
+		return fmt.Errorf("service not healthy, status: %s", healthResponse.Status)
 	}
 	return nil
 }
@@ -77,28 +77,28 @@ func (d *DoclingClient) ProcessFile(ctx context.Context, imageBytes []byte, file
 
 	part, err := writer.CreateFormFile("files", filename)
 	if err != nil {
-		return nil, fmt.Errorf("docling client: failed to create form file for image '%s': %w", filename, err)
+		return nil, fmt.Errorf("while creating form file for image '%s': %w", filename, err)
 	}
 	_, err = io.Copy(part, bytes.NewReader(imageBytes))
 	if err != nil {
-		return nil, fmt.Errorf("docling client: failed to copy image data to form for '%s': %w", filename, err)
+		return nil, fmt.Errorf("while copying image data '%s': %w", filename, err)
 	}
 
 	for key, value := range options {
 		if err := writer.WriteField(key, value); err != nil {
-			return nil, fmt.Errorf("docling client: failed to write field '%s' with value '%s': %w", key, value, err)
+			return nil, fmt.Errorf("while writing field '%s' with value '%s': %w", key, value, err)
 		}
 	}
 
 	err = writer.Close()
 	if err != nil {
-		return nil, fmt.Errorf("docling client: failed to close multipart writer: %w", err)
+		return nil, fmt.Errorf("while closing multipart writer: %w", err)
 	}
 
 	reqURL := d.BaseURL + doclingConvertPath
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, &requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("docling client: failed to create convert request: %w", err)
+		return nil, fmt.Errorf("while creating convert request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -106,26 +106,26 @@ func (d *DoclingClient) ProcessFile(ctx context.Context, imageBytes []byte, file
 
 	resp, err := d.Client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("docling: convert request to %s failed: %w", reqURL, err)
+		return nil, fmt.Errorf("request to %s failed: %w", reqURL, err)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, fmt.Errorf("docling client: failed to read convert response body (status %d): %w", resp.StatusCode, readErr)
+		return nil, fmt.Errorf("while reading res body (status %d): %w", resp.StatusCode, readErr)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("docling: convert request to %s failed with status %d: %s", reqURL, resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("req to %s failed with status %d: %s", reqURL, resp.StatusCode, string(bodyBytes))
 	}
 
 	var convertResponse DoclingConvertDocumentResponse
 	if err := json.Unmarshal(bodyBytes, &convertResponse); err != nil {
-		return nil, fmt.Errorf("docling client: failed to decode convert response. Body: %s. Error: %w", string(bodyBytes), err)
+		return nil, fmt.Errorf("while json unmarshalling response. Error: %w", err)
 	}
 
 	if convertResponse.Status != "success" && convertResponse.Status != "partial_success" {
-		return nil, fmt.Errorf("docling: conversion failed with status: %s", convertResponse.Status)
+		return nil, fmt.Errorf("unmarshalling failed status: %s", convertResponse.Status)
 	}
 
 	return &convertResponse, nil
@@ -158,7 +158,6 @@ func NewDoclingCliClient() *DoclingCliClient {
 	return client
 }
 
-// IsAvailable returns whether the  docling CLI is available
 func (c *DoclingCliClient) IsAvailable() bool {
 	return c.Available
 }
@@ -195,7 +194,7 @@ func (c *DoclingCliClient) optionsToCliArgs(options map[string]string) []string 
 // ProcessFile processes a file using the  docling CLI
 func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, filename string, options map[string]string, outputDir string) (*DoclingConvertDocumentResponse, error) {
 	if !c.Available {
-		return nil, fmt.Errorf("docling CLI is not available")
+		return nil, fmt.Errorf("is not available")
 	}
 
 	// Create temporary file because docling CLI doesn't support reading from stdin
@@ -203,13 +202,13 @@ func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, fi
 
 	tempDir, err := os.MkdirTemp("", "docling-input-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp directory: %w", err)
+		return nil, fmt.Errorf("while creating temp dir: %w", err)
 	}
 	defer os.RemoveAll(tempDir)
 
 	tempFile := filepath.Join(tempDir, filename)
 	if err := os.WriteFile(tempFile, fileBytes, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write temp file: %w", err)
+		return nil, fmt.Errorf("while writing temp file: %w", err)
 	}
 
 	args := []string{tempFile}
@@ -227,10 +226,10 @@ func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, fi
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-				return nil, fmt.Errorf("docling CLI failed with exit code %d: %s", status.ExitStatus(), stderr.String())
+				return nil, fmt.Errorf("failed with exit code %d: %s", status.ExitStatus(), stderr.String())
 			}
 		}
-		return nil, fmt.Errorf("docling CLI execution failed: %w, stderr: %s", err, stderr.String())
+		return nil, fmt.Errorf("execution failed: %w, stderr: %s", err, stderr.String())
 	}
 
 	outputFormat := options["to"]
@@ -254,7 +253,7 @@ func (c *DoclingCliClient) ProcessFile(ctx context.Context, fileBytes []byte, fi
 
 	content, err := os.ReadFile(outputPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read CLI output file %s: %w", outputPath, err)
+		return nil, fmt.Errorf("while reading CLI output file %s: %w", outputPath, err)
 	}
 
 	// Create response compatible with REST API response

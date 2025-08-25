@@ -18,7 +18,7 @@ func NewGeminiProvider(config Config) (OCRProvider, error) {
 
 	apiKey := cf.GowallConfig.EnvConfig.GEMINI_API_KEY
 	if apiKey == "" {
-		return nil, fmt.Errorf("GEMINI_API_KEY env is not set")
+		return nil, fmt.Errorf("GEMINI_API_KEY env is not set,check that your .env file location is correct inside config.yml and you are properly providing the env's")
 	}
 	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
 		APIKey:  apiKey,
@@ -62,13 +62,7 @@ func (g *GeminiProvider) GetConfig() Config {
 
 func (g *GeminiProvider) InputToMessages(input OCRInput) ([]*genai.Part, error) {
 	prompt := g.config.OCR.Prompt
-
-	// prompt += " Format the output in plain text"
-
-	if g.config.OCR.Format == "md" {
-		prompt += " Format the output in Markdown."
-		prompt = AddPageContextToPrompt(input.Filename, prompt)
-	}
+	prompt = BuildPrompt(prompt, input.Filename, g.config.OCR.Format)
 
 	switch input.Type {
 	case InputTypeImage:

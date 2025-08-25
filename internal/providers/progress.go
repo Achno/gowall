@@ -9,16 +9,6 @@ import (
 	"github.com/Achno/gowall/utils"
 )
 
-// 1. You create a custom progress tracker, start it pass it as an argument to the stages, have the increment/decrement there
-// progress := WithCustomProgress(len(initialItems), func(inProgress, completed, failed, total int64) string {
-// 	return fmt.Sprintf("Pre-processing: %d active, %d done, %d failed (Total: %d)",
-// 		inProgress, completed, failed, total)
-// })
-// progress.Start()
-// defer progress.Stop()
-
-// grayScaleStage := NewGrayScaleStageWithProgress(image.GrayScaleProcessor{}, progress)
-
 // ProgressTracker handles progress tracking with atomic counters and periodic updates
 type ProgressTracker struct {
 	total      int64

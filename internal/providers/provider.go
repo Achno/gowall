@@ -30,18 +30,28 @@ type ProviderOptionsInterface interface {
 // ProviderService composes providers with their dependencies
 type ProviderService struct {
 	ocr                   OCRProvider
+	textProcessor         TextProcessor
 	rateLimiter           *RateLimiter
 	correctionTextLimiter *RateLimiter
 	config                Config
 }
 
 func NewProviderService(provider OCRProvider, config Config) *ProviderService {
-	return &ProviderService{
+	service := &ProviderService{
 		ocr:                   provider,
 		rateLimiter:           NewRateLimiter(config.RateLimit),
 		correctionTextLimiter: NewRateLimiter(config.TextCorrection.RateLimit),
 		config:                config,
 	}
+
+	// Create separate text correction provider if enabled
+	if config.TextCorrection.Enabled {
+		if textCorrectionProvider, err := NewTextCorrectionProvider(config); err == nil {
+			service.textProcessor = textCorrectionProvider
+		}
+	}
+
+	return service
 }
 
 func (s *ProviderService) OCR(ctx context.Context, input OCRInput) (*OCRResult, error) {
@@ -52,8 +62,7 @@ func (s *ProviderService) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 }
 
 func (s *ProviderService) Complete(ctx context.Context, text string) (string, error) {
-	textProcessor, ok := s.ocr.(TextProcessor)
-	if !ok {
+	if s.textProcessor == nil {
 		return "", fmt.Errorf("provider doesn't support text completion")
 	}
 
@@ -61,7 +70,7 @@ func (s *ProviderService) Complete(ctx context.Context, text string) (string, er
 		return "", fmt.Errorf("rate limit wait failed: %w", err)
 	}
 
-	return textProcessor.Complete(ctx, text)
+	return s.textProcessor.Complete(ctx, text)
 }
 
 func (s *ProviderService) SupportsPDF() bool {
@@ -75,13 +84,9 @@ func (s *ProviderService) GetConfig() Config {
 	return s.config
 }
 
-func NewOCRProvider(config Config) (OCRProvider, error) {
-
-	if config.OCR.Model == "" || config.OCR.Provider == "" {
-		return nil, fmt.Errorf("didn't specify OCR model & provider")
-	}
-
-	providers := map[string]func(config Config) (OCRProvider, error){
+// getProviderFactories returns the map of available provider factories
+func getProviderFactories() map[string]func(config Config) (OCRProvider, error) {
+	return map[string]func(config Config) (OCRProvider, error){
 		"ollama":     NewOllamaProvider,
 		"vllm":       NewOpenAIProvider,
 		"openai":     NewOpenAIProvider,
@@ -91,11 +96,53 @@ func NewOCRProvider(config Config) (OCRProvider, error) {
 		"tesseract":  NewTesseractProvider,
 		"docling":    NewDoclingProvider,
 	}
+}
 
-	provider, ok := providers[config.OCR.Provider]
-	if !ok {
-		return nil, fmt.Errorf("you have not entered a valid provider")
+func NewProvider(providerName, model string, config Config) (OCRProvider, error) {
+	if model == "" || providerName == "" {
+		return nil, fmt.Errorf("didn't specify model & provider")
 	}
 
-	return provider(config)
+	providers := getProviderFactories()
+	providerFunc, ok := providers[providerName]
+	if !ok {
+		return nil, fmt.Errorf("provider '%s' is not supported", providerName)
+	}
+
+	return providerFunc(config)
+}
+
+func NewOCRProvider(config Config) (OCRProvider, error) {
+	return NewProvider(config.OCR.Provider, config.OCR.Model, config)
+}
+
+func NewTextCorrectionProvider(config Config) (TextProcessor, error) {
+	textCorrectionConfig := createTextCorrectionConfig(config)
+
+	provider, err := NewProvider(
+		config.TextCorrection.Provider.Provider,
+		config.TextCorrection.Provider.Model,
+		textCorrectionConfig,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("while creating completionprovider: %w", err)
+	}
+
+	textProcessor, ok := provider.(TextProcessor)
+	if !ok {
+		return nil, fmt.Errorf("provider '%s' doesn't support text completion", config.TextCorrection.Provider.Provider)
+	}
+
+	return textProcessor, nil
+}
+
+func createTextCorrectionConfig(config Config) Config {
+	return Config{
+		OCR: ProviderConfig{
+			Provider: config.TextCorrection.Provider.Provider,
+			Model:    config.TextCorrection.Provider.Model,
+			Prompt:   config.TextCorrection.Provider.Prompt,
+		},
+		RateLimit: config.TextCorrection.RateLimit,
+	}
 }

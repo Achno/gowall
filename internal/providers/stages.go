@@ -87,7 +87,7 @@ func NewSingleInputOCRStageWithProgress(ocrFunc ocrFunc, progress *ProgressTrack
 type textCorrectionFunc func(ctx context.Context, text string) (string, error)
 
 // NewTextCorrectionStage creates a text correction stage for post-processing OCR results
-func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc) fluxus.StageFunc[*OCRResult, *OCRResult] {
+func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc, progress *ProgressTracker) fluxus.StageFunc[*OCRResult, *OCRResult] {
 	return func(ctx context.Context, result *OCRResult) (*OCRResult, error) {
 		if result == nil {
 			return result, nil
@@ -95,6 +95,7 @@ func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc) fluxus.StageF
 
 		correctedText, err := textCorrectionFunc(ctx, result.Text)
 		if err != nil {
+			progress.IncrementFailed()
 			return nil, fmt.Errorf("text correction stage > %w", err)
 		}
 
@@ -108,6 +109,7 @@ func NewTextCorrectionStage(textCorrectionFunc textCorrectionFunc) fluxus.StageF
 		}
 		correctedResult.Metadata["TextCorrectionApplied"] = "true"
 
+		progress.IncrementCompleted()
 		return correctedResult, nil
 	}
 }

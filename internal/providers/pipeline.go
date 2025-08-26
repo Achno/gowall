@@ -58,10 +58,13 @@ func StartOCRPipeline(ops []imageio.ImageIO, service *ProviderService) error {
 
 	// 5. Run optional Post-processing Pipeline
 	if config.TextCorrection.Enabled {
-		finalResults, err = runPostprocessingPipeline(finalResults, config, service)
+		postProcessingProgress := WithPrefixProgress(len(finalResults), "Post-Processing")
+		postProcessingProgress.Start()
+		finalResults, err = runPostprocessingPipeline(finalResults, config, service, postProcessingProgress)
 		if err != nil {
 			return fmt.Errorf("post-processing failed: %w", err)
 		}
+		postProcessingProgress.Stop("Post-Processing completed.")
 	}
 
 	// 6. Use the mapping to save the results to the correct files
@@ -122,7 +125,7 @@ func runPreprocessingPipeline(initialItems []*PipelineItem, service *ProviderSer
 }
 
 // runPostprocessingPipeline runs text correction on the stitched OCR results
-func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *ProviderService) ([]*OCRResult, error) {
+func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *ProviderService, progress *ProgressTracker) ([]*OCRResult, error) {
 	ctx := context.Background()
 
 	validResults := 0
@@ -136,7 +139,7 @@ func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *
 		return ocrResults, nil
 	}
 
-	textCorrectionStage := NewTextCorrectionStage(service.Complete)
+	textCorrectionStage := NewTextCorrectionStage(service.Complete, progress)
 
 	textCorrectionMap := fluxus.NewMap(textCorrectionStage).
 		WithConcurrency(config.Pipeline.Concurrency).

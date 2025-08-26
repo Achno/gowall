@@ -177,6 +177,9 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.DoclingOptions != nil {
 					cfg.DoclingOptions = schema.Config.DoclingOptions
 				}
+				if schema.Config.OpenAIOptions != nil {
+					cfg.OpenAIOptions = schema.Config.OpenAIOptions
+				}
 				schemaFound = true
 				break
 			}

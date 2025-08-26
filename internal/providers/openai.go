@@ -95,19 +95,27 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 }
 
 func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, error) {
-	prompt := o.config.TextCorrection.Provider.Prompt
+	prompt := o.config.OCR.Prompt
 
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.UserMessage(prompt + "\n\n" + text),
 	}
 
+	//TODO: make sure to use this ApplyOptions() abstraction in other providers like docling
+	openaiOptions, err := o.ApplyOptions()
+	if err != nil {
+		return "", err
+	}
+
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages: messages,
-		Model:    o.model,
+		Messages:    messages,
+		Model:       o.model,
+		MaxTokens:   openai.Int(openaiOptions.MaxTokens),
+		Temperature: openai.Float(openaiOptions.Temperature),
 	})
 	if err != nil {
 		logger.Warnf("Error correcting text falling back to original: %v", err)
-		return text, err
+		return text, nil
 	}
 
 	return chatCompletion.Choices[0].Message.Content, nil
@@ -175,5 +183,31 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 		return nil, fmt.Errorf("the provider doesn't support PDF's directly")
 	default:
 		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
+	}
+}
+
+// ApplyOptions merges the schema.yml openai specific options with the default options
+func (o *OpenAIProvider) ApplyOptions() (*OpenAIOptions, error) {
+	openaiOptions := o.config.OpenAIOptions
+	if openaiOptions == nil {
+		openaiOptions = &OpenAIOptions{}
+	}
+
+	optionsRaw, err := openaiOptions.Apply(o.getOpenAIOptions(), o.config)
+	if err != nil {
+		return nil, fmt.Errorf("while merging openai options: %w", err)
+	}
+	openaiOptions, ok := optionsRaw.(*OpenAIOptions)
+	if !ok {
+		return nil, fmt.Errorf("options are not a OpenAIOptions")
+	}
+
+	return openaiOptions, nil
+}
+
+func (o *OpenAIProvider) getOpenAIOptions() *OpenAIOptions {
+	return &OpenAIOptions{
+		MaxTokens:   4096,
+		Temperature: 0.7,
 	}
 }

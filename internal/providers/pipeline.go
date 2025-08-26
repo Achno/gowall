@@ -139,6 +139,7 @@ func runPostprocessingPipeline(ocrResults []*OCRResult, config Config, service *
 		return ocrResults, nil
 	}
 
+	//TODO: make sure to split the text into chunks if they surpass 4096 (MaxTokens)
 	textCorrectionStage := NewTextCorrectionStage(service.Complete, progress)
 
 	textCorrectionMap := fluxus.NewMap(textCorrectionStage).

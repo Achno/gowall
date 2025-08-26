@@ -42,7 +42,10 @@ type Config struct {
 
 	// Provider-specific options that implement the ProviderOptionsInterface
 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
+	OpenAIOptions  *OpenAIOptions  `yaml:"openai_options,omitempty"`
 }
+
+//TODO: make a reusable Merge() function with generics that asserts the given interface and merges the structs with mergo.
 
 // DoclingOptions 3 state bool to overcome go unset,specified false bool fields.
 type DoclingOptions struct {
@@ -115,4 +118,28 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 	delete(optionsMap, "from")
 
 	return optionsMap, nil
+}
+
+type OpenAIOptions struct {
+	MaxTokens   int64   `yaml:"max_tokens"`
+	Temperature float64 `yaml:"temperature"`
+}
+
+func (o *OpenAIOptions) Apply(defaults any, config Config) (any, error) {
+	defaultOptions, ok := defaults.(*OpenAIOptions)
+	if !ok {
+		return nil, fmt.Errorf("defaults 'any' is not a 'OpenAIOptions'")
+	}
+
+	merged := *defaultOptions
+	if o != nil {
+		if err := mergo.Merge(&merged, o, mergo.WithoutDereference, mergo.WithSliceDeepCopy); err != nil {
+			return nil, fmt.Errorf("while merging OpenAIOptions: %w", err)
+		}
+	}
+
+	return &OpenAIOptions{
+		MaxTokens:   merged.MaxTokens,
+		Temperature: merged.Temperature,
+	}, nil
 }

@@ -137,12 +137,18 @@ func NewTextCorrectionProvider(config Config) (TextProcessor, error) {
 }
 
 func createTextCorrectionConfig(config Config) Config {
-	return Config{
-		OCR: ProviderConfig{
-			Provider: config.TextCorrection.Provider.Provider,
-			Model:    config.TextCorrection.Provider.Model,
-			Prompt:   config.TextCorrection.Provider.Prompt,
-		},
-		RateLimit: config.TextCorrection.RateLimit,
+	textCorrectionConfig := config
+
+	textCorrectionConfig.OCR = ProviderConfig{
+		Provider:    config.TextCorrection.Provider.Provider,
+		Model:       config.TextCorrection.Provider.Model,
+		Prompt:      config.TextCorrection.Provider.Prompt,
+		Language:    config.TextCorrection.Provider.Language,
+		Format:      config.TextCorrection.Provider.Format,
+		SupportsPDF: config.TextCorrection.Provider.SupportsPDF,
 	}
+
+	textCorrectionConfig.RateLimit = config.TextCorrection.RateLimit
+
+	return textCorrectionConfig
 }

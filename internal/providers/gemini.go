@@ -6,6 +6,7 @@ import (
 
 	cf "github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"google.golang.org/genai"
 )
 
@@ -54,6 +55,22 @@ func (g *GeminiProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 			"codexresult": res.CodeExecutionResult(),
 		},
 	}, nil
+}
+
+func (g *GeminiProvider) Complete(ctx context.Context, text string) (string, error) {
+	prompt := g.config.OCR.Prompt
+
+	payload := &genai.Part{
+		Text: prompt + "\n\n" + text,
+	}
+
+	res, err := g.client.Models.GenerateContent(ctx, g.config.OCR.Model, []*genai.Content{{Parts: []*genai.Part{payload}}}, nil)
+	if err != nil {
+		logger.Warnf("Error correcting text falling back to original: %v", err)
+		return text, nil
+	}
+
+	return res.Text(), nil
 }
 
 func (g *GeminiProvider) GetConfig() Config {

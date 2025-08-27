@@ -130,22 +130,9 @@ func (p *DoclingProvider) WithImage(ctx context.Context, input OCRInput) (*Docli
 		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
 	}
 
-	// Safely handle nil DoclingOptions
-	var doclingOptions *DoclingOptions
-	if p.Config.DoclingOptions != nil {
-		doclingOptions = p.Config.DoclingOptions
-	} else {
-		doclingOptions = &DoclingOptions{}
-	}
-
-	options, err := doclingOptions.Apply(p.getDefaultDoclingOptions(), p.Config)
+	optionsMap, err := p.ApplyOptions()
 	if err != nil {
-		return nil, fmt.Errorf("failed to apply schema options: %w", err)
-	}
-
-	optionsMap, ok := options.(map[string]string)
-	if !ok {
-		return nil, fmt.Errorf("options are not a map[string]string")
+		return nil, err
 	}
 
 	return &DoclingProcessPayload{
@@ -160,21 +147,9 @@ func (p *DoclingProvider) WithPDF(ctx context.Context, input OCRInput) (*Docling
 		return nil, fmt.Errorf("PDF data is nil")
 	}
 
-	var doclingOptions *DoclingOptions
-	if p.Config.DoclingOptions != nil {
-		doclingOptions = p.Config.DoclingOptions
-	} else {
-		doclingOptions = &DoclingOptions{}
-	}
-
-	options, err := doclingOptions.Apply(p.getDefaultDoclingOptions(), p.Config)
+	optionsMap, err := p.ApplyOptions()
 	if err != nil {
-		return nil, fmt.Errorf("failed to apply schema options: %w", err)
-	}
-
-	optionsMap, ok := options.(map[string]string)
-	if !ok {
-		return nil, fmt.Errorf("options are not a map[string]string")
+		return nil, err
 	}
 
 	return &DoclingProcessPayload{
@@ -213,6 +188,25 @@ func (p *DoclingProvider) SupportsPDF() bool {
 
 func (p *DoclingProvider) GetConfig() Config {
 	return p.Config
+}
+
+// ApplyOptions merges the schema.yml openai specific options with the default options
+func (p *DoclingProvider) ApplyOptions() (map[string]string, error) {
+	doclingOptions := p.Config.DoclingOptions
+	if doclingOptions == nil {
+		doclingOptions = &DoclingOptions{}
+	}
+
+	optionsRaw, err := doclingOptions.Apply(p.getDefaultDoclingOptions(), p.Config)
+	if err != nil {
+		return nil, fmt.Errorf("while merging docling options: %w", err)
+	}
+	optionsMap, ok := optionsRaw.(map[string]string)
+	if !ok {
+		return nil, fmt.Errorf("options are not a map[string]string")
+	}
+
+	return optionsMap, nil
 }
 
 func (p *DoclingProvider) getDefaultDoclingOptions() *DoclingOptions {

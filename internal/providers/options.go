@@ -43,6 +43,7 @@ type Config struct {
 	// Provider-specific options that implement the ProviderOptionsInterface
 	DoclingOptions *DoclingOptions `yaml:"docling_options,omitempty"`
 	OpenAIOptions  *OpenAIOptions  `yaml:"openai_options,omitempty"`
+	OllamaOptions  *OllamaOptions  `yaml:"ollama_options,omitempty"`
 }
 
 //TODO: make a reusable Merge() function with generics that asserts the given interface and merges the structs with mergo.
@@ -139,6 +140,30 @@ func (o *OpenAIOptions) Apply(defaults any, config Config) (any, error) {
 	}
 
 	return &OpenAIOptions{
+		MaxTokens:   merged.MaxTokens,
+		Temperature: merged.Temperature,
+	}, nil
+}
+
+type OllamaOptions struct {
+	MaxTokens   int64   `yaml:"max_tokens"`
+	Temperature float64 `yaml:"temperature"`
+}
+
+func (o *OllamaOptions) Apply(defaults any, config Config) (any, error) {
+	defaultOptions, ok := defaults.(*OllamaOptions)
+	if !ok {
+		return nil, fmt.Errorf("defaults 'any' is not a 'OllamaOptions'")
+	}
+
+	merged := *defaultOptions
+	if o != nil {
+		if err := mergo.Merge(&merged, o, mergo.WithoutDereference, mergo.WithSliceDeepCopy); err != nil {
+			return nil, fmt.Errorf("while merging OllamaOptions: %w", err)
+		}
+	}
+
+	return &OllamaOptions{
 		MaxTokens:   merged.MaxTokens,
 		Temperature: merged.Temperature,
 	}, nil

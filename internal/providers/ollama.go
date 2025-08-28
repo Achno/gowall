@@ -63,6 +63,11 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	prompt := o.config.OCR.Prompt
 	prompt = BuildPrompt(prompt, input.Filename, o.config.OCR.Format)
 
+	ollamaOptions, err := o.ApplyOptions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply options: %w", err)
+	}
+
 	req := OllamaRequest{
 		Model: o.config.OCR.Model,
 		Messages: []OllamaMessage{
@@ -73,6 +78,10 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 			},
 		},
 		Stream: false,
+		Options: map[string]any{
+			"num_predict": ollamaOptions.MaxTokens,
+			"temperature": ollamaOptions.Temperature,
+		},
 	}
 
 	reqBody, err := json.Marshal(req)
@@ -111,10 +120,88 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	return result, nil
 }
 
+func (o *OllamaProvider) Complete(ctx context.Context, text string) (string, error) {
+	prompt := o.config.OCR.Prompt
+
+	ollamaOptions, err := o.ApplyOptions()
+	if err != nil {
+		return "", fmt.Errorf("failed to apply options: %w", err)
+	}
+
+	fmt.Println("ollamaOptions", ollamaOptions.MaxTokens, ollamaOptions.Temperature)
+	fmt.Println("prompt", prompt)
+	fmt.Println("text", text)
+	req := OllamaRequest{
+		Model: o.config.OCR.Model,
+		Messages: []OllamaMessage{
+			{
+				Role:    "user",
+				Content: prompt + "\n\n" + text,
+			},
+		},
+		Stream: false,
+		Options: map[string]any{
+			"num_predict": ollamaOptions.MaxTokens,
+			"temperature": ollamaOptions.Temperature,
+		},
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Send request to Ollama
+	resp, err := http.Post(o.host+"/api/chat", "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to send request to Ollama: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("ollama API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response
+	var ollamaResp OllamaResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return ollamaResp.Message.Content, nil
+}
+
 func (o *OllamaProvider) GetConfig() Config {
 	return o.config
 }
 
 func (o *OllamaProvider) SupportsPDF() bool {
 	return false
+}
+
+// ApplyOptions merges the schema.yml ollama specific options with the default options
+func (o *OllamaProvider) ApplyOptions() (*OllamaOptions, error) {
+	ollamaOptions := o.config.OllamaOptions
+	if ollamaOptions == nil {
+		ollamaOptions = &OllamaOptions{}
+	}
+
+	optionsRaw, err := ollamaOptions.Apply(o.getOllamaOptions(), o.config)
+	if err != nil {
+		return nil, fmt.Errorf("while merging ollama options: %w", err)
+	}
+	ollamaOptions, ok := optionsRaw.(*OllamaOptions)
+	if !ok {
+		return nil, fmt.Errorf("options are not a OllamaOptions")
+	}
+
+	return ollamaOptions, nil
+}
+
+func (o *OllamaProvider) getOllamaOptions() *OllamaOptions {
+	return &OllamaOptions{
+		MaxTokens:   4096,
+		Temperature: 0.7,
+	}
 }

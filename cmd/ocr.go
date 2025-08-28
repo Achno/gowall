@@ -180,6 +180,9 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.OpenAIOptions != nil {
 					cfg.OpenAIOptions = schema.Config.OpenAIOptions
 				}
+				if schema.Config.OllamaOptions != nil {
+					cfg.OllamaOptions = schema.Config.OllamaOptions
+				}
 				schemaFound = true
 				break
 			}
@@ -293,7 +296,10 @@ func setDefaultOCRConfig() providers.Config {
 				4. Maintain coherence:
 				- Ensure the content connects smoothly with the previous context
 				- Handle text that starts or ends mid-sentence appropriately
-	
+
+				5. Code
+				 - If the content is code then make sure to close any braces {} or brackets [] or parenthesis () if necessary
+				 	
 				IMPORTANT: Respond ONLY with the corrected text. Preserve all original formatting, including line breaks. Do not include any introduction, explanation, or metadata
 			`,
 			},

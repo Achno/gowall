@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func BuildPrompt(base, filename, format string) string {
+func BuildPrompt(base, appendPrompt, filename, format string) string {
 
 	prompt := base
 	if format == "txt" {
@@ -13,6 +13,10 @@ func BuildPrompt(base, filename, format string) string {
 	} else {
 		prompt += " Format the output in Markdown."
 		prompt = AddPageContextToPrompt(filename, prompt)
+	}
+
+	if appendPrompt != "" {
+		prompt += " " + appendPrompt
 	}
 
 	return prompt

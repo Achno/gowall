@@ -9,12 +9,13 @@ import (
 )
 
 type ProviderConfig struct {
-	Provider    string `yaml:"provider"`
-	Model       string `yaml:"model"`
-	Prompt      string `yaml:"prompt"`
-	Language    string `yaml:"language"`
-	Format      string `yaml:"format"`
-	SupportsPDF bool   `yaml:"supports_pdf"`
+	Provider     string `yaml:"provider"`
+	Model        string `yaml:"model"`
+	Prompt       string `yaml:"prompt"`
+	AppendPrompt string `yaml:"append_prompt"`
+	Language     string `yaml:"language"`
+	Format       string `yaml:"format"`
+	SupportsPDF  bool   `yaml:"supports_pdf"`
 }
 
 type PipelineConfig struct {

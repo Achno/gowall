@@ -41,6 +41,7 @@ func BuildOCRCmd() *cobra.Command {
 		provider string
 		model    string
 		uprompt  string
+		aprompt  string
 		language string
 		schema   string
 		dpi      float64
@@ -49,7 +50,8 @@ func BuildOCRCmd() *cobra.Command {
 	)
 	flags.StringVarP(&provider, "provider", "p", "", "Provider to use for OCR")
 	flags.StringVarP(&model, "model", "m", "", "Model to use for OCR")
-	flags.StringVarP(&uprompt, "uprompt", "u", "", "User prompt to use for OCR")
+	flags.StringVarP(&uprompt, "uprompt", "u", "", "User prompt to use for OCR,overrides the base prompt")
+	flags.StringVarP(&aprompt, "aprompt", "a", "", "Append prompt to the base prompt used for OCR")
 	flags.StringVarP(&language, "language", "l", "", "Language to use for OCR")
 	flags.Float64VarP(&dpi, "dpi", "d", 120.0, "DPI in pdf->images conversion")
 	flags.Float64VarP(&rps, "rps", "r", 0, "Rate limit : requests per second")
@@ -135,6 +137,9 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.OCR.Prompt != "" {
 					cfg.OCR.Prompt = schema.Config.OCR.Prompt
 				}
+				if schema.Config.OCR.AppendPrompt != "" {
+					cfg.OCR.AppendPrompt = schema.Config.OCR.AppendPrompt
+				}
 				if schema.Config.OCR.Language != "" {
 					cfg.OCR.Language = schema.Config.OCR.Language
 				}
@@ -214,6 +219,13 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 			return providers.Config{}, err
 		}
 		cfg.OCR.Prompt = v
+	}
+	if flags.Changed("aprompt") {
+		v, err := flags.GetString("aprompt")
+		if err != nil {
+			return providers.Config{}, err
+		}
+		cfg.OCR.AppendPrompt = v
 	}
 	if flags.Changed("language") {
 		v, err := flags.GetString("language")

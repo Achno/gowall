@@ -61,7 +61,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 	}
 
 	prompt := o.config.OCR.Prompt
-	prompt = BuildPrompt(prompt, input.Filename, o.config.OCR.Format)
+	prompt = BuildPrompt(prompt, o.config.OCR.AppendPrompt, input.Filename, o.config.OCR.Format)
 
 	ollamaOptions, err := o.ApplyOptions()
 	if err != nil {

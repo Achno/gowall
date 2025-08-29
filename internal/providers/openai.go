@@ -162,7 +162,7 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 
 	prompt := o.config.OCR.Prompt
-	prompt = BuildPrompt(prompt, input.Filename, o.config.OCR.Format)
+	prompt = BuildPrompt(prompt, o.config.OCR.AppendPrompt, input.Filename, o.config.OCR.Format)
 
 	switch input.Type {
 	case InputTypeImage:

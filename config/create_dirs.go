@@ -25,7 +25,7 @@ func CreateDirectory() (dirPath string, err error) {
 	}
 
 	// Ensure all required directories exist
-	subDirs := []string{"cluts", "gifs"}
+	subDirs := []string{"cluts", "gifs", "ocr"}
 	for _, sub := range subDirs {
 		subDir := filepath.Join(dirPath, sub)
 		err = os.MkdirAll(subDir, 0755)

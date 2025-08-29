@@ -50,7 +50,7 @@ var (
 			if cmd.Flags().Changed("resize") {
 				options = append(options, image.WithMode(resize))
 			}
-			imageOps, err := imageio.DetermineImageOperations(shared, args)
+			imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 			utils.HandleError(err)
 
 			err = image.CreateGif(imageOps, options...)

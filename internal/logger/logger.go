@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	RedColor   = "\033[31m"
-	ResetColor = "\033[0m"
+	RedColor    = "\033[31m"
+	YellowColor = "\033[33m"
+	ResetColor  = "\033[0m"
 )
 
 type Logger struct {
@@ -69,6 +70,15 @@ func (l *Logger) Printf(format string, v ...any) {
 	}
 }
 
+func (l *Logger) Warnf(format string, v ...any) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	if !l.quiet {
+		fmt.Fprintf(l.outWriter, YellowColor+format+"\n"+ResetColor, v...)
+	}
+}
+
 // Error outputs an error message (always logs to stderr)
 func (l *Logger) Error(v ...any) {
 	l.mu.Lock()
@@ -117,6 +127,10 @@ func Print(v ...any) {
 // Logs format message to stdout if setQuiet was called with false
 func Printf(format string, v ...any) {
 	defaultLogger.Printf(format, v...)
+}
+
+func Warnf(format string, v ...any) {
+	defaultLogger.Warnf(format, v...)
 }
 
 // Logs message to sderr

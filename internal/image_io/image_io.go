@@ -10,6 +10,7 @@ import (
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/utils"
+	"github.com/spf13/cobra"
 )
 
 type ImageIO struct {
@@ -93,10 +94,10 @@ func (so Stdout) String() string {
 }
 
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.
-func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string) ([]ImageIO, error) {
+func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
 	// Process by priority: directory > batch files > single file/stdin
 	if flags.InputDir != "" {
-		imgIO, err := directoryIO(flags)
+		imgIO, err := directoryIO(flags, cmd)
 		if err != nil {
 			return nil, err
 		}
@@ -104,10 +105,10 @@ func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string)
 	}
 
 	if len(flags.InputFiles) > 0 {
-		return batchIO(flags), nil
+		return batchIO(flags, cmd), nil
 	}
 
-	imgIO, err := SingleIO(flags, args)
+	imgIO, err := SingleIO(flags, args, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +116,9 @@ func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string)
 }
 
 // SingleIO handles both file and STDIN input cases
-func SingleIO(flags config.GlobalSubCommandFlags, args []string) ([]ImageIO, error) {
+func SingleIO(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
 	input := determineInput(args)
-	output, ext, err := determineOutput(flags, args, input)
+	output, ext, err := determineOutput(flags, args, input, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("could not determine output: ")
 	}
@@ -131,13 +132,26 @@ func SingleIO(flags config.GlobalSubCommandFlags, args []string) ([]ImageIO, err
 }
 
 // directoryIO handles the case when a directory of images is provided
-func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
-	inputFiles, err := GetImagesFromDirectoryRecursively(flags.InputDir)
+func directoryIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]ImageIO, error) {
+
+	filter := func(path string, entry fs.DirEntry) bool {
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if cmd.Name() == "ocr" {
+			return config.SupportedTextExtensions[ext] || config.SupportedImageExtensions[ext]
+		}
+		return config.SupportedImageExtensions[ext]
+	}
+
+	inputFiles, err := GetFilesFromDirectory(flags.InputDir, filter)
 	if err != nil {
 		return nil, err
 	}
 	var operations []ImageIO
 	dir := config.GowallConfig.OutputFolder
+
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
 
 	// --output - multiple files
 	if flags.OutputDestination != "" {
@@ -146,7 +160,7 @@ func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 
 	for _, inputFile := range inputFiles {
 		baseName := filepath.Base(inputFile.Path)
-		ext, err := determineFileExt(flags, inputFile, nil)
+		ext, err := determineFileExt(flags, inputFile, nil, cmd)
 		if err != nil {
 			continue
 		}
@@ -162,9 +176,13 @@ func directoryIO(flags config.GlobalSubCommandFlags) ([]ImageIO, error) {
 }
 
 // batchIO handles the case when a list of input files is provided
-func batchIO(flags config.GlobalSubCommandFlags) []ImageIO {
+func batchIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) []ImageIO {
 	var operations []ImageIO
 	dir := config.GowallConfig.OutputFolder
+
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
 
 	// --output - multiple files
 	if flags.OutputDestination != "" {
@@ -182,7 +200,7 @@ func batchIO(flags config.GlobalSubCommandFlags) []ImageIO {
 
 		input := FileReader{Path: absolutePath}
 		baseName := filepath.Base(absolutePath)
-		ext, err := determineFileExt(flags, input, nil)
+		ext, err := determineFileExt(flags, input, nil, cmd)
 		if err != nil {
 			continue
 		}
@@ -210,23 +228,23 @@ func determineInput(args []string) ImageReader {
 	return FileReader{Path: f[0]}
 }
 
-// determineOutput resolves the output destination and format
-func determineOutput(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (ImageWriter, string, error) {
+// determineOutput resolves the output destination and format for SingleIO
+func determineOutput(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (ImageWriter, string, error) {
 	// Check if output should be stdout
 	if IsStdoutOutput(flags, args) {
-		ext, err := determineFileExt(flags, input, Stdout{})
+		ext, err := determineFileExt(flags, input, Stdout{}, cmd)
 		if err != nil {
 			return nil, "", err
 		}
 		return Stdout{}, ext, nil
 	}
 
-	outputDest, err := resolveOutputPath(flags, args, input)
+	outputDest, err := resolveOutputPath(flags, args, input, cmd)
 	if err != nil {
 		return nil, "", err
 	}
 	output := FileWriter{Path: outputDest}
-	ext, err := determineFileExt(flags, input, output)
+	ext, err := determineFileExt(flags, input, output, cmd)
 	if err != nil {
 		return nil, "", err
 	}
@@ -235,9 +253,14 @@ func determineOutput(flags config.GlobalSubCommandFlags, args []string, input Im
 }
 
 // resolveOutputPath determines the final output path based on flags and args
-func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (string, error) {
+func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (string, error) {
 	dir := config.GowallConfig.OutputFolder
-	name, err := generateFileName(flags, args, input)
+
+	if cmd.Name() == "ocr" {
+		dir = filepath.Join(dir, "ocr")
+	}
+
+	name, err := generateFileName(flags, args, input, cmd)
 	if err != nil {
 		return "", err
 	}
@@ -257,12 +280,12 @@ func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input 
 }
 
 // generateFileName creates a filename with an extension for an image
-func generateFileName(flags config.GlobalSubCommandFlags, args []string, input ImageReader) (string, error) {
+func generateFileName(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (string, error) {
 	// For stdin input, generate timestamp-based filename
 	if len(args) > 0 && args[0] == "-" {
 		ts := time.Now().Format("20060102-150405")
 		filename := fmt.Sprintf("img-%s", ts)
-		ext, err := determineFileExt(flags, input, nil)
+		ext, err := determineFileExt(flags, input, nil, cmd)
 		if err != nil {
 			return "", err
 		}
@@ -273,7 +296,7 @@ func generateFileName(flags config.GlobalSubCommandFlags, args []string, input I
 	absInput, err := filepath.Abs(args[0])
 	utils.HandleError(err, "could not resolve absolute path for input")
 	baseName := filepath.Base(absInput)
-	ext, err := determineFileExt(flags, input, nil)
+	ext, err := determineFileExt(flags, input, nil, cmd)
 	if err != nil {
 		return "", err
 	}
@@ -288,7 +311,8 @@ func IsStdoutOutput(flags config.GlobalSubCommandFlags, args []string) bool {
 }
 
 // Determines file extension based on flags and the arguments, will return "png" if nothing is satisfied
-func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, output ImageWriter) (string, error) {
+// make the cobra arguement optional, varidadic
+func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, output ImageWriter, cmd *cobra.Command) (string, error) {
 	// Ext from --format flag
 	if flags.Format != "" {
 		return flags.Format, nil
@@ -297,6 +321,14 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 	// Ext from --output flag
 	if ext := filepath.Ext(flags.OutputDestination); ext != "" {
 		return strings.ReplaceAll(ext, ".", ""), nil
+	}
+
+	// if 'gowall ocr' is invoked make the default 'md' and then listen for the --format flag
+	if cmd != nil && cmd.Name() == "ocr" {
+		if flags.Format != "" {
+			return flags.Format, nil
+		}
+		return "md", nil
 	}
 
 	// Check if output is a FileWriter to get its path
@@ -318,7 +350,6 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 		return "png", nil
 	}
 
-	// by default if given a Stdin Reader source, encode it into png
 	return "", fmt.Errorf("extension not found")
 }
 
@@ -328,7 +359,7 @@ func replaceExt(inputName string, ext string) string {
 	return strings.TrimSuffix(inputName, oldExt) + "." + strings.TrimPrefix(ext, ".")
 }
 
-func GetImagesFromDirectoryRecursively(path string) ([]FileReader, error) {
+func GetFilesFromDirectory(path string, filter func(string, fs.DirEntry) bool) ([]FileReader, error) {
 	var files []FileReader
 	err := filepath.WalkDir(path, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -337,8 +368,7 @@ func GetImagesFromDirectoryRecursively(path string) ([]FileReader, error) {
 		if entry.IsDir() {
 			return nil
 		}
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if config.SupportedExtensions[ext] {
+		if filter(path, entry) {
 			files = append(files, FileReader{Path: path})
 		}
 		return nil
@@ -348,7 +378,7 @@ func GetImagesFromDirectoryRecursively(path string) ([]FileReader, error) {
 	}
 
 	if len(files) == 0 {
-		return nil, fmt.Errorf("no image files found in directory or subdirectories")
+		return nil, fmt.Errorf("no files found in directory or subdirectories")
 	}
 
 	return files, nil

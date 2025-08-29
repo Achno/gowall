@@ -64,9 +64,10 @@ func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
 }
 
-// Configure logger and validates flags
+// Configure logger, spinner with quiet modes for Unix pipes and redirections and validates flags
 func initCli(cmd *cobra.Command, args []string) error {
 	logger.SetQuiet(imageio.IsStdoutOutput(shared, args))
+	utils.SetSpinnerQuiet(imageio.IsStdoutOutput(shared, args))
 	return validateFlagsCompatibility(cmd, args)
 }
 
@@ -74,6 +75,8 @@ func initCli(cmd *cobra.Command, args []string) error {
 func initConfig() {
 	config.LoadConfig()
 	image.LoadCustomThemes()
+	utils.NewSpinner(utils.SpinnerConfig())
+	defer utils.Spinner.Stop()
 }
 
 var rootCmd = &cobra.Command{
@@ -88,13 +91,15 @@ var rootCmd = &cobra.Command{
 			logger.Printf("gowall version: %s\n", config.Version)
 
 		case wallOfTheDayFlag:
-			logger.Print("Fetching wallpaper of the day...")
+			// logger.Print("Fetching wallpaper of the day...")
+			utils.Spinner.Start()
+			utils.Spinner.Message("Fetching wallpaper of the day...")
 			url, err := api.GetWallpaperOfTheDay()
 			utils.HandleError(err, "Could not fetch wallpaper of the day")
 
-			path, err := image.SaveUrlAsImg(url)
+			path, err := imageio.SaveUrlAsImg(url)
 			utils.HandleError(err)
-
+			utils.Spinner.Stop()
 			err = image.OpenImageInViewer(path)
 			utils.HandleError(err)
 

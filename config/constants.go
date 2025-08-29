@@ -4,9 +4,11 @@ const (
 	Version            = "v0.2.1"
 	OutputFolder       = "Pictures/gowall"
 	configFile         = "config.yml"
+	OCRSchemaFile      = "schema.yml"
 	WallOfTheDayUrl    = "https://www.reddit.com/r/wallpaper/top/"
 	HexCodeVisualUrl   = "https://lawlesscreation.github.io/hex-color-visualiser/"
 	UpscalerBinaryName = "realesrgan-ncnn-vulkan"
+	EnvFilePath        = ".gowall/.env"
 )
 
 var (
@@ -22,5 +24,6 @@ func defaultConfig() Options {
 		Themes:                ThemesDefault,
 		InlineImagePreview:    InlineImagePreviewDefault,
 		ImagePreviewBackend:   ImagePreviewBackend,
+		EnvFilePath:           EnvFilePath,
 	}
 }

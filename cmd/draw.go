@@ -43,7 +43,7 @@ var GridCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 		utils.HandleError(err)
 		logger.Print("Processing images...")
 
@@ -86,7 +86,7 @@ var BorderCmd = &cobra.Command{
 			BorderThickness: BorderThickness,
 		}
 
-		imageOps, err := imageio.DetermineImageOperations(shared, args)
+		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 		utils.HandleError(err)
 
 		logger.Print("Processing images...")

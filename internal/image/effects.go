@@ -8,7 +8,7 @@ import (
 
 type FlipProcessor struct{}
 
-func (p *FlipProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *FlipProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
@@ -25,7 +25,7 @@ func (p *FlipProcessor) Process(img image.Image, theme string) (image.Image, err
 
 type MirrorProcessor struct{}
 
-func (p *MirrorProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *MirrorProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
@@ -51,7 +51,7 @@ func (p *MirrorProcessor) Process(img image.Image, theme string) (image.Image, e
 
 type GrayScaleProcessor struct{}
 
-func (p *GrayScaleProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *GrayScaleProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	bounds := img.Bounds()
 	grayImg := image.NewGray(bounds)
@@ -74,7 +74,7 @@ type BrightnessProcessor struct {
 	Factor float64
 }
 
-func (p *BrightnessProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *BrightnessProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	if p.Factor <= 0.0 || p.Factor > 10 {
 		return nil, fmt.Errorf("enter a valid factor : from (0.0,10.0] ")

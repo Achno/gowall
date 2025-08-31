@@ -9,7 +9,7 @@ import (
 type Inverter struct {
 }
 
-func (Invrt *Inverter) Process(img image.Image, theme string) (image.Image, error) {
+func (Invrt *Inverter) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	newImg, err := invertImage(img)
 

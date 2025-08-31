@@ -57,7 +57,7 @@ func NewGrayScaleStage(processor image.GrayScaleProcessor) fluxus.StageFunc[*Pip
 			return item, nil
 		}
 
-		img, err := processor.Process(item.Input.Image, "")
+		img, err := processor.Process(item.Input.Image, "", "")
 		if err != nil {
 			return item, fmt.Errorf("grayscale stage > %s : %w", item.Input.Filename, err)
 		}

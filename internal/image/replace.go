@@ -13,7 +13,7 @@ type ReplaceProcessor struct {
 	Threshold float64
 }
 
-func (r *ReplaceProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (r *ReplaceProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	from, err := HexToRGBA(r.FromColor)
 

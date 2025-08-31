@@ -23,7 +23,7 @@ import (
 
 // Create a Processor of this interface and call 'ProcessImg'
 type ImageProcessor interface {
-	Process(image.Image, string) (image.Image, error)
+	Process(image.Image, string, string) (image.Image, error)
 }
 
 // NoOpImageProcessor  implements ImageProcessor but does nothing.
@@ -33,7 +33,7 @@ type ImageProcessor interface {
 type NoOpImageProcessor struct{}
 
 // Implement the Process method
-func (p *NoOpImageProcessor) Process(img image.Image, options string) (image.Image, error) {
+func (p *NoOpImageProcessor) Process(img image.Image, options string, format string) (image.Image, error) {
 	// Simply return the image without any modifications
 	return img, nil
 }
@@ -127,7 +127,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 				}
 			}
 			// Process the image
-			newImg, err := imgProcessor.Process(img, theme)
+			newImg, err := imgProcessor.Process(img, theme, currentImgOp.Format)
 			if err != nil {
 				errChan <- fmt.Errorf("while processing image: %w", err)
 				return

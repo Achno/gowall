@@ -61,7 +61,7 @@ func (p *BackgroundProcessor) SetOptions(options ...BgOption) {
 	p.options = opts
 }
 
-func (p *BackgroundProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *BackgroundProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	// check if options have not been set
 	if p.options.Convergence == 0 || p.options.MaxIter == 0 || p.options.SampleRate == 0 || p.options.NumRoutines == 0 {

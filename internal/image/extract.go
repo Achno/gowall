@@ -13,7 +13,7 @@ type ExtractProcessor struct {
 	NumOfColors int
 }
 
-func (e *ExtractProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (e *ExtractProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 	clr, err := colorthief.GetPalette(img, e.NumOfColors)
 	if err != nil {
 		return nil, err

@@ -10,7 +10,7 @@ type PixelateProcessor struct {
 	Scale float64
 }
 
-func (p *PixelateProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *PixelateProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	// check if scale is valid
 	if p.Scale < 1 || p.Scale > 25 {

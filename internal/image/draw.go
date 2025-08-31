@@ -13,7 +13,7 @@ type BorderProcessor struct {
 	BorderThickness int
 }
 
-func (b *BorderProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (b *BorderProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	newImg := drawBorder(img, b.BorderThickness, b.Color)
 
@@ -101,7 +101,7 @@ func (g *GridProcessor) SetGridOptions(options ...GridOption) {
 	g.options = opts
 }
 
-func (g *GridProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (g *GridProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
 
 	newImg, err := applyGridToImage(img, &g.options)
 	if err != nil {

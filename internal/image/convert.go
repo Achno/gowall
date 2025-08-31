@@ -21,7 +21,7 @@ var clutMutex sync.Mutex
 
 type ThemeConverter struct{}
 
-func (themeConv *ThemeConverter) Process(img image.Image, theme string) (image.Image, error) {
+func (themeConv *ThemeConverter) Process(img image.Image, theme string, format string) (image.Image, error) {
 	level := 8
 
 	selectedTheme, err := SelectTheme(theme)

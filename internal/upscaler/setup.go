@@ -47,7 +47,7 @@ func SetupUpscaler() error {
 	logger.Print(utils.BlueColor + " ➜ Folder created" + utils.ResetColor)
 
 	// Extract  zip
-	err = utils.ExtractZipBinary(zipPath, destFolder, config.UpscalerBinaryName)
+	err = utils.ExtractArchiveBinary(zipPath, destFolder, config.UpscalerBinaryName)
 	if err != nil {
 		return fmt.Errorf("while extracting zip : %v", err)
 	}

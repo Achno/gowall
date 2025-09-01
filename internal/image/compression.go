@@ -1,9 +1,15 @@
 package image
 
-import "image"
+import (
+	"fmt"
+	"image"
+	"strings"
+
+	"github.com/Achno/gowall/internal/backends/compression"
+)
 
 type CompressionStrategy interface {
-	Compress(img image.Image, quality int) (image.Image, error)
+	Compress(img image.Image) (image.Image, error)
 	GetFormat() string
 }
 
@@ -13,9 +19,9 @@ type CompressionProcessor struct {
 
 // Options with the functional options pattern so you can pick options and set defaults
 type CompressionOptions struct {
-	Quality int
-	Speed   int
-	Method  string
+	Quality  int
+	Speed    int
+	Strategy string // Name of the backend to use
 }
 type CompressionOption func(*CompressionOptions)
 
@@ -31,12 +37,122 @@ func WithSpeed(speed int) CompressionOption {
 	}
 }
 
-func WithMethod(method string) CompressionOption {
+func WithStrategy(strategy string) CompressionOption {
 	return func(co *CompressionOptions) {
-		co.Method = method
+		co.Strategy = strategy
 	}
 }
 
-func (p *CompressionProcessor) Process(img image.Image, theme string) (image.Image, error) {
-	return img, nil
+// NewCompressionProcessor creates a new compression processor with default strategies
+func NewCompressionProcessor(opts ...CompressionOption) *CompressionProcessor {
+	// Default options
+	options := CompressionOptions{
+		Quality:  80,
+		Speed:    4,
+		Strategy: "",
+	}
+
+	// Apply functional options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	processor := &CompressionProcessor{
+		options: options,
+	}
+
+	return processor
+}
+
+// Process implements the ImageProcessor interface (updated to include format)
+func (p *CompressionProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
+
+	format = strings.ToLower(format)
+
+	strategy, err := p.GetStrategy(format)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get compression strategy: %w", err)
+	}
+
+	return strategy.Compress(img)
+}
+
+// GetStrategies returns all available strategies
+func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, speed int) (CompressionStrategy, error) {
+
+	//? Here is where strategies are registered.
+	// Keys: <strategy_name>-<format> and they map to a function that returns a CompressionStrategy
+	// the -<format> part is used to filter strategies by format and is required.
+	var strategies = map[string]func(quality int, speed int) (CompressionStrategy, error){
+		"pngquant-png": func(quality int, speed int) (CompressionStrategy, error) {
+			return compression.NewPngquantStrategy(quality, speed)
+		},
+	}
+
+	return strategies
+}
+
+// GetDefaultStrategyNameForFormat returns the default strategy name for a format
+func (p *CompressionProcessor) GetDefaultStrategyNameForFormat(format string) (string, error) {
+
+	//? Here is where default strategies are registered.
+	var defaultStrategyName string
+	switch format {
+	case "png":
+		defaultStrategyName = "pngquant"
+	}
+
+	return defaultStrategyName, nil
+}
+
+func (p *CompressionProcessor) GetStrategy(format string) (CompressionStrategy, error) {
+
+	strategies := p.GetStrategies()
+	strategyName := p.options.Strategy
+
+	// Filter strategies that contain the format
+	var availableStrategies []string
+	for strategyName := range strategies {
+		if strings.Contains(strategyName, format) {
+			availableStrategies = append(availableStrategies, strategyName)
+		}
+	}
+
+	if len(availableStrategies) == 0 {
+		return nil, fmt.Errorf("no compression strategies available for format: %s", format)
+	}
+
+	// If a strategy is not specified, fallback to the default strategy of the format
+	if strategyName == "" {
+		defaultStrategyName, err := p.GetDefaultStrategyNameForFormat(format)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default strategy name for format: %w", err)
+		}
+		strategyName = defaultStrategyName
+	}
+
+	key := strategyName + "-" + format
+
+	strategyFunc, ok := strategies[key]
+	if !ok {
+		return nil, fmt.Errorf("strategy %q not available for format %q", p.options.Strategy, format)
+	}
+	return strategyFunc(p.options.Quality, p.options.Speed)
+}
+
+// GetAllStrategies returns all available strategy names (without format suffix)
+func (p *CompressionProcessor) GetAllStrategiesNames() []string {
+	strategies := p.GetStrategies()
+	var strategyNames []string
+
+	for key := range strategies {
+		strategyName, _, found := strings.Cut(key, "-")
+		if found {
+			strategyNames = append(strategyNames, strategyName)
+		} else {
+			strategyNames = append(strategyNames, key)
+		}
+	}
+
+	return strategyNames
 }

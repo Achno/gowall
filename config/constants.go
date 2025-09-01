@@ -8,6 +8,7 @@ const (
 	WallOfTheDayUrl    = "https://www.reddit.com/r/wallpaper/top/"
 	HexCodeVisualUrl   = "https://lawlesscreation.github.io/hex-color-visualiser/"
 	UpscalerBinaryName = "realesrgan-ncnn-vulkan"
+	PngquantBinaryName = "pngquant"
 	EnvFilePath        = ".gowall/.env"
 )
 

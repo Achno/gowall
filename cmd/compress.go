@@ -4,6 +4,8 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"strings"
+
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/utils"
@@ -11,9 +13,10 @@ import (
 )
 
 func BuildCompressCmd() *cobra.Command {
+	strategies := image.NewCompressionProcessor().GetAllStrategiesNames()
 	cmd := &cobra.Command{
-		Use:   "compress",
-		Short: "Compress an image",
+		Use:   "compress [INPUT]",
+		Short: "Compress an image, using  ",
 		Long:  "Compress an image",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			err := validateInput(shared, args)
@@ -32,7 +35,7 @@ func BuildCompressCmd() *cobra.Command {
 		speed   int
 	)
 
-	flags.StringVarP(&method, "method", "m", "", "Method to use for compression")
+	flags.StringVarP(&method, "method", "m", "", "Available methods: "+strings.Join(strategies, ", "))
 	flags.IntVarP(&quality, "quality", "q", 80, "Quality to use for compression")
 	flags.IntVarP(&speed, "speed", "s", 4, "Speed to use for compression")
 

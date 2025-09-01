@@ -2,6 +2,7 @@ package png
 
 import (
 	"image"
+	"image/png"
 
 	"github.com/Achno/gowall/internal/types"
 )
@@ -15,7 +16,16 @@ func NewLosslessPngStrategy() (*LosslessPngStrategy, error) {
 }
 
 func (l *LosslessPngStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
-	return img, types.ImageMetadata{}, nil
+
+	png := &png.Encoder{
+		CompressionLevel: png.BestCompression,
+	}
+
+	metadata := types.ImageMetadata{
+		EncoderFunction: png.Encode,
+	}
+
+	return img, metadata, nil
 }
 
 func (l *LosslessPngStrategy) GetFormat() string {

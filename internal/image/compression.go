@@ -88,6 +88,9 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 		"pngquant-png": func(quality int, speed int) (CompressionStrategy, error) {
 			return png.NewPngquantStrategy(quality, speed)
 		},
+		"losslesspng-png": func(quality int, speed int) (CompressionStrategy, error) {
+			return png.NewLosslessPngStrategy()
+		},
 	}
 
 	return strategies

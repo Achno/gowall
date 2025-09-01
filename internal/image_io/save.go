@@ -13,10 +13,11 @@ import (
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/logger"
+	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/utils"
 )
 
-func SaveImage(img image.Image, output ImageWriter, format string) error {
+func SaveImage(img image.Image, output ImageWriter, format string, metadata types.ImageMetadata) error {
 	encoder, ok := encoders[strings.ToLower(format)]
 
 	if !ok {

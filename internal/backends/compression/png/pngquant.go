@@ -1,4 +1,4 @@
-package compression
+package png
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os/exec"
 
+	"github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/utils"
 )
 
@@ -48,16 +49,16 @@ func NewPngquantStrategy(quality int, speed int) (*PngquantStrategy, error) {
 }
 
 // Compress implements the CompressionStrategy interface
-func (p *PngquantStrategy) Compress(img image.Image) (image.Image, error) {
+func (p *PngquantStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
 	if err := p.ValidateParams(); err != nil {
-		return nil, fmt.Errorf("while validating parameters: %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
 	}
 
 	// Encode input image to PNG format in memory
 	var inputBuffer bytes.Buffer
 	err := png.Encode(&inputBuffer, img)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode input image to PNG: %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("failed to encode input image to PNG: %w", err)
 	}
 
 	qualityRange := fmt.Sprintf("--quality=%d-%d", p.Quality-10, p.Quality)
@@ -84,15 +85,15 @@ func (p *PngquantStrategy) Compress(img image.Image) (image.Image, error) {
 
 	err = cmd.Run()
 	if err != nil {
-		return nil, fmt.Errorf("pngquant failed: %w, stderr: %s", err, errorBuffer.String())
+		return nil, types.ImageMetadata{}, fmt.Errorf("pngquant failed: %w, stderr: %s", err, errorBuffer.String())
 	}
 
 	compressedImg, err := png.Decode(&outputBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode compressed PNG: %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("failed to decode compressed PNG: %w", err)
 	}
 
-	return compressedImg, nil
+	return compressedImg, types.ImageMetadata{}, nil
 }
 
 // GetFormat returns the format this strategy handles

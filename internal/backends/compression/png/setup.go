@@ -1,4 +1,4 @@
-package compression
+package png
 
 import (
 	"fmt"

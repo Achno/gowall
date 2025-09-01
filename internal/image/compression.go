@@ -5,11 +5,12 @@ import (
 	"image"
 	"strings"
 
-	"github.com/Achno/gowall/internal/backends/compression"
+	png "github.com/Achno/gowall/internal/backends/compression/png"
+	types "github.com/Achno/gowall/internal/types"
 )
 
 type CompressionStrategy interface {
-	Compress(img image.Image) (image.Image, error)
+	Compress(img image.Image) (image.Image, types.ImageMetadata, error)
 	GetFormat() string
 }
 
@@ -65,13 +66,13 @@ func NewCompressionProcessor(opts ...CompressionOption) *CompressionProcessor {
 }
 
 // Process implements the ImageProcessor interface (updated to include format)
-func (p *CompressionProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
+func (p *CompressionProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	format = strings.ToLower(format)
 
 	strategy, err := p.GetStrategy(format)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get compression strategy: %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("failed to get compression strategy: %w", err)
 	}
 
 	return strategy.Compress(img)
@@ -85,7 +86,7 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 	// the -<format> part is used to filter strategies by format and is required.
 	var strategies = map[string]func(quality int, speed int) (CompressionStrategy, error){
 		"pngquant-png": func(quality int, speed int) (CompressionStrategy, error) {
-			return compression.NewPngquantStrategy(quality, speed)
+			return png.NewPngquantStrategy(quality, speed)
 		},
 	}
 

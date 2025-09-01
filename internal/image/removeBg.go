@@ -7,6 +7,8 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+
+	types "github.com/Achno/gowall/internal/types"
 )
 
 // impliments the ImageProcessor interface
@@ -61,7 +63,7 @@ func (p *BackgroundProcessor) SetOptions(options ...BgOption) {
 	p.options = opts
 }
 
-func (p *BackgroundProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
+func (p *BackgroundProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	// check if options have not been set
 	if p.options.Convergence == 0 || p.options.MaxIter == 0 || p.options.SampleRate == 0 || p.options.NumRoutines == 0 {
@@ -71,10 +73,10 @@ func (p *BackgroundProcessor) Process(img image.Image, theme string, format stri
 	newImg, err := removeBackground(&p.options, img)
 
 	if err != nil {
-		return nil, fmt.Errorf("while removing background: %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("while removing background: %w", err)
 	}
 
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 }
 
 type Point struct {

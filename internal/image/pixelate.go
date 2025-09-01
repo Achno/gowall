@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"image"
 	"math"
+
+	types "github.com/Achno/gowall/internal/types"
 )
 
 type PixelateProcessor struct {
 	Scale float64
 }
 
-func (p *PixelateProcessor) Process(img image.Image, theme string, format string) (image.Image, error) {
+func (p *PixelateProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	// check if scale is valid
 	if p.Scale < 1 || p.Scale > 25 {
-		return nil, fmt.Errorf("scale must be between 1 and 25")
+		return nil, types.ImageMetadata{}, fmt.Errorf("scale must be between 1 and 25")
 	}
 
 	bounds := img.Bounds()
@@ -28,7 +30,7 @@ func (p *PixelateProcessor) Process(img image.Image, theme string, format string
 	// Upscale back to the original dimensions
 	upscaled := upscale(downscaled, originalWidth, originalHeight)
 
-	return upscaled, nil
+	return upscaled, types.ImageMetadata{}, nil
 
 }
 

@@ -9,7 +9,7 @@ import (
 	"io"
 	"os"
 
-	webp "github.com/HugoSmits86/nativewebp"
+	webp "github.com/chai2010/webp"
 	_ "golang.org/x/image/webp"
 )
 

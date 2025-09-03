@@ -74,7 +74,7 @@ func (p *PngquantStrategy) Compress(img image.Image) (image.Image, types.ImageMe
 	args = append(args, "--force", "-", "--output", "-")
 
 	cmd := exec.Command(p.BinaryPath, args...)
-	fmt.Println("THE COMMAND: ", cmd.String()) //!
+	//DEBUG: fmt.Println("THE COMMAND: ", cmd.String())
 
 	// Set up pipes
 	cmd.Stdin = &inputBuffer

@@ -34,11 +34,9 @@ func SaveImage(img image.Image, output ImageWriter, format string, metadata type
 	defer file.Close()
 
 	if metadata.EncoderFunction != nil {
-		fmt.Println("Using custom encoder function")
 		return metadata.EncoderFunction(file, img)
 	}
 
-	fmt.Println("Using default encoder map")
 	return encoder(file, img)
 }
 

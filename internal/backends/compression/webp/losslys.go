@@ -5,7 +5,7 @@ import (
 	"image"
 	"io"
 
-	webp "github.com/HugoSmits86/nativewebp"
+	"github.com/chai2010/webp"
 	_ "golang.org/x/image/webp"
 
 	"github.com/Achno/gowall/internal/types"
@@ -15,7 +15,7 @@ type LosslyWebpStrategy struct {
 	Quality int
 }
 
-func NewLosslessWebpStrategy(quality int) (*LosslyWebpStrategy, error) {
+func NewLossllyWebpStrategy(quality int) (*LosslyWebpStrategy, error) {
 	return &LosslyWebpStrategy{
 		Quality: quality,
 	}, nil
@@ -28,10 +28,9 @@ func (l *LosslyWebpStrategy) Compress(img image.Image) (image.Image, types.Image
 	}
 
 	webpOptions := &webp.Options{
-		// Quality: l.Quality,
+		Quality:  float32(l.Quality),
+		Lossless: false,
 	}
-
-	//TODO change to the chai2010 webp library
 
 	encoderFunc := func(w io.Writer, img image.Image) error {
 		return webp.Encode(w, img, webpOptions)

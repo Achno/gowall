@@ -7,6 +7,7 @@ import (
 
 	"github.com/Achno/gowall/internal/backends/compression/jpg"
 	png "github.com/Achno/gowall/internal/backends/compression/png"
+	"github.com/Achno/gowall/internal/backends/compression/webp"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -98,6 +99,9 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 		"lossllyjpg-jpg": func(quality int, speed int) (CompressionStrategy, error) {
 			return jpg.NewLossllyJpgStrategy(quality)
 		},
+		"lossllywebp-webp": func(quality int, speed int) (CompressionStrategy, error) {
+			return webp.NewLossllyWebpStrategy(quality)
+		},
 	}
 
 	return strategies
@@ -110,14 +114,13 @@ func (p *CompressionProcessor) GetDefaultStrategyNameForFormat(format string) (s
 	var defaultStrategyName string
 	switch format {
 	case "png":
-		fmt.Println("using default strategy for png")
 		defaultStrategyName = "pngquant"
 	case "jpeg":
-		fmt.Println("using default strategy for jpeg")
 		defaultStrategyName = "lossllyjpeg"
 	case "jpg":
-		fmt.Println("using default strategy for jpg")
 		defaultStrategyName = "lossllyjpg"
+	case "webp":
+		defaultStrategyName = "lossllywebp"
 	}
 
 	return defaultStrategyName, nil

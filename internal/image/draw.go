@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 
+	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/utils"
 )
 
@@ -13,11 +14,11 @@ type BorderProcessor struct {
 	BorderThickness int
 }
 
-func (b *BorderProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (b *BorderProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	newImg := drawBorder(img, b.BorderThickness, b.Color)
 
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 
 }
 
@@ -101,13 +102,13 @@ func (g *GridProcessor) SetGridOptions(options ...GridOption) {
 	g.options = opts
 }
 
-func (g *GridProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (g *GridProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	newImg, err := applyGridToImage(img, &g.options)
 	if err != nil {
-		return nil, err
+		return nil, types.ImageMetadata{}, err
 	}
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 
 }
 

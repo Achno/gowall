@@ -4,20 +4,22 @@ import (
 	"errors"
 	"image"
 	"image/color"
+
+	types "github.com/Achno/gowall/internal/types"
 )
 
 type Inverter struct {
 }
 
-func (Invrt *Inverter) Process(img image.Image, theme string) (image.Image, error) {
+func (Invrt *Inverter) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	newImg, err := invertImage(img)
 
 	if err != nil {
-		return nil, err
+		return nil, types.ImageMetadata{}, err
 	}
 
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 }
 
 func invertImage(img image.Image) (image.Image, error) {

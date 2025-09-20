@@ -141,9 +141,24 @@ cd void-packages/
 sudo xbps-install -R hostdir/binpkgs gowall
 ```
 
-### Build from source
+### Grab the binary from the release section (Stable Release) 🢀 **Prefered Method**
+
+If you don't know how to install gowall you should probably following this method rather than cloning and building the project.
+
+Head over to the [release](https://github.com/Achno/gowall/releases) section
+
+Choose the latest version of gowall. You should see a `.tar.gz` for your operating system and architecture. Simply Extract the binary inside named `gowall` and place it inside your `$PATH`
+
+```sh
+sudo cp gowall /usr/local/bin/
+```
+
+### Build from source (Cutting Edge) 
+
+Prefer just using the stable release method of grabbing the binary above, if you wish to contribute to the project or all other methods fail, you can use this method )
 
 🔨 Clone the repo, build the project and move it inside your `$PATH`
+
 
 ```sh
 git clone https://github.com/Achno/gowall

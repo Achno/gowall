@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+
+	types "github.com/Achno/gowall/internal/types"
 )
 
 type FlipProcessor struct{}
 
-func (p *FlipProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *FlipProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
@@ -20,12 +22,12 @@ func (p *FlipProcessor) Process(img image.Image, theme string) (image.Image, err
 			newImg.Set(x, y, pixel)
 		}
 	}
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 }
 
 type MirrorProcessor struct{}
 
-func (p *MirrorProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *MirrorProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
@@ -46,12 +48,12 @@ func (p *MirrorProcessor) Process(img image.Image, theme string) (image.Image, e
 			newImg.Set(width/2+x, y, pixel)
 		}
 	}
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 }
 
 type GrayScaleProcessor struct{}
 
-func (p *GrayScaleProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *GrayScaleProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	bounds := img.Bounds()
 	grayImg := image.NewGray(bounds)
@@ -67,17 +69,17 @@ func (p *GrayScaleProcessor) Process(img image.Image, theme string) (image.Image
 			grayImg.SetGray(x, y, color.Gray{Y: grayValue})
 		}
 	}
-	return grayImg, nil
+	return grayImg, types.ImageMetadata{}, nil
 }
 
 type BrightnessProcessor struct {
 	Factor float64
 }
 
-func (p *BrightnessProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (p *BrightnessProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	if p.Factor <= 0.0 || p.Factor > 10 {
-		return nil, fmt.Errorf("enter a valid factor : from (0.0,10.0] ")
+		return nil, types.ImageMetadata{}, fmt.Errorf("enter a valid factor : from (0.0,10.0] ")
 	}
 
 	bounds := img.Bounds()
@@ -96,7 +98,7 @@ func (p *BrightnessProcessor) Process(img image.Image, theme string) (image.Imag
 		}
 	}
 
-	return newImg, nil
+	return newImg, types.ImageMetadata{}, nil
 }
 
 func clamp(val, min, max int) int {

@@ -16,6 +16,7 @@ import (
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
+	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
 	_ "golang.org/x/image/webp"
@@ -23,7 +24,7 @@ import (
 
 // Create a Processor of this interface and call 'ProcessImg'
 type ImageProcessor interface {
-	Process(image.Image, string) (image.Image, error)
+	Process(image.Image, string, string) (image.Image, types.ImageMetadata, error)
 }
 
 // NoOpImageProcessor  implements ImageProcessor but does nothing.
@@ -33,9 +34,9 @@ type ImageProcessor interface {
 type NoOpImageProcessor struct{}
 
 // Implement the Process method
-func (p *NoOpImageProcessor) Process(img image.Image, options string) (image.Image, error) {
+func (p *NoOpImageProcessor) Process(img image.Image, options string, format string) (image.Image, types.ImageMetadata, error) {
 	// Simply return the image without any modifications
-	return img, nil
+	return img, types.ImageMetadata{}, nil
 }
 
 // Opens the image on the default viewing application of every operating system.
@@ -127,14 +128,14 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 				}
 			}
 			// Process the image
-			newImg, err := imgProcessor.Process(img, theme)
+			newImg, metadata, err := imgProcessor.Process(img, theme, currentImgOp.Format)
 			if err != nil {
 				errChan <- fmt.Errorf("while processing image: %w", err)
 				return
 			}
 
 			// Save the image
-			err = imageio.SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format)
+			err = imageio.SaveImage(newImg, currentImgOp.ImageOutput, currentImgOp.Format, metadata)
 			if err != nil {
 				errChan <- fmt.Errorf("while saving image: %w in %s", err, currentImgOp.ImageOutput)
 				return

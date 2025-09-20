@@ -5,6 +5,8 @@ import (
 	"image"
 	"image/color"
 	"math"
+
+	types "github.com/Achno/gowall/internal/types"
 )
 
 type ReplaceProcessor struct {
@@ -13,26 +15,26 @@ type ReplaceProcessor struct {
 	Threshold float64
 }
 
-func (r *ReplaceProcessor) Process(img image.Image, theme string) (image.Image, error) {
+func (r *ReplaceProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	from, err := HexToRGBA(r.FromColor)
 
 	if err != nil {
-		return nil, err
+		return nil, types.ImageMetadata{}, err
 	}
 
 	to, err := HexToRGBA(r.ToColor)
 
 	if err != nil {
-		return nil, err
+		return nil, types.ImageMetadata{}, err
 	}
 	newimage, err := replaceColor(img, from, to, r.Threshold)
 
 	if err != nil {
-		return nil, fmt.Errorf("replacing color failed : %w", err)
+		return nil, types.ImageMetadata{}, fmt.Errorf("replacing color failed : %w", err)
 	}
 
-	return newimage, nil
+	return newimage, types.ImageMetadata{}, nil
 }
 
 // replaces every pixel from the "from" color over to the "to" color in the image

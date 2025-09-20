@@ -155,7 +155,11 @@ sudo cp gowall /usr/local/bin/
 
 ### Build from source (Cutting Edge) 
 
-Prefer just using the stable release method of grabbing the binary above, if you wish to contribute to the project or all other methods fail, you can use this method )
+If you are a normal user, consider using using the method above for a stable gowall release.
+
+> If you want to contribute to the project
+> 
+> Or have all the latest features that have not been released yet then
 
 🔨 Clone the repo, build the project and move it inside your `$PATH`
 

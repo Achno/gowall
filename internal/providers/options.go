@@ -3,6 +3,7 @@ package providers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"dario.cat/mergo"
 	"github.com/Achno/gowall/utils"
@@ -101,7 +102,7 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 		// Check if it's a VLM model
 		if config.OCR.Model == "smoldocling" ||
 			config.OCR.Model == "granite_vision" ||
-			config.OCR.Model == "granite_vision_ollama" {
+			config.OCR.Model == "granite_vision_ollama" || strings.Contains(config.OCR.Model, "docling") {
 
 			optionsMap["vlm_model"] = config.OCR.Model
 			optionsMap["pipeline"] = "vlm"

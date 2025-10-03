@@ -94,6 +94,7 @@ func getProviderFactories() map[string]func(config Config) (OCRProvider, error) 
 		"mistral":    NewMistralProvider,
 		"openrouter": NewOpenAIProvider,
 		"tesseract":  NewTesseractProvider,
+		"oc":         NewOpenAIProvider,
 		"docling":    NewDoclingProvider,
 	}
 }

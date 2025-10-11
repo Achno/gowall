@@ -10,8 +10,8 @@
 
 # Overview :framed_picture:
 
-Gowall is a tool to convert an image ( specifically a wallpaper ) to any color-scheme / palette you like!
-It also offers a bunch of image processing features (image to pixel art, Image upscaling, color palette extraction...)
+Gowall started as a tool to convert an image ( specifically a wallpaper ) to any color-scheme / palette you like!
+It has now evolved to a swiss army knife of image prosessing offering (OCR,Image upsacling,image compression and a lot more)
 
 ## Docs
 Gowall is really well documented with **visual examples**: [Gowall Docs](https://achno.github.io/gowall-docs/)

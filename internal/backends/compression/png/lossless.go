@@ -7,7 +7,6 @@ import (
 	"github.com/Achno/gowall/internal/types"
 )
 
-// PngquantStrategy implements pngquant compression for PNG images
 type LosslessPngStrategy struct {
 }
 

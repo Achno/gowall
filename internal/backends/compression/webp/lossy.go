@@ -11,17 +11,17 @@ import (
 	"github.com/Achno/gowall/internal/types"
 )
 
-type LosslyWebpStrategy struct {
+type LossyWebpStrategy struct {
 	Quality int
 }
 
-func NewLossllyWebpStrategy(quality int) (*LosslyWebpStrategy, error) {
-	return &LosslyWebpStrategy{
+func NewLossyWebpStrategy(quality int) (*LossyWebpStrategy, error) {
+	return &LossyWebpStrategy{
 		Quality: quality,
 	}, nil
 }
 
-func (l *LosslyWebpStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
+func (l *LossyWebpStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
 
 	if err := l.ValidateParams(); err != nil {
 		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
@@ -43,11 +43,11 @@ func (l *LosslyWebpStrategy) Compress(img image.Image) (image.Image, types.Image
 	return img, metadata, nil
 }
 
-func (l *LosslyWebpStrategy) GetFormat() string {
+func (l *LossyWebpStrategy) GetFormat() string {
 	return "webp"
 }
 
-func (p *LosslyWebpStrategy) ValidateParams() error {
+func (p *LossyWebpStrategy) ValidateParams() error {
 	if p.Quality < 0 || p.Quality > 100 {
 		return fmt.Errorf("quality must be between 0 and 100")
 	}

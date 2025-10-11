@@ -93,14 +93,14 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 		"losslesspng-png": func(quality int, speed int) (CompressionStrategy, error) {
 			return png.NewLosslessPngStrategy()
 		},
-		"lossllyjpeg-jpeg": func(quality int, speed int) (CompressionStrategy, error) {
-			return jpg.NewLossllyJpgStrategy(quality)
+		"lossyjpeg-jpeg": func(quality int, speed int) (CompressionStrategy, error) {
+			return jpg.NewLossyJpgStrategy(quality)
 		},
-		"lossllyjpg-jpg": func(quality int, speed int) (CompressionStrategy, error) {
-			return jpg.NewLossllyJpgStrategy(quality)
+		"lossyjpg-jpg": func(quality int, speed int) (CompressionStrategy, error) {
+			return jpg.NewLossyJpgStrategy(quality)
 		},
-		"lossllywebp-webp": func(quality int, speed int) (CompressionStrategy, error) {
-			return webp.NewLossllyWebpStrategy(quality)
+		"lossywebp-webp": func(quality int, speed int) (CompressionStrategy, error) {
+			return webp.NewLossyWebpStrategy(quality)
 		},
 	}
 
@@ -116,11 +116,11 @@ func (p *CompressionProcessor) GetDefaultStrategyNameForFormat(format string) (s
 	case "png":
 		defaultStrategyName = "pngquant"
 	case "jpeg":
-		defaultStrategyName = "lossllyjpeg"
+		defaultStrategyName = "lossyjpeg"
 	case "jpg":
-		defaultStrategyName = "lossllyjpg"
+		defaultStrategyName = "lossyjpg"
 	case "webp":
-		defaultStrategyName = "lossllywebp"
+		defaultStrategyName = "lossywebp"
 	}
 
 	return defaultStrategyName, nil

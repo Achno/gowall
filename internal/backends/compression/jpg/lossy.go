@@ -9,17 +9,17 @@ import (
 	"github.com/Achno/gowall/internal/types"
 )
 
-type LosslessJpgStrategy struct {
+type LossyJpgStrategy struct {
 	Quality int
 }
 
-func NewLossllyJpgStrategy(quality int) (*LosslessJpgStrategy, error) {
-	return &LosslessJpgStrategy{
+func NewLossyJpgStrategy(quality int) (*LossyJpgStrategy, error) {
+	return &LossyJpgStrategy{
 		Quality: quality,
 	}, nil
 }
 
-func (l *LosslessJpgStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
+func (l *LossyJpgStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
 
 	if err := l.ValidateParams(); err != nil {
 		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
@@ -40,11 +40,11 @@ func (l *LosslessJpgStrategy) Compress(img image.Image) (image.Image, types.Imag
 	return img, metadata, nil
 }
 
-func (l *LosslessJpgStrategy) GetFormat() string {
+func (l *LossyJpgStrategy) GetFormat() string {
 	return "jpeg"
 }
 
-func (p *LosslessJpgStrategy) ValidateParams() error {
+func (p *LossyJpgStrategy) ValidateParams() error {
 	if p.Quality < 0 || p.Quality > 100 {
 		return fmt.Errorf("quality must be between 0 and 100")
 	}

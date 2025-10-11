@@ -8,6 +8,7 @@ import (
 
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
 )
@@ -62,6 +63,7 @@ func RunCompressCmd(cmd *cobra.Command, args []string) {
 		image.WithSpeed(speed),
 	)
 
+	logger.Print("Compressing images...")
 	compressedImages, err := image.ProcessImgs(processor, ops, "")
 	utils.HandleError(err, "Error")
 

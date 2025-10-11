@@ -59,6 +59,13 @@ func LoadConfig() {
 		log.Fatalf("could not create config directory %v", err)
 	}
 
+	if _, err := os.Stat(filepath.Join(configDir, ".config", "gowall", configFile)); errors.Is(err, os.ErrNotExist) {
+		err = os.WriteFile(filepath.Join(configDir, ".config", "gowall", configFile), []byte(""), 0644)
+		if err != nil {
+			log.Fatalf("could not create config file %v", err)
+		}
+	}
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		log.Printf("Error reading config file: %v", err)

@@ -11,14 +11,12 @@ import (
 	"github.com/Achno/gowall/utils"
 )
 
-// PngquantStrategy implements pngquant compression for PNG images
 type PngquantStrategy struct {
 	BinaryPath string
 	Quality    int
 	Speed      int
 }
 
-// NewPngquantStrategy creates a new pngquant strategy
 func NewPngquantStrategy(quality int, speed int) (*PngquantStrategy, error) {
 
 	_, err := CheckPngquantInstalled()

@@ -1,7 +1,7 @@
 package config
 
 const (
-	Version            = "v0.2.1"
+	Version            = "v0.2.2"
 	OutputFolder       = "Pictures/gowall"
 	configFile         = "config.yml"
 	OCRSchemaFile      = "schema.yml"

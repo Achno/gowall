@@ -23,10 +23,12 @@ Gowall is really well documented with **visual examples**: [Gowall Docs](https:/
 ❗ Although Gowall is a CLI tool, it has an `Image preview` feature that allows
 printing images directly in the terminal. See [Gowall Terminal Image preview](https://achno.github.io/gowall-docs/#image-preview)
 
-- Convert Wallpaper's theme 👾 – Recolor an image to match your favorite + (Custom) themes (Catppuccin...).
-- AI Image Upscaling 👾- Increase the resolution of the image while preserving or improving its quality.
-- Support for Unix pipes/redirection 👾 - Read from stdin and write to stdout.
-- Convert Icon's theme 👾 (svg,ico) - Recolor your icons to match a theme.
+- **Convert Wallpaper's theme**  – Recolor an image to match your favorite + (Custom) themes (Catppuccin...).
+- **Image compression** - Reduce the size of png,jpeg,jpg,webp images.
+- **OCR** - Extract text from images and pdfs', supporting 9+ providers (Traditional OCR, Visual Language Models and hybrid methods).
+- **AI Image Upscaling** - Increase the resolution of the image while preserving or improving its quality.
+- **Convert Icon's theme**  (svg,ico) - Recolor your icons to match a theme.
+- Support for Unix pipes/redirection  - Read from stdin and write to stdout.
 - Image to pixel art - Transforms your image to the typical blocky appearance of pixel art.
 - Replace a specific color in an image - Pretty self explanatory.
 - Create a gif from images - Use the images as frames and specify a delay and the number of loops.
@@ -99,7 +101,22 @@ All themes can be shown (both default and user-created via `~/.config/gowall/con
 Make sure to do `gowall -v` and compare it against the release page version,
 since the [docs](https://achno.github.io/gowall-docs/installation) only show the commands/flags and capabilities of the latest released version.
 
-### MacOS (Homebrew)
+### Grab the binary from the release section (Stable Release) 🢀 **Prefered Method**
+
+- If the installation options do not cover your package manager of your distro/OS
+- If gowall in your package manager is not up to date as per the [release section's latest version](https://github.com/Achno/gowall/releases)
+- If you don't know how to install gowall and don't want to build the project.
+
+Head over to the [release](https://github.com/Achno/gowall/releases) section
+
+Choose the latest version of gowall. You should see a `.tar.gz` for your operating system and architecture. Simply Extract the binary inside named `gowall` and place it inside your `$PATH`
+
+```sh
+sudo cp gowall /usr/local/bin/
+```
+
+
+### MacOS (Homebrew) - currently on v0.2.0
 
 ```sh
 brew install gowall
@@ -141,18 +158,6 @@ cd void-packages/
 sudo xbps-install -R hostdir/binpkgs gowall
 ```
 
-### Grab the binary from the release section (Stable Release) 🢀 **Prefered Method**
-
-If you don't know how to install gowall you should probably following this method rather than cloning and building the project.
-
-Head over to the [release](https://github.com/Achno/gowall/releases) section
-
-Choose the latest version of gowall. You should see a `.tar.gz` for your operating system and architecture. Simply Extract the binary inside named `gowall` and place it inside your `$PATH`
-
-```sh
-sudo cp gowall /usr/local/bin/
-```
-
 ### Build from source (Cutting Edge) 
 
 If you are a normal user, consider using using the method above for a stable gowall release.
@@ -172,20 +177,30 @@ sudo cp gowall /usr/local/bin/
 gowall
 ```
 
-Notes 🗒️ : You dont have to use `sudo cp gowall /usr/local/bin/` if you have `$GOPATH` setup correctly
-Eg. you have the following in your .zshrc / .bashrc
+If this threw any errors while building simply follow the solution below.
 
-```sh
-export GOPATH=$(go env GOPATH)
-export GOBIN=$GOPATH/bin
-export PATH=$PATH:$GOBIN
+#### Windows (Or any OS if git cloning and go build did not work)
+
+For Windows we need to install `zig` & `go` to build it. I advise you to use a package manager like [scoop](https://scoop.sh/) to install it. Obviously you can just go the zig website and download the installer, it doesn't really matter, the zig binary needs to be in your `$PATH`.
+
+```bash
+scoop install main/zig # or just go to the website and download zig if you don't want to use a package manager
 ```
 
-And simply use `go install`
+```bash
+git clone https://github.com/Achno/gowall
+cd gowall
 
-```sh
-go install github.com/Achno/gowall@latest
+export CGO_ENABLED=1 # if you are using powershell : $env:CGO_ENABLED=1
+export CC="zig cc" # if you are using powershell : $env:CC="zig cc"
+export CXX="zig c++" # if you are using powershell : $env:CXX="zig c++"
+
+go clean -cache 
+go build -v
+
+# then simply add the binary to your PATH
 ```
+
 ---
 
 # Contributions :handshake:

@@ -42,11 +42,13 @@ printing images directly in the terminal. See [Gowall Terminal Image preview](ht
 
 ---
 
-<div align="center"><img src="assets/custom.png"><br><br></div>
+<div  align="center"><img height="350" src="assets/custom.png"><br><br></div>
 
-<div align="center"><img src="https://github.com/user-attachments/assets/4029e2b7-b8fd-4738-9334-20a6d01872c7"><br><br></div>
+<div align="center" ><img height="450" src="https://github.com/user-attachments/assets/4029e2b7-b8fd-4738-9334-20a6d01872c7"><br><br></div>
 
-<div align="center"><img src="https://github.com/user-attachments/assets/c9ee11ae-ec99-4371-9daf-e98a66dc9db7"><br><br></div>
+<div align="center"><img height="450" src="https://github.com/user-attachments/assets/7b6ad413-938f-4f01-bda7-1f50f2f64616"><br><br></div>
+
+<div align="center"><img height="500" src="https://github.com/user-attachments/assets/4bf6dc47-46eb-4bc4-9913-8dea3b454b80"><br><br></div>
 
 <div align="center"><img src="assets/invert.png"><br><br></div>
 

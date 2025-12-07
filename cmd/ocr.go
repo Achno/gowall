@@ -23,15 +23,7 @@ func BuildOCRCmd() *cobra.Command {
 		Short: "Input images & pdfs extract the text and return as plain text or markdown.",
 		Long:  `Input images & pdfs, apply pre-processing ,connect to various OCR providers regardless if they support pdfs or not, apply post-processing and output as markdown or plain text`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("schema") {
-				if err := cmd.MarkFlagRequired("provider"); err != nil {
-					return err
-				}
-				if err := cmd.MarkFlagRequired("model"); err != nil {
-					return err
-				}
-			}
-			return nil
+			return ValidateParseOCRCmd(cmd, shared, args)
 		},
 		Run: runOCRcmd,
 	}
@@ -82,6 +74,37 @@ func runOCRcmd(cmd *cobra.Command, args []string) {
 	service := providers.NewProviderService(n, cfg)
 	err = providers.StartOCRPipeline(ops, service)
 	utils.HandleError(err, "Error")
+}
+
+func ValidateParseOCRCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	if !cmd.Flags().Changed("schema") {
+		if err := cmd.MarkFlagRequired("provider"); err != nil {
+			return err
+		}
+		if err := cmd.MarkFlagRequired("model"); err != nil {
+			return err
+		}
+	}
+
+	if cmd.Flags().Changed("dpi") {
+		dpi, _ := cmd.Flags().GetFloat64("dpi")
+		if dpi < 72 || dpi > 600 {
+			return fmt.Errorf("dpi must be between 72 and 600, got: %.0f", dpi)
+		}
+	}
+
+	if cmd.Flags().Changed("burst") {
+		burst, _ := cmd.Flags().GetInt("burst")
+		if burst < 1 {
+			return fmt.Errorf("burst must be at least 1, got: %d", burst)
+		}
+	}
+
+	return nil
 }
 
 // (1) Loads default config

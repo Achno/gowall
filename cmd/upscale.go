@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
@@ -37,6 +39,8 @@ func BuildUpscaleCmd() *cobra.Command {
         realesrgan-x4plus (Slower,Better quality,forces -s 4),
         realesrgan-x4plus-anime (optimized for anime small),
 		realesr-animevideov3 (Fast model ,animation video (default))`)
+
+	cmd.RegisterFlagCompletionFunc("model", upscaleCompletion)
 
 	addGlobalFlags(cmd)
 
@@ -82,19 +86,19 @@ func ValidateParseUpscaleCmd(cmd *cobra.Command, flags config.GlobalSubCommandFl
 	}
 
 	modelName, _ := cmd.Flags().GetString("model")
-	modelNames := map[string]bool{
-		"realesr-animevideov3":    true,
-		"realesrgan-x4plus":       true,
-		"realesrgan-x4plus-anime": true,
-		"realesrnet-x4plus":       true,
-	}
+	availableModels := image.GetAvailableUpscaleModels()
 
-	_, exists := modelNames[modelName]
-	if !exists {
-		return fmt.Errorf("invalid Model name")
+	validModel := slices.Contains(availableModels, modelName)
+
+	if !validModel {
+		return fmt.Errorf("invalid model name: %s, available models: %s", modelName, strings.Join(availableModels, ", "))
 	}
 
 	return nil
+}
+
+func upscaleCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return image.GetAvailableUpscaleModels(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

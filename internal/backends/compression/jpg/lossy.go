@@ -1,7 +1,6 @@
 package jpg
 
 import (
-	"fmt"
 	"image"
 	"image/jpeg"
 	"io"
@@ -21,10 +20,6 @@ func NewLossyJpgStrategy(quality int) (*LossyJpgStrategy, error) {
 
 func (l *LossyJpgStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
 
-	if err := l.ValidateParams(); err != nil {
-		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
-	}
-
 	jpegOptions := &jpeg.Options{
 		Quality: l.Quality,
 	}
@@ -42,11 +37,4 @@ func (l *LossyJpgStrategy) Compress(img image.Image) (image.Image, types.ImageMe
 
 func (l *LossyJpgStrategy) GetFormat() string {
 	return "jpeg"
-}
-
-func (p *LossyJpgStrategy) ValidateParams() error {
-	if p.Quality < 0 || p.Quality > 100 {
-		return fmt.Errorf("quality must be between 0 and 100")
-	}
-	return nil
 }

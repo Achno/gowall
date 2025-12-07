@@ -38,6 +38,8 @@ func BuildCompressCmd() *cobra.Command {
 	flags.IntVarP(&quality, "quality", "q", 80, "Quality to use for compression")
 	flags.IntVarP(&speed, "speed", "s", 4, "Speed to use for compression")
 
+	cmd.RegisterFlagCompletionFunc("method", compressCompletion)
+
 	addGlobalFlags(cmd)
 
 	return cmd
@@ -84,6 +86,10 @@ func ValidateParseCompressCmd(cmd *cobra.Command, flags config.GlobalSubCommandF
 	}
 
 	return nil
+}
+
+func compressCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return image.NewCompressionProcessor().GetAllStrategiesNames(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

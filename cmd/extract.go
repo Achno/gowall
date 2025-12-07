@@ -11,48 +11,59 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	colorsNum   int
-	previewFlag bool
-)
+func BuildExtractCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "extract [INPUT]",
+		Short: "Prints the color pallete of the image you specificed (like pywal)",
+		Long:  `Using the colorthief backend ( like pywal ) it prints the color pallete of the image (path) you specified`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseExtractCmd(cmd, shared, args)
+		},
+		Run: RunExtractCmd,
+	}
 
-// extractCmd represents the extract command
-var extractCmd = &cobra.Command{
-	Use:   "extract [INPUT]",
-	Short: "Prints the color pallete of the image you specificed (like pywal)",
-	Long:  `Using the colorthief backend ( like pywal ) it prints the color pallete of the image (path) you specified`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		err := validateInput(shared, args)
-		if err != nil {
-			return err
-		}
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
-		utils.HandleError(err)
+	flags := cmd.Flags()
+	var (
+		colorsNum   int
+		previewFlag bool
+	)
 
-		NumOfColors, err := cmd.Flags().GetInt("colors")
-		utils.HandleError(err, "Error")
+	flags.IntVarP(&colorsNum, "colors", "c", 6, "-c <number of colors to return>")
+	flags.BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
 
-		processor := &image.ExtractProcessor{
-			NumOfColors: NumOfColors,
-		}
+	addGlobalFlags(cmd)
 
-		_, err = image.ProcessImgs(processor, imageOps, theme)
-		utils.HandleError(err, "Error")
+	return cmd
+}
 
-		// open up hex code preview site
-		if previewFlag {
-			utils.OpenURL(config.HexCodeVisualUrl)
-		}
-	},
+func RunExtractCmd(cmd *cobra.Command, args []string) {
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	numOfColors, err := cmd.Flags().GetInt("colors")
+	utils.HandleError(err, "Error")
+	previewFlag, err := cmd.Flags().GetBool("preview")
+	utils.HandleError(err, "Error")
+
+	processor := &image.ExtractProcessor{
+		NumOfColors: numOfColors,
+	}
+
+	_, err = image.ProcessImgs(processor, imageOps, theme)
+	utils.HandleError(err, "Error")
+
+	if previewFlag {
+		utils.OpenURL(config.HexCodeVisualUrl)
+	}
+}
+
+func ValidateParseExtractCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+	return nil
 }
 
 func init() {
-	rootCmd.AddCommand(extractCmd)
-	extractCmd.Flags().IntVarP(&colorsNum, "colors", "c", 6, "-c <number of colors to return>")
-	extractCmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
-	// extractCmd.PersistentFlags().StringVarP(&shared.OutputDestination, "output", "o", "", "Usage: --output imageName (no extension) Not available in batch proccesing")
-	addGlobalFlags(extractCmd)
+	rootCmd.AddCommand(BuildExtractCmd())
 }

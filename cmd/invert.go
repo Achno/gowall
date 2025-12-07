@@ -4,6 +4,7 @@ Copyright © 2024 Achnologia <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -11,44 +12,45 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// invertCmd represents the invert command
-var invertCmd = &cobra.Command{
-	Use:   "invert [INPUT] [OPTIONAL OUTPUT]",
-	Short: "Inverts the color's of an image",
-	Long:  `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		err := validateInput(shared, args)
-		if err != nil {
-			return err
-		}
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		if isInputBatch(shared) {
-			logger.Print("Processing batch files...")
-		} else {
-			logger.Print("Processing single image...")
-		}
+func BuildInvertCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "invert [INPUT] [OPTIONAL OUTPUT]",
+		Short: "Inverts the color's of an image",
+		Long:  `Inverts the color's of an image , then you can convert the inverted image to your favourite color scheme`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseInvertCmd(cmd, shared, args)
+		},
+		Run: RunInvertCmd,
+	}
 
-		processor := &image.Inverter{}
+	addGlobalFlags(cmd)
 
-		imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
-		utils.HandleError(err)
+	return cmd
+}
 
-		processedImages, err := image.ProcessImgs(processor, imageOps, "")
-		utils.HandleError(err, "Error")
+func RunInvertCmd(cmd *cobra.Command, args []string) {
 
-		// if len(processedImages) == 0 {
-		// 	utils.HandleError(err, "Error Processing Images")
-		// }
-		if err != nil {
-			logger.Error(err, "The following images had errors while processing")
-		}
-		openImageInViewer(shared, args, processedImages[0])
-	},
+	logger.Print("Processing images...")
+
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	processor := &image.Inverter{}
+
+	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(shared, args, processedImages[0])
+}
+
+func ValidateParseInvertCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func init() {
-	rootCmd.AddCommand(invertCmd)
-	addGlobalFlags(invertCmd)
+	rootCmd.AddCommand(BuildInvertCmd())
 }

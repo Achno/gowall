@@ -68,9 +68,6 @@ func (p *ResizeProcessor) Process(img image.Image, theme string, format string) 
 }
 
 func resize(config *ResizeOptions, img image.Image) (image.Image, error) {
-	if config.Width < 0 || config.Height < 0 {
-		return nil, fmt.Errorf("dimensions cannot be negative: width=%d, height=%d", config.Width, config.Height)
-	}
 
 	if config.Width == 0 && config.Height == 0 {
 		return img, nil

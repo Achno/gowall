@@ -37,7 +37,10 @@ func RunInvertCmd(cmd *cobra.Command, args []string) {
 
 	processor := &image.Inverter{}
 
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])

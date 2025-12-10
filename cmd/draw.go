@@ -74,7 +74,10 @@ func RunBorderCmd(cmd *cobra.Command, args []string) {
 		BorderThickness: borderThickness,
 	}
 
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil, // default
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])
@@ -137,7 +140,10 @@ func RunGridCmd(cmd *cobra.Command, args []string) {
 		image.WithMaskonly(gridMask),
 	)
 
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])

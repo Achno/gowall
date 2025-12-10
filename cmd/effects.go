@@ -56,7 +56,10 @@ func RunFlipCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 
 	processor := &image.FlipProcessor{}
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil, // default
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])
@@ -89,7 +92,10 @@ func RunMirrorCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 
 	processor := &image.MirrorProcessor{}
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil, // default
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])
@@ -122,7 +128,10 @@ func RunGrayscaleCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 
 	processor := &image.GrayScaleProcessor{}
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])
@@ -163,7 +172,10 @@ func RunBrightnessCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 
 	processor := &image.BrightnessProcessor{Factor: factor}
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil, // default
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])

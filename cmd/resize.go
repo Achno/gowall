@@ -70,7 +70,10 @@ func RunResizeCmd(cmd *cobra.Command, args []string) {
 	)
 
 	logger.Print("Resizing images...")
-	resizedImages, err := image.ProcessImgs(processor, ops, "")
+	resizedImages, err := image.ProcessImgs(processor, ops, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil, // default
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, resizedImages[0])

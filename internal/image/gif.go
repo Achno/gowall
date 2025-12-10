@@ -1,7 +1,6 @@
 package image
 
 import (
-	"fmt"
 	"image"
 	"image/color/palette"
 	"image/draw"
@@ -23,16 +22,12 @@ const (
 type GifProcessor struct {
 	Loop  int // 0 loops forever, -1 shows the frames only once, anything else loop+1
 	Delay int // Delay in 100ths of a second between frames
-	Mode  int // Resize (0) NoResize (1) for resizing all images to same dimensions
+	Mode  int // Resize (1) NoResize (0) for resizing all images to same dimensions
 }
 
 // Composite processes multiple images into a single animated GIF
 func (g *GifProcessor) Composite(images []image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
-	if len(images) == 0 {
-		return nil, types.ImageMetadata{}, fmt.Errorf("no images to process")
-	}
 
-	// Find max dimensions
 	var maxWidth, maxHeight int
 	for _, img := range images {
 		bounds := img.Bounds()

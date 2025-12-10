@@ -41,7 +41,10 @@ var bgCmd = &cobra.Command{
 			image.WithNumRoutines(numRoutines),
 			image.WithSampleRate(sampleRate),
 		)
-		processedImages, err := image.ProcessImgs(processor, imageOps, "")
+		processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+			Theme:      "",
+			OnComplete: nil,
+		})
 		utils.HandleError(err, "Error")
 		// Only crash when we couldn't process any images
 		// if len(processedImages) == 0 {

@@ -60,7 +60,10 @@ func RunGifCmd(cmd *cobra.Command, args []string) {
 		Mode:  resize,
 	}
 
-	_, err = image.MultiProcessImgs(processor, imageOps, "")
+	_, err = image.MultiProcessImgs(processor, imageOps, image.MultiProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 }
 
@@ -70,7 +73,7 @@ func ValidateParseGifCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags,
 	}
 
 	if len(args) > 0 {
-		return fmt.Errorf("use --batch or --dir with gif with multiple images")
+		return fmt.Errorf("use --batch or --dir with gif with multiple images,stdout is disabled for the gif cmd")
 	}
 
 	delay, _ := cmd.Flags().GetInt("delay")

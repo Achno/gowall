@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/synoptiq/go-fluxus v1.1.1
 	github.com/theckman/yacspin v0.13.12
-	golang.org/x/image v0.22.0
+	golang.org/x/image v0.33.0
 	golang.org/x/term v0.30.0
 	golang.org/x/time v0.11.0
 	google.golang.org/genai v1.4.0
@@ -24,6 +24,7 @@ require (
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -52,7 +53,7 @@ require (
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/grpc v1.71.1 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect

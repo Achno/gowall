@@ -1,7 +1,6 @@
 package image
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 
@@ -77,10 +76,6 @@ type BrightnessProcessor struct {
 }
 
 func (p *BrightnessProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
-
-	if p.Factor <= 0.0 || p.Factor > 10 {
-		return nil, types.ImageMetadata{}, fmt.Errorf("enter a valid factor : from (0.0,10.0] ")
-	}
 
 	bounds := img.Bounds()
 	newImg := image.NewRGBA(bounds)

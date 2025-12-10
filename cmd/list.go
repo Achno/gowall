@@ -13,38 +13,52 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Lists available themes",
-	Long:  `List all available themes. This includes the predefined and custom user provided themes in ~/.config/gowall/config.yml`,
-	Run: func(cmd *cobra.Command, args []string) {
-		th, _ := cmd.Flags().GetString("theme")
+func BuildListCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "Lists available themes",
+		Long:  `List all available themes. This includes the predefined and custom user provided themes in ~/.config/gowall/config.yml`,
+		Run:   RunListCmd,
+	}
 
-		switch {
-		case th != "":
-			colors, err := image.GetThemeColors(th)
-			utils.HandleError(err)
+	flags := cmd.Flags()
+	var (
+		theme       string
+		previewFlag bool
+	)
 
-			for _, color := range colors {
-				logger.Print(color)
-			}
+	flags.StringVarP(&theme, "theme", "t", "", "Usage : --theme <theme_name>")
+	flags.BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
 
-			if previewFlag {
-				utils.OpenURL(config.HexCodeVisualUrl)
-			}
+	return cmd
+}
 
-		default:
-			allThemes := image.ListThemes()
-			sort.Strings(allThemes)
-			for _, theme := range allThemes {
-				logger.Print(theme)
-			}
+func RunListCmd(cmd *cobra.Command, args []string) {
+	theme, _ := cmd.Flags().GetString("theme")
+	previewFlag, _ := cmd.Flags().GetBool("preview")
+
+	switch {
+	case theme != "":
+		colors, err := image.GetThemeColors(theme)
+		utils.HandleError(err)
+
+		for _, color := range colors {
+			logger.Print(color)
 		}
-	},
+
+		if previewFlag {
+			utils.OpenURL(config.HexCodeVisualUrl)
+		}
+
+	default:
+		allThemes := image.ListThemes()
+		sort.Strings(allThemes)
+		for _, theme := range allThemes {
+			logger.Print(theme)
+		}
+	}
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&theme, "theme", "t", "", "Usage : --theme <theme_name>")
-	listCmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "gowall extract -p (opens hex code preview site)")
+	rootCmd.AddCommand(BuildListCmd())
 }

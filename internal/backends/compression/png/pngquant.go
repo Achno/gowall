@@ -48,9 +48,6 @@ func NewPngquantStrategy(quality int, speed int) (*PngquantStrategy, error) {
 
 // Compress implements the CompressionStrategy interface
 func (p *PngquantStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
-	if err := p.ValidateParams(); err != nil {
-		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
-	}
 
 	// Encode input image to PNG format in memory
 	var inputBuffer bytes.Buffer
@@ -97,14 +94,4 @@ func (p *PngquantStrategy) Compress(img image.Image) (image.Image, types.ImageMe
 // GetFormat returns the format this strategy handles
 func (p *PngquantStrategy) GetFormat() string {
 	return "png"
-}
-
-func (p *PngquantStrategy) ValidateParams() error {
-	if p.Quality < 0 || p.Quality > 100 {
-		return fmt.Errorf("quality must be between 0 and 100")
-	}
-	if p.Speed < 0 || p.Speed > 11 {
-		return fmt.Errorf("speed must be between 0 and 11")
-	}
-	return nil
 }

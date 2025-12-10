@@ -53,10 +53,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string, format string)
 	if err := imageio.SaveImage(img, imageio.FileWriter{Path: inputPath}, "png", types.ImageMetadata{}); err != nil {
 		return nil, types.ImageMetadata{}, fmt.Errorf("failed to save temp input image: %w", err)
 	}
-	// Validate params
-	if err := p.validateParams(inputPath); err != nil {
-		return nil, types.ImageMetadata{}, fmt.Errorf("while validating parameters: %w", err)
-	}
+
 	cmd := exec.Command(binary, "-i", inputPath, "-o", outputPath, "-s", fmt.Sprintf("%d", p.Scale))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -77,26 +74,11 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string, format string)
 	return imgUpscaled, types.ImageMetadata{}, nil
 }
 
-func (p *UpscaleProcessor) validateParams(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("this path does not exist")
+func GetAvailableUpscaleModels() []string {
+	return []string{
+		"realesr-animevideov3",
+		"realesrgan-x4plus",
+		"realesrgan-x4plus-anime",
+		"realesrnet-x4plus",
 	}
-
-	if p.Scale < 2 || p.Scale > 4 {
-		return fmt.Errorf("the upscale ratio is invalid")
-	}
-
-	modelNames := map[string]bool{
-		"realesr-animevideov3":    true,
-		"realesrgan-x4plus":       true,
-		"realesrgan-x4plus-anime": true,
-		"realesrnet-x4plus":       true,
-	}
-
-	_, exists := modelNames[p.ModelName]
-	if !exists {
-		return fmt.Errorf("invalid Model name")
-	}
-
-	return nil
 }

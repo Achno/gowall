@@ -4,8 +4,10 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -20,11 +22,7 @@ func BuildCompressCmd() *cobra.Command {
 		Short: "Compress an image, using  ",
 		Long:  "Compress an image",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := validateInput(shared, args)
-			if err != nil {
-				return err
-			}
-			return nil
+			return ValidateParseCompressCmd(cmd, shared, args)
 		},
 		Run: RunCompressCmd,
 	}
@@ -39,6 +37,8 @@ func BuildCompressCmd() *cobra.Command {
 	flags.StringVarP(&method, "method", "m", "", "Available methods: "+strings.Join(strategies, ", "))
 	flags.IntVarP(&quality, "quality", "q", 80, "Quality to use for compression")
 	flags.IntVarP(&speed, "speed", "s", 4, "Speed to use for compression")
+
+	cmd.RegisterFlagCompletionFunc("method", compressCompletion)
 
 	addGlobalFlags(cmd)
 
@@ -68,6 +68,28 @@ func RunCompressCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, compressedImages[0])
+}
+
+func ValidateParseCompressCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	quality, _ := cmd.Flags().GetInt("quality")
+	if quality < 0 || quality > 100 {
+		return fmt.Errorf("quality must be between 1 and 100, got: %d", quality)
+	}
+
+	speed, _ := cmd.Flags().GetInt("speed")
+	if speed < 0 || speed > 11 {
+		return fmt.Errorf("speed must be between 1 and 10, got: %d", speed)
+	}
+
+	return nil
+}
+
+func compressCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return image.NewCompressionProcessor().GetAllStrategiesNames(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

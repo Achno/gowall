@@ -61,9 +61,9 @@ func RunGifCmd(cmd *cobra.Command, args []string) {
 	if cmd.Flags().Changed("loop") {
 		options = append(options, image.WithLoop(loop))
 	}
-	if cmd.Flags().Changed("output") {
-		options = append(options, image.WithOutputName(shared.OutputDestination))
-	}
+	// if cmd.Flags().Changed("output") {
+	// 	options = append(options, image.WithOutputName(shared.OutputDestination))
+	// }
 	if cmd.Flags().Changed("resize") {
 		options = append(options, image.WithMode(resize))
 	}

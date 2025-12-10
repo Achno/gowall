@@ -95,8 +95,14 @@ func (so Stdout) String() string {
 
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.
 func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
+	// Check if this is a multi-input-single-output command
+	isMultiInputSingleOutput := cmd.Name() == "gif" // Add more commands here as needed
+
 	// Process by priority: directory > batch files > single file/stdin
 	if flags.InputDir != "" {
+		if isMultiInputSingleOutput {
+			return directoryIOMulti(flags, cmd)
+		}
 		imgIO, err := directoryIO(flags, cmd)
 		if err != nil {
 			return nil, err
@@ -105,6 +111,9 @@ func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string,
 	}
 
 	if len(flags.InputFiles) > 0 {
+		if isMultiInputSingleOutput {
+			return batchIOMulti(flags, cmd)
+		}
 		return batchIO(flags, cmd), nil
 	}
 
@@ -173,6 +182,110 @@ func directoryIO(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]Imag
 	}
 
 	return operations, nil
+}
+
+// directoryIOMulti handles directory input for multi-input-single-output commands (e.g., gif)
+func directoryIOMulti(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]ImageIO, error) {
+	filter := func(path string, entry fs.DirEntry) bool {
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		return config.SupportedImageExtensions[ext]
+	}
+
+	inputFiles, err := GetFilesFromDirectory(flags.InputDir, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate single output for all inputs
+	output, ext, err := generateSingleOutput(flags, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	var operations []ImageIO
+	for _, inputFile := range inputFiles {
+		operations = append(operations, ImageIO{
+			ImageInput:  inputFile,
+			ImageOutput: output,
+			Format:      ext,
+		})
+	}
+
+	return operations, nil
+}
+
+// batchIOMulti handles batch files for multi-input-single-output commands (e.g., gif)
+func batchIOMulti(flags config.GlobalSubCommandFlags, cmd *cobra.Command) ([]ImageIO, error) {
+	// Generate single output for all inputs
+	output, ext, err := generateSingleOutput(flags, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	// expand the tilde (~) to the full path in case the shell does not
+	files := utils.ExpandTilde(flags.InputFiles)
+
+	var operations []ImageIO
+	for _, path := range files {
+		absolutePath, err := filepath.Abs(path)
+		if err != nil {
+			continue
+		}
+
+		input := FileReader{Path: absolutePath}
+		operations = append(operations, ImageIO{
+			ImageInput:  input,
+			ImageOutput: output,
+			Format:      ext,
+		})
+	}
+
+	return operations, nil
+}
+
+// generateSingleOutput creates a single output for multi-input commands
+func generateSingleOutput(flags config.GlobalSubCommandFlags, cmd *cobra.Command) (ImageWriter, string, error) {
+	cmdKey := cmd.Name() // e.g., "gif", "collage", etc.
+
+	// Check if output should be stdout
+	if IsStdoutOutput(flags, nil) {
+		ext := flags.Format
+		if ext == "" {
+			ext = cmdKey
+		}
+		return Stdout{}, ext, nil
+	}
+
+	// Determine output directory
+	dir := config.GowallConfig.OutputFolder
+	if cmdKey == "gif" {
+		dir = filepath.Join(dir, "gifs")
+	}
+
+	// --output flag overrides
+	if flags.OutputDestination != "" {
+		// If it has an extension, use it as the full file path
+		if filepath.Ext(flags.OutputDestination) != "" {
+			ext := strings.TrimPrefix(filepath.Ext(flags.OutputDestination), ".")
+			if ext == "" {
+				ext = cmdKey
+			}
+			return FileWriter{Path: flags.OutputDestination}, ext, nil
+		}
+		// Otherwise it's a directory
+		dir = flags.OutputDestination
+	}
+
+	// Generate timestamped filename: "gif-20241210-150405.gif"
+	timestamp := time.Now().Format("20060102-150405")
+	ext := flags.Format
+	if ext == "" {
+		ext = cmdKey
+	}
+	fileName := fmt.Sprintf("%s-%s.%s", cmdKey, timestamp, ext)
+	outputPath := filepath.Join(dir, fileName)
+
+	return FileWriter{Path: outputPath}, ext, nil
 }
 
 // batchIO handles the case when a list of input files is provided

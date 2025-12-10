@@ -6,11 +6,8 @@ import (
 	"image/color/palette"
 	"image/draw"
 	"image/gif"
-	"path/filepath"
 	"sync"
-	"time"
 
-	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 
 	drawx "golang.org/x/image/draw"
@@ -22,10 +19,9 @@ const (
 )
 
 type GifOptions struct {
-	Loop       int    // 0 loops forever, -1 shows the frames only once, anything else loop+1
-	Delay      int    // Delay in 100ths of a second between frames
-	Mode       int    // Resize (0) NoResize (1) for resizing all images to same dimensions
-	outputName string // outputName of the gif
+	Loop  int // 0 loops forever, -1 shows the frames only once, anything else loop+1
+	Delay int // Delay in 100ths of a second between frames
+	Mode  int // Resize (0) NoResize (1) for resizing all images to same dimensions
 }
 
 type GifOption func(*GifOptions)
@@ -38,20 +34,15 @@ func WithDelay(delay int) GifOption {
 	return func(g *GifOptions) { g.Delay = delay }
 }
 
-func WithOutputName(name string) GifOption {
-	return func(g *GifOptions) { g.outputName = name }
-}
-
 func WithMode(mode int) GifOption {
 	return func(g *GifOptions) { g.Mode = mode }
 }
 
 func defaultGifOptions(options []GifOption) GifOptions {
 	opts := GifOptions{
-		Loop:       0,
-		Delay:      200,
-		Mode:       Resize,
-		outputName: "",
+		Loop:  0,
+		Delay: 200,
+		Mode:  Resize,
 	}
 
 	if len(options) > 0 {
@@ -90,14 +81,9 @@ func CreateGif(files []imageio.ImageIO, opts ...GifOption) error {
 		newGif.Disposal[i] = gif.DisposalNone
 	}
 
-	fileName := options.outputName
-	if options.outputName == "" {
-		timestamp := time.Now().Format(time.DateTime)
-		fileName = fmt.Sprintf("gif-%s", timestamp)
-		fileName = filepath.Join(config.GowallConfig.OutputFolder, "gifs", fileName)
-	}
+	output := files[0].ImageOutput
 
-	err = imageio.SaveGif(*newGif, fileName)
+	err = imageio.SaveGif(*newGif, output)
 	if err != nil {
 		return fmt.Errorf("while saving gif: %w", err)
 	}

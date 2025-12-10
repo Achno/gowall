@@ -22,9 +22,14 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// Create a Processor of this interface and call 'ProcessImg'
+// ImageProcessor accepts a single input and processes it into a single output (e.g., png, jpg)
 type ImageProcessor interface {
 	Process(image.Image, string, string) (image.Image, types.ImageMetadata, error)
+}
+
+// MultiImageProcessor accepts multiple inputs and processes them into a single output (e.g.,gif)
+type MultiImageProcessor interface {
+	Composite([]image.Image, string, string) (image.Image, types.ImageMetadata, error)
 }
 
 // NoOpImageProcessor  implements ImageProcessor but does nothing.

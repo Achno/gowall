@@ -54,21 +54,13 @@ func RunGifCmd(cmd *cobra.Command, args []string) {
 	resize, err := cmd.Flags().GetInt("resize")
 	utils.HandleError(err, "Error")
 
-	options := []image.GifOption{}
-	if cmd.Flags().Changed("delay") {
-		options = append(options, image.WithDelay(delay))
-	}
-	if cmd.Flags().Changed("loop") {
-		options = append(options, image.WithLoop(loop))
-	}
-	// if cmd.Flags().Changed("output") {
-	// 	options = append(options, image.WithOutputName(shared.OutputDestination))
-	// }
-	if cmd.Flags().Changed("resize") {
-		options = append(options, image.WithMode(resize))
+	processor := &image.GifProcessor{
+		Loop:  loop,
+		Delay: delay,
+		Mode:  resize,
 	}
 
-	err = image.CreateGif(imageOps, options...)
+	_, err = image.MultiProcessImgs(processor, imageOps, "")
 	utils.HandleError(err, "Error")
 }
 

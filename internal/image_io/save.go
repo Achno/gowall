@@ -18,8 +18,19 @@ import (
 )
 
 func SaveImage(img image.Image, output ImageWriter, format string, metadata types.ImageMetadata) error {
-	encoder, ok := encoders[strings.ToLower(format)]
 
+	//? This is to bypass the default encoders for compression as well as a very hacky solution
+	//? to allow Composite() to work with gifs and save them.
+	if metadata.EncoderFunction != nil {
+		file, err := output.Create()
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return metadata.EncoderFunction(file, img)
+	}
+
+	encoder, ok := encoders[strings.ToLower(format)]
 	if !ok {
 		return fmt.Errorf("unsupported format: %s", format)
 	}
@@ -27,15 +38,12 @@ func SaveImage(img image.Image, output ImageWriter, format string, metadata type
 	if img == nil {
 		return nil
 	}
+
 	file, err := output.Create()
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
-	if metadata.EncoderFunction != nil {
-		return metadata.EncoderFunction(file, img)
-	}
 
 	return encoder(file, img)
 }

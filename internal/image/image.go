@@ -166,6 +166,58 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 	return processedImagesFilePaths, nil
 }
 
+// MultiProcessImgs loads multiple images, processes them together via Composite, and saves single output (N:1)
+func MultiProcessImgs(processor MultiImageProcessor, imageOps []imageio.ImageIO, theme string) (string, error) {
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	images := make([]image.Image, 0, len(imageOps))
+	errChan := make(chan error, len(imageOps))
+
+	for _, imageOp := range imageOps {
+		wg.Add(1)
+		go func(currentImgOp imageio.ImageIO) {
+			defer wg.Done()
+			img, err := imageio.LoadImage(currentImgOp.ImageInput)
+			if err != nil {
+				errChan <- fmt.Errorf("while loading image %s: %w", currentImgOp.ImageInput.String(), err)
+				return
+			}
+			mu.Lock()
+			images = append(images, img)
+			mu.Unlock()
+		}(imageOp)
+	}
+	wg.Wait()
+	close(errChan)
+
+	// Check for loading errors
+	if len(errChan) > 0 {
+		var errs []error
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+		return "", errors.New(utils.FormatErrors(errs))
+	}
+
+	// All imageOps have the same output and format for multi-input commands
+	output := imageOps[0].ImageOutput
+	format := imageOps[0].Format
+
+	resultImg, metadata, err := processor.Composite(images, theme, format)
+	if err != nil {
+		return "", fmt.Errorf("while compositing images: %w", err)
+	}
+
+	err = imageio.SaveImage(resultImg, output, format, metadata)
+	if err != nil {
+		return "", fmt.Errorf("while saving image: %w", err)
+	}
+
+	logger.Printf("::: Multi-image processing completed & saved in %s :::\n", output.String())
+	return output.String(), nil
+}
+
 // returns themeName that was inserted to the theme map
 func loadThemeFromJson(jsonTheme string) (string, error) {
 	reader, err := os.Open(jsonTheme)

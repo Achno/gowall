@@ -13,7 +13,7 @@ import (
 type BorderProcessor struct {
 	Color           color.RGBA
 	BorderThickness int
-	CornerRadius    float64 // 0 means no rounding
+	CornerRadius    float64
 }
 
 func (b *BorderProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
@@ -45,7 +45,6 @@ func drawBorder(img image.Image, borderThickness int, borderColor color.Color, c
 		}
 	}
 
-	// If corner radius is specified, apply rounding to corners
 	if cornerRadius > 0 {
 		applyCornerRounding(newImg, cornerRadius, borderThickness, borderColor)
 	}
@@ -98,9 +97,11 @@ func applyCornerRounding(img *image.RGBA, radius float64, borderThickness int, b
 				} else if distanceFromCenter > radius-float64(borderThickness) {
 					// Pixel is in the border ring of the rounded corner
 					img.Set(x, y, borderColor)
-				} else {
+				} else if borderThickness > 0 {
 					currentPixel := img.RGBAAt(x, y)
-					if currentPixel == borderColor.(color.RGBA) {
+					bcR, bcG, bcB, bcA := borderColor.RGBA()
+					cpR, cpG, cpB, cpA := currentPixel.RGBA()
+					if cpR == bcR && cpG == bcG && cpB == bcB && cpA == bcA {
 						img.Set(x, y, color.Transparent)
 					}
 				}
@@ -109,9 +110,61 @@ func applyCornerRounding(img *image.RGBA, radius float64, borderThickness int, b
 	}
 }
 
-// func roundImageCorners(img *image.RGBA, radius float64) {
-// 	applyCornerRounding(img, radius, 0, color.Transparent)
-// }
+func roundImageCorners(img image.Image, radius float64) *image.RGBA {
+	bounds := img.Bounds()
+	dst := image.NewRGBA(bounds)
+	draw.Draw(dst, bounds, img, image.Point{}, draw.Src)
+
+	w, h := float64(bounds.Dx()), float64(bounds.Dy())
+
+	for y := 0; y < bounds.Dy(); y++ {
+		for x := 0; x < bounds.Dx(); x++ {
+			fx, fy := float64(x), float64(y)
+			var dx, dy float64
+			inCorner := false
+
+			// Check all 4 corners
+			if fx < radius && fy < radius { // Top Left
+				dx, dy = fx-radius, fy-radius
+				inCorner = true
+			} else if fx > w-radius && fy < radius { // Top Right
+				dx, dy = fx-(w-radius), fy-radius
+				inCorner = true
+			} else if fx < radius && fy > h-radius { // Bottom Left
+				dx, dy = fx-radius, fy-(h-radius)
+				inCorner = true
+			} else if fx > w-radius && fy > h-radius { // Bottom Right
+				dx, dy = fx-(w-radius), fy-(h-radius)
+				inCorner = true
+			}
+
+			if inCorner {
+				dist := math.Sqrt(dx*dx + dy*dy)
+				if dist > radius {
+					// Outside circle -> Transparent
+					dst.Set(x, y, color.Transparent)
+				} else if dist > radius-1 {
+					// Edge -> Anti-alias
+					alphaRatio := radius - dist
+					c := dst.RGBAAt(x, y)
+					c.A = uint8(float64(c.A) * alphaRatio)
+					dst.SetRGBA(x, y, c)
+				}
+			}
+		}
+	}
+
+	return dst
+}
+
+type RoundProcessor struct {
+	CornerRadius float64
+}
+
+func (r *RoundProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
+	newImg := roundImageCorners(img, r.CornerRadius)
+	return newImg, types.ImageMetadata{}, nil
+}
 
 type GridProcessor struct {
 	options GridOptions

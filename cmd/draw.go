@@ -16,9 +16,9 @@ import (
 
 func BuildDrawCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "draw [DRAW-COMMAND] [INPUT] [OPTIONAL OUTPUT]",
+		Use:   "draw [DRAW-COMMAND] [INPUT]",
 		Short: "Draw on images",
-		Long:  `Draw a [border,grid] in your images`,
+		Long:  `Draw a [border,grid,round] in your images`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger.Print("Please specify an draw command to apply")
 			err := cmd.Usage()
@@ -28,6 +28,7 @@ func BuildDrawCmd() *cobra.Command {
 
 	cmd.AddCommand(BuildBorderCmd())
 	cmd.AddCommand(BuildGridCmd())
+	cmd.AddCommand(BuildRoundCmd())
 
 	addGlobalFlags(cmd)
 
@@ -37,7 +38,7 @@ func BuildDrawCmd() *cobra.Command {
 // Border Command
 func BuildBorderCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "border [PATH] [OPTIONAL OUTPUT]",
+		Use:   "border [PATH]",
 		Short: "draw a border with a specified  color and thickness on the image",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return ValidateParseBorderCmd(cmd, shared, args)
@@ -114,7 +115,7 @@ func ValidateParseBorderCmd(cmd *cobra.Command, flags config.GlobalSubCommandFla
 
 func BuildGridCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "grid [PATH] [OPTIONAL OUTPUT]",
+		Use:   "grid [PATH]",
 		Short: "draw a grid with a specific size,color and thickness on the image",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return ValidateParseGridCmd(cmd, shared, args)
@@ -173,6 +174,58 @@ func RunGridCmd(cmd *cobra.Command, args []string) {
 func ValidateParseGridCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
 	if err := validateInput(flags, args); err != nil {
 		return err
+	}
+	return nil
+}
+
+func BuildRoundCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "round [PATH]",
+		Short: "round the corners of an image with a specified radius",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseRoundCmd(cmd, shared, args)
+		},
+		Run: RunRoundCmd,
+	}
+
+	flags := cmd.Flags()
+	var cornerRadius float64
+
+	flags.Float64VarP(&cornerRadius, "radius", "r", 30, "Corner radius for rounding")
+
+	return cmd
+}
+
+func RunRoundCmd(cmd *cobra.Command, args []string) {
+	logger.Print("Processing images...")
+
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	cornerRadius, err := cmd.Flags().GetFloat64("radius")
+	utils.HandleError(err, "Error")
+
+	processor := &image.RoundProcessor{
+		CornerRadius: cornerRadius,
+	}
+
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(shared, args, processedImages[0])
+}
+
+func ValidateParseRoundCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	cornerRadius, _ := cmd.Flags().GetFloat64("radius")
+	if cornerRadius <= 0 {
+		return fmt.Errorf("corner radius must be greater than 0")
 	}
 	return nil
 }

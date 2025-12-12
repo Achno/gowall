@@ -82,7 +82,10 @@ func RunConvertCmd(cmd *cobra.Command, args []string) {
 	}
 
 	logger.Print("Processing images...")
-	processedImages, err := image.ProcessImgs(processor, imageOps, theme)
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      theme,
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, processedImages[0])

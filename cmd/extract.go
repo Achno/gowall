@@ -49,7 +49,11 @@ func RunExtractCmd(cmd *cobra.Command, args []string) {
 		NumOfColors: numOfColors,
 	}
 
-	_, err = image.ProcessImgs(processor, imageOps, "")
+	_, err = image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme: "",
+		OnComplete: func(outputPath string, remaining int) {
+		},
+	})
 	utils.HandleError(err, "Error")
 
 	if previewFlag {

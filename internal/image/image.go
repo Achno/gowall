@@ -22,9 +22,14 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// Create a Processor of this interface and call 'ProcessImg'
+// ImageProcessor accepts a single input and processes it into a single output (e.g., png, jpg)
 type ImageProcessor interface {
 	Process(image.Image, string, string) (image.Image, types.ImageMetadata, error)
+}
+
+// MultiImageProcessor accepts multiple inputs and processes them into a single output (e.g.,gif)
+type MultiImageProcessor interface {
+	Composite([]image.Image, string, string) (image.Image, types.ImageMetadata, error)
 }
 
 // NoOpImageProcessor  implements ImageProcessor but does nothing.
@@ -101,8 +106,17 @@ func OpenImageInViewer(filePath string) error {
 	return cmd.Start()
 }
 
+// CompletionFunc is called after each image is processed and saved
+type CompletionFunc func(outputPath string, remaining int)
+
+// ProcessOptions contains options for ProcessImgs
+type ProcessOptions struct {
+	Theme      string
+	OnComplete CompletionFunc // nil = default behavior
+}
+
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
-func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme string) ([]string, error) {
+func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts ProcessOptions) ([]string, error) {
 	var wg sync.WaitGroup
 	remaining := int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
@@ -113,7 +127,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 		wg.Add(1)
 		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
-			theme := theme
+			theme := opts.Theme
 			img, err := imageio.LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
@@ -141,7 +155,12 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 				return
 			}
 			remainingCount := atomic.AddInt32(&remaining, -1)
-			logger.Printf("::: Image completed & saved in %s, %d Images left :::\n", currentImgOp.ImageOutput.String(), remainingCount)
+			if opts.OnComplete != nil {
+				opts.OnComplete(currentImgOp.ImageOutput.String(), int(remainingCount))
+			} else {
+				// Default completion message
+				logger.Printf("::: Image completed & saved in %s, %d Images left :::\n", currentImgOp.ImageOutput.String(), remainingCount)
+			}
 			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
 		}(index, processor, imageOp)
 	}
@@ -159,6 +178,72 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, theme str
 		return processedImagesFilePaths, errors.New(utils.FormatErrors(errs))
 	}
 	return processedImagesFilePaths, nil
+}
+
+// MultiCompletionFunc is called after multi-image processing is complete
+type MultiCompletionFunc func(outputPath string, numInputs int)
+
+// MultiProcessOptions contains options for MultiProcessImgs
+type MultiProcessOptions struct {
+	Theme      string
+	OnComplete MultiCompletionFunc // nil = default behavior
+}
+
+// MultiProcessImgs loads multiple images, processes them together via Composite, and saves single output (N:1)
+func MultiProcessImgs(processor MultiImageProcessor, imageOps []imageio.ImageIO, opts MultiProcessOptions) (string, error) {
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	images := make([]image.Image, 0, len(imageOps))
+	errChan := make(chan error, len(imageOps))
+
+	for _, imageOp := range imageOps {
+		wg.Add(1)
+		go func(currentImgOp imageio.ImageIO) {
+			defer wg.Done()
+			img, err := imageio.LoadImage(currentImgOp.ImageInput)
+			if err != nil {
+				errChan <- fmt.Errorf("while loading image %s: %w", currentImgOp.ImageInput.String(), err)
+				return
+			}
+			mu.Lock()
+			images = append(images, img)
+			mu.Unlock()
+		}(imageOp)
+	}
+	wg.Wait()
+	close(errChan)
+
+	// Check for loading errors
+	if len(errChan) > 0 {
+		var errs []error
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+		return "", errors.New(utils.FormatErrors(errs))
+	}
+
+	// All imageOps have the same output and format for multi-input commands
+	output := imageOps[0].ImageOutput
+	format := imageOps[0].Format
+
+	resultImg, metadata, err := processor.Composite(images, opts.Theme, format)
+	if err != nil {
+		return "", fmt.Errorf("while compositing images: %w", err)
+	}
+
+	err = imageio.SaveImage(resultImg, output, format, metadata)
+	if err != nil {
+		return "", fmt.Errorf("while saving image: %w", err)
+	}
+
+	if opts.OnComplete != nil {
+		opts.OnComplete(output.String(), len(images))
+	} else {
+		// Default completion message
+		logger.Printf("::: Multi-image processing completed & saved in %s :::\n", output.String())
+	}
+	return output.String(), nil
 }
 
 // returns themeName that was inserted to the theme map

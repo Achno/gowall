@@ -64,7 +64,10 @@ func RunCompressCmd(cmd *cobra.Command, args []string) {
 	)
 
 	logger.Print("Compressing images...")
-	compressedImages, err := image.ProcessImgs(processor, ops, "")
+	compressedImages, err := image.ProcessImgs(processor, ops, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	openImageInViewer(shared, args, compressedImages[0])

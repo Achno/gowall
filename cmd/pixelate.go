@@ -49,7 +49,10 @@ func RunPixelateCmd(cmd *cobra.Command, args []string) {
 		Scale: scale,
 	}
 
-	processedImages, err := image.ProcessImgs(processor, imageOps, "")
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
 	utils.HandleError(err, "Error")
 
 	if err != nil {

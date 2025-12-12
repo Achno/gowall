@@ -212,19 +212,21 @@ func BuildTiltCmd() *cobra.Command {
 		preset       string
 		tiltX        float64
 		tiltY        float64
+		tiltZ        float64
 		scale        float64
 		cornerRadius float64
 		bgStart      string
 		bgEnd        string
 	)
 
-	flags.StringVarP(&preset, "preset", "p", "", "Use a preset configuration (classic, sharp, subtle, dynamic, minimal, bold, ocean, sunset, neon, monochrome)")
+	flags.StringVarP(&preset, "preset", "p", "", "Use a preset configuration (classic, sharp, subtle, obsidian)")
 	flags.Float64VarP(&tiltX, "tiltx", "x", 5.0, "Tilt angle on X axis (degrees)")
 	flags.Float64VarP(&tiltY, "tilty", "y", -8.0, "Tilt angle on Y axis (degrees)")
-	flags.Float64VarP(&scale, "scale", "s", 0.85, "Scale factor (0.1 - 1.0)")
+	flags.Float64VarP(&tiltZ, "tiltz", "z", 3.0, "Tilt angle on Z axis / rotation (degrees, positive = clockwise)")
+	flags.Float64VarP(&scale, "scale", "s", 0.65, "Scale factor (0.1 - 1.0)")
 	flags.Float64VarP(&cornerRadius, "radius", "r", 40.0, "Corner radius for rounding")
-	flags.StringVarP(&bgStart, "bg-start", "b", "#FF416C", "Gradient start color (hex)")
-	flags.StringVarP(&bgEnd, "bg-end", "e", "#7434EB", "Gradient end color (hex)")
+	flags.StringVarP(&bgStart, "bg-start", "b", "#121212", "Gradient start color (hex)")
+	flags.StringVarP(&bgEnd, "bg-end", "e", "#282828", "Gradient end color (hex)")
 
 	cmd.RegisterFlagCompletionFunc("preset", presetCompletion)
 
@@ -255,6 +257,8 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 		utils.HandleError(err, "Error")
 		tiltY, err := cmd.Flags().GetFloat64("tilty")
 		utils.HandleError(err, "Error")
+		tiltZ, err := cmd.Flags().GetFloat64("tiltz")
+		utils.HandleError(err, "Error")
 		scale, err := cmd.Flags().GetFloat64("scale")
 		utils.HandleError(err, "Error")
 		cornerRadius, err := cmd.Flags().GetFloat64("radius")
@@ -274,6 +278,7 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 			BackgroundEnd:   bgEndColor,
 			TiltX:           tiltX,
 			TiltY:           tiltY,
+			TiltZ:           tiltZ,
 			Scale:           scale,
 			CornerRadius:    cornerRadius,
 		}
@@ -302,17 +307,16 @@ func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags
 	// Check if any manual flags were changed
 	manualFlagsUsed := cmd.Flags().Changed("tiltx") ||
 		cmd.Flags().Changed("tilty") ||
+		cmd.Flags().Changed("tiltz") ||
 		cmd.Flags().Changed("scale") ||
 		cmd.Flags().Changed("radius") ||
 		cmd.Flags().Changed("bg-start") ||
 		cmd.Flags().Changed("bg-end")
 
-	// If preset is specified, manual flags cannot be used
 	if presetName != "" && manualFlagsUsed {
-		return fmt.Errorf("cannot use preset flag (-p/--preset) together with manual configuration flags (x, y, s, r, b, e) either choose a preset or make your own")
+		return fmt.Errorf("cannot use preset flag (-p/--preset) together with manual configuration flags (x, y, z, s, r, b, e) either choose a preset or make your own")
 	}
 
-	// If preset is specified, validate it exists
 	if presetName != "" {
 		if _, exists := image.TiltPresets[presetName]; !exists {
 			validPresets := image.GetTiltPresetNames()
@@ -321,7 +325,6 @@ func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags
 		return nil
 	}
 
-	// Validate manual configuration
 	scale, _ := cmd.Flags().GetFloat64("scale")
 	if scale <= 0.0 || scale > 1.0 {
 		return fmt.Errorf("scale must be in range (0.0, 1.0], got: %.2f", scale)

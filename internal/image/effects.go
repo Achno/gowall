@@ -112,6 +112,7 @@ type Preset struct {
 	BackgroundEnd   color.RGBA
 	TiltX           float64
 	TiltY           float64
+	TiltZ           float64 // Z-axis rotation in degrees (positive = clockwise)
 	Scale           float64
 	CornerRadius    float64
 }
@@ -122,7 +123,8 @@ var TiltPresets = map[string]Preset{
 		BackgroundEnd:   color.RGBA{40, 40, 40, 255}, // Dark Gray
 		TiltX:           5.0,
 		TiltY:           -8.0,
-		Scale:           0.85,
+		TiltZ:           3.0,
+		Scale:           0.70,
 		CornerRadius:    40.0,
 	},
 	"sharp": {
@@ -130,7 +132,8 @@ var TiltPresets = map[string]Preset{
 		BackgroundEnd:   color.RGBA{40, 40, 40, 255}, // Dark Gray
 		TiltX:           -5.0,
 		TiltY:           8.0,
-		Scale:           0.85,
+		TiltZ:           -4.0,
+		Scale:           0.70,
 		CornerRadius:    40.0,
 	},
 	"subtle": {
@@ -138,6 +141,7 @@ var TiltPresets = map[string]Preset{
 		BackgroundEnd:   color.RGBA{200, 200, 210, 255}, // Medium Gray
 		TiltX:           5.0,
 		TiltY:           -8.0,
+		TiltZ:           0.0,
 		Scale:           0.60,
 		CornerRadius:    50.0,
 	},
@@ -146,8 +150,9 @@ var TiltPresets = map[string]Preset{
 		BackgroundEnd:   color.RGBA{200, 200, 210, 255}, // Medium Gray
 		TiltX:           20.0,                           // Strong backward tilt (top edge far away)
 		TiltY:           15.0,                           // Rotated so right side is further away
-		Scale:           0.70,                           // Reduced scale to accommodate the large perspective spread
-		CornerRadius:    30.0,                           // Smooth rounded corners
+		TiltZ:           0.0,
+		Scale:           0.70, // Reduced scale to accommodate the large perspective spread
+		CornerRadius:    30.0, // Smooth rounded corners
 	},
 }
 
@@ -166,7 +171,13 @@ type TiltProcessor struct {
 func (p *TiltProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
 	rounded := roundImageCorners(img, p.Preset.CornerRadius)
-	tilted := apply3DTransform(rounded, p.Preset.TiltX, p.Preset.TiltY, p.Preset.Scale)
+
+	var rotated image.Image = rounded
+	if p.Preset.TiltZ != 0 {
+		rotated = rotate2D(rounded, p.Preset.TiltZ)
+	}
+
+	tilted := apply3DTransform(rotated, p.Preset.TiltX, p.Preset.TiltY, p.Preset.Scale)
 	trimmed, _ := trimContent(tilted)
 
 	outW, outH := 1920, 1080
@@ -190,6 +201,69 @@ func (p *TiltProcessor) Process(img image.Image, theme string, format string) (i
 	draw.Draw(final, image.Rect(targetX, targetY, targetX+contentBounds.Dx(), targetY+contentBounds.Dy()), trimmed, image.Point{}, draw.Over)
 
 	return final, types.ImageMetadata{}, nil
+}
+
+func rotate2D(src image.Image, angleDegrees float64) *image.RGBA {
+	bounds := src.Bounds()
+	w, h := float64(bounds.Dx()), float64(bounds.Dy())
+
+	// Convert angle to radians
+	angleRad := angleDegrees * math.Pi / 180
+	cos := math.Cos(angleRad)
+	sin := math.Sin(angleRad)
+
+	// Calculate bounding box for rotated image
+	corners := [][2]float64{
+		{0, 0}, {w, 0}, {0, h}, {w, h},
+	}
+
+	minX, minY := math.MaxFloat64, math.MaxFloat64
+	maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
+
+	for _, corner := range corners {
+		x := corner[0] - w/2
+		y := corner[1] - h/2
+		newX := x*cos - y*sin
+		newY := x*sin + y*cos
+
+		if newX < minX {
+			minX = newX
+		}
+		if newX > maxX {
+			maxX = newX
+		}
+		if newY < minY {
+			minY = newY
+		}
+		if newY > maxY {
+			maxY = newY
+		}
+	}
+
+	outW := int(maxX - minX + 1)
+	outH := int(maxY - minY + 1)
+	dst := image.NewRGBA(image.Rect(0, 0, outW, outH))
+
+	centerSrcX := w / 2
+	centerSrcY := h / 2
+	centerDstX := float64(outW) / 2
+	centerDstY := float64(outH) / 2
+
+	for dstY := range outH {
+		for dstX := range outW {
+			x := float64(dstX) - centerDstX
+			y := float64(dstY) - centerDstY
+
+			srcX := x*cos + y*sin + centerSrcX
+			srcY := -x*sin + y*cos + centerSrcY
+
+			if srcX >= 0 && srcX < w-1 && srcY >= 0 && srcY < h-1 {
+				dst.Set(dstX, dstY, getPixelBilinear(src, srcX, srcY))
+			}
+		}
+	}
+
+	return dst
 }
 
 func apply3DTransform(src image.Image, tiltX, tiltY, scale float64) *image.RGBA {

@@ -4,6 +4,8 @@ Copyright © 2024 Achno <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -47,10 +49,12 @@ func BuildBorderCmd() *cobra.Command {
 	var (
 		color           string
 		borderThickness int
+		cornerRadius    float64
 	)
 
-	flags.StringVarP(&color, "color", "c", "#5D3FD3", "--color #5D3FD3")
+	flags.StringVarP(&color, "color", "c", "", "--color #5D3FD3")
 	flags.IntVarP(&borderThickness, "borderThickness", "b", 5, "-b 5")
+	flags.Float64VarP(&cornerRadius, "radius", "r", 0, "Corner radius (0 = no rounding)")
 
 	return cmd
 }
@@ -65,6 +69,8 @@ func RunBorderCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	borderThickness, err := cmd.Flags().GetInt("borderThickness")
 	utils.HandleError(err, "Error")
+	cornerRadius, err := cmd.Flags().GetFloat64("radius")
+	utils.HandleError(err, "Error")
 
 	clr, err := image.HexToRGBA(hex)
 	utils.HandleError(err, "Error")
@@ -72,11 +78,12 @@ func RunBorderCmd(cmd *cobra.Command, args []string) {
 	processor := &image.BorderProcessor{
 		Color:           clr,
 		BorderThickness: borderThickness,
+		CornerRadius:    cornerRadius,
 	}
 
 	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
 		Theme:      "",
-		OnComplete: nil, // default
+		OnComplete: nil,
 	})
 	utils.HandleError(err, "Error")
 
@@ -87,10 +94,24 @@ func ValidateParseBorderCmd(cmd *cobra.Command, flags config.GlobalSubCommandFla
 	if err := validateInput(flags, args); err != nil {
 		return err
 	}
+
+	colorStr, _ := cmd.Flags().GetString("color")
+	if colorStr == "" {
+		return fmt.Errorf("color must be specified (use --color or -c with a hex color like #5D3FD3)")
+	}
+
+	_, err := image.HexToRGBA(colorStr)
+	if err != nil {
+		return fmt.Errorf("invalid color format: %v (expected format: #RRGGBB, e.g., #5D3FD3)", err)
+	}
+
+	cornerRadius, _ := cmd.Flags().GetFloat64("radius")
+	if cornerRadius < 0 {
+		return fmt.Errorf("corner radius must be greater than 0")
+	}
 	return nil
 }
 
-// Grid Command
 func BuildGridCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "grid [PATH] [OPTIONAL OUTPUT]",

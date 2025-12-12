@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 
 	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/utils"
@@ -12,43 +13,105 @@ import (
 type BorderProcessor struct {
 	Color           color.RGBA
 	BorderThickness int
+	CornerRadius    float64 // 0 means no rounding
 }
 
 func (b *BorderProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
-
-	newImg := drawBorder(img, b.BorderThickness, b.Color)
-
+	newImg := drawBorder(img, b.BorderThickness, b.Color, b.CornerRadius)
 	return newImg, types.ImageMetadata{}, nil
-
 }
 
-func drawBorder(img image.Image, borderThickness int, borderColor color.Color) image.Image {
+func drawBorder(img image.Image, borderThickness int, borderColor color.Color, cornerRadius float64) image.Image {
 	bounds := img.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
 
-	// draw on new image
 	newImg := image.NewRGBA(bounds)
 	draw.Draw(newImg, bounds, img, image.Point{0, 0}, draw.Src)
 
-	// top and bottom borders
-	for x := 0; x < width; x++ {
-		for t := 0; t < borderThickness; t++ {
+	// Top and bottom borders
+	for x := range width {
+		for t := range borderThickness {
 			newImg.Set(x, t, borderColor)
 			newImg.Set(x, height-borderThickness+t, borderColor)
 		}
 	}
 
-	// left and right borders
-	for y := 0; y < height; y++ {
-		for t := 0; t < borderThickness; t++ {
+	// Left and right borders
+	for y := range height {
+		for t := range borderThickness {
 			newImg.Set(t, y, borderColor)
 			newImg.Set(width-borderThickness+t, y, borderColor)
 		}
 	}
 
+	// If corner radius is specified, apply rounding to corners
+	if cornerRadius > 0 {
+		applyCornerRounding(newImg, cornerRadius, borderThickness, borderColor)
+	}
+
 	return newImg
 }
+
+func applyCornerRounding(img *image.RGBA, radius float64, borderThickness int, borderColor color.Color) {
+	bounds := img.Bounds()
+	width := float64(bounds.Dx())
+	height := float64(bounds.Dy())
+
+	for y := 0; y < bounds.Dy(); y++ {
+		for x := 0; x < bounds.Dx(); x++ {
+			fx, fy := float64(x), float64(y)
+
+			var distanceFromCenter float64
+			isInCorner := false
+
+			// Top-left corner
+			if fx < radius && fy < radius {
+				dx := fx - radius
+				dy := fy - radius
+				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
+				isInCorner = true
+			} else if fx > width-radius && fy < radius {
+				// Top-right corner
+				dx := fx - (width - radius)
+				dy := fy - radius
+				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
+				isInCorner = true
+			} else if fx < radius && fy > height-radius {
+				// Bottom-left corner
+				dx := fx - radius
+				dy := fy - (height - radius)
+				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
+				isInCorner = true
+			} else if fx > width-radius && fy > height-radius {
+				// Bottom-right corner
+				dx := fx - (width - radius)
+				dy := fy - (height - radius)
+				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
+				isInCorner = true
+			}
+
+			if isInCorner {
+				// Check if pixel is outside the outer radius (cut off completely)
+				if distanceFromCenter > radius {
+					img.Set(x, y, color.Transparent)
+				} else if distanceFromCenter > radius-float64(borderThickness) {
+					// Pixel is in the border ring of the rounded corner
+					img.Set(x, y, borderColor)
+				} else {
+					currentPixel := img.RGBAAt(x, y)
+					if currentPixel == borderColor.(color.RGBA) {
+						img.Set(x, y, color.Transparent)
+					}
+				}
+			}
+		}
+	}
+}
+
+// func roundImageCorners(img *image.RGBA, radius float64) {
+// 	applyCornerRounding(img, radius, 0, color.Transparent)
+// }
 
 type GridProcessor struct {
 	options GridOptions

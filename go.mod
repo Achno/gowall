@@ -9,7 +9,6 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/joho/godotenv v1.5.1
-	github.com/muesli/gamut v0.3.1
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/spf13/cobra v1.8.1
 	github.com/synoptiq/go-fluxus v1.1.1
@@ -37,19 +36,15 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jupiterrider/ffi v0.5.0 // indirect
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/muesli/clusters v0.0.0-20200529215643-2700303c1762 // indirect
-	github.com/muesli/kmeans v0.3.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect

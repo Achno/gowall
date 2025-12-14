@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
@@ -41,28 +42,43 @@ func BuildClrConvertCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "convert [COLOR]",
 		Short: "Convert a color between different formats",
-		Long:  `Convert a color between different formats (hex, rgb, hsl, etc.)`,
+		Long:  `Convert a color between different formats (hex, rgb, hsl, lab)`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return ValidateParseConvertCmd(cmd, shared, args)
+			return ValidateParseClrConvertCmd(cmd, shared, args)
 		},
-		Run: RunConvertCmd,
+		Run: RunClrConvertCmd,
 	}
 
 	flags := cmd.Flags()
 	var toFormat string
-	flags.StringVarP(&toFormat, "to", "t", "rgb", "Target format to convert to (rgb, hsl, hex)")
+	flags.StringVarP(&toFormat, "to", "t", "rgb", "Target format to convert to (rgb, hsl, hex, lab)")
 
 	return cmd
 }
 
 func RunClrConvertCmd(cmd *cobra.Command, args []string) {
-	logger.Print("Converting color...")
-
-	// TODO: Implement color conversion logic
-	color := args[0]
+	inputColor := args[0]
 	toFormat, _ := cmd.Flags().GetString("to")
 
-	logger.Print(fmt.Sprintf("Converting %s to %s format", color, toFormat))
+	hexColor, err := cpkg.ParseColorToHex(inputColor)
+	if err != nil {
+		utils.HandleError(err, "Error parsing input color")
+		return
+	}
+
+	outputStr, _, err := cpkg.ConvertHexToFormat(hexColor, toFormat)
+	if err != nil {
+		utils.HandleError(err, "Error converting color")
+		return
+	}
+
+	t, err := cpkg.NewTransformation([]string{inputColor}, []string{outputStr})
+	if err != nil {
+		utils.HandleError(err, "Error creating transformation")
+		return
+	}
+
+	t.Print()
 }
 
 func ValidateParseClrConvertCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -71,10 +87,10 @@ func ValidateParseClrConvertCmd(cmd *cobra.Command, flags config.GlobalSubComman
 	}
 
 	toFormat, _ := cmd.Flags().GetString("to")
-	validFormats := []string{"rgb", "hsl", "hex", "hsv"}
+	validFormats := cpkg.ValidFormats()
 	valid := slices.Contains(validFormats, toFormat)
 	if !valid {
-		return fmt.Errorf("invalid format '%s'. Valid formats: rgb, hsl, hex, hsv", toFormat)
+		return fmt.Errorf("invalid format '%s'. Valid formats: %v", toFormat, validFormats)
 	}
 
 	return nil

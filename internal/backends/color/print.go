@@ -8,26 +8,33 @@ import (
 // 2. Does the same for the output and boxes with the specified get printed along with the clrs.
 //
 // t, _ := colorbox.NewTransformation(
-//     []string{"#FF0000", "#00FF00"},
+//     []string{"#FF0000", "lab(50 0 0)"},
 //     []string{"#808080"},
 // )
 // t.Print()
 
-// ColorBox represents a colored terminal box with its hex value
+// ColorBox represents a colored terminal box with its color value
 type ColorBox struct {
-	Hex string
-	Box string
+	ColorStr string // The original color string (can be any format)
+	Box      string // The colored box ANSI code
 }
 
-// CreateColorBox creates a colored box with ANSI codes
-func CreateColorBox(hex string) (ColorBox, error) {
-	c, err := HexToRGBA(hex)
+// CreateColorBox creates a colored box with ANSI codes from any color format
+func CreateColorBox(colorStr string) (ColorBox, error) {
+	// Parse the color to hex internally to get RGB values
+	hexColor, err := ParseColorToHex(colorStr)
 	if err != nil {
 		return ColorBox{}, err
 	}
+
+	c, err := HexToRGBA(hexColor)
+	if err != nil {
+		return ColorBox{}, err
+	}
+
 	r, g, b := c.R, c.G, c.B
 	box := fmt.Sprintf("\033[48;2;%d;%d;%dm    \033[0m", r, g, b)
-	return ColorBox{Hex: hex, Box: box}, nil
+	return ColorBox{ColorStr: colorStr, Box: box}, nil
 }
 
 // Transformation represents input colors -> output colors
@@ -68,7 +75,7 @@ func (t *Transformation) Print() {
 		if i > 0 {
 			fmt.Print(", ")
 		}
-		fmt.Printf("%s %s", cb.Hex, cb.Box)
+		fmt.Printf("%s %s", cb.ColorStr, cb.Box)
 	}
 
 	fmt.Print("  ->  ")
@@ -77,7 +84,7 @@ func (t *Transformation) Print() {
 		if i > 0 {
 			fmt.Print(", ")
 		}
-		fmt.Printf("%s %s", cb.Hex, cb.Box)
+		fmt.Printf("%s %s", cb.ColorStr, cb.Box)
 	}
 
 	fmt.Println()
@@ -89,7 +96,7 @@ func (t *Transformation) PrintCustom(separator, arrow string) {
 		if i > 0 {
 			fmt.Print(separator)
 		}
-		fmt.Printf("%s %s", cb.Hex, cb.Box)
+		fmt.Printf("%s %s", cb.ColorStr, cb.Box)
 	}
 
 	fmt.Print(arrow)
@@ -98,7 +105,7 @@ func (t *Transformation) PrintCustom(separator, arrow string) {
 		if i > 0 {
 			fmt.Print(separator)
 		}
-		fmt.Printf("%s %s", cb.Hex, cb.Box)
+		fmt.Printf("%s %s", cb.ColorStr, cb.Box)
 	}
 
 	fmt.Println()
@@ -122,38 +129,5 @@ func (t *Transformation) PrintCompact() {
 		fmt.Print(cb.Box)
 	}
 
-	fmt.Println()
-}
-
-// PrintVerbose displays transformation with hex codes on separate line from boxes
-func (t *Transformation) PrintVerbose() {
-	for i, cb := range t.Inputs {
-		if i > 0 {
-			fmt.Print(", ")
-		}
-		fmt.Printf("%-9s", cb.Hex)
-	}
-	fmt.Print(" -> ")
-	for i, cb := range t.Outputs {
-		if i > 0 {
-			fmt.Print(", ")
-		}
-		fmt.Printf("%-9s", cb.Hex)
-	}
-	fmt.Println()
-
-	for i, cb := range t.Inputs {
-		if i > 0 {
-			fmt.Print(" ")
-		}
-		fmt.Print(cb.Box)
-	}
-	fmt.Print(" -> ")
-	for i, cb := range t.Outputs {
-		if i > 0 {
-			fmt.Print(" ")
-		}
-		fmt.Print(cb.Box)
-	}
 	fmt.Println()
 }

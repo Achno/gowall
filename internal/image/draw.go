@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"math"
 
+	clr "github.com/Achno/gowall/internal/backends/color"
 	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/utils"
 )
@@ -163,7 +164,7 @@ func WithGridSize(gridsize int) GridOption {
 }
 func WithGridColor(gridColor string) GridOption {
 	return func(g *GridOptions) {
-		c, err := HexToRGBA(gridColor)
+		c, err := clr.HexToRGBA(gridColor)
 		utils.HandleError(err)
 		g.GridColor = c
 	}

@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"math"
 
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -17,13 +18,13 @@ type ReplaceProcessor struct {
 
 func (r *ReplaceProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
-	from, err := HexToRGBA(r.FromColor)
+	from, err := cpkg.HexToRGBA(r.FromColor)
 
 	if err != nil {
 		return nil, types.ImageMetadata{}, err
 	}
 
-	to, err := HexToRGBA(r.ToColor)
+	to, err := cpkg.HexToRGBA(r.ToColor)
 
 	if err != nil {
 		return nil, types.ImageMetadata{}, err
@@ -57,7 +58,7 @@ func replaceColor(img image.Image, from, to color.Color, threshold float64) (ima
 	}
 
 	if !replacementMade {
-		hex := RGBtoHex(from.(color.RGBA))
+		hex := cpkg.RGBtoHex(from.(color.RGBA))
 		return nil, fmt.Errorf("the color : %s was not found in the image, nothing to replace", hex)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -266,9 +267,9 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 		bgEnd, err := cmd.Flags().GetString("bg-end")
 		utils.HandleError(err, "Error")
 
-		bgStartColor, err := image.HexToRGBA(bgStart)
+		bgStartColor, err := cpkg.HexToRGBA(bgStart)
 		utils.HandleError(err, "Error parsing bg-start color")
-		bgEndColor, err := image.HexToRGBA(bgEnd)
+		bgEndColor, err := cpkg.HexToRGBA(bgEnd)
 		utils.HandleError(err, "Error parsing bg-end color")
 
 		preset = image.Preset{
@@ -334,13 +335,13 @@ func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags
 	}
 
 	bgStart, _ := cmd.Flags().GetString("bg-start")
-	_, err := image.HexToRGBA(bgStart)
+	_, err := cpkg.HexToRGBA(bgStart)
 	if err != nil {
 		return fmt.Errorf("invalid bg-start color format: %v (expected format: #RRGGBB)", err)
 	}
 
 	bgEnd, _ := cmd.Flags().GetString("bg-end")
-	_, err = image.HexToRGBA(bgEnd)
+	_, err = cpkg.HexToRGBA(bgEnd)
 	if err != nil {
 		return fmt.Errorf("invalid bg-end color format: %v (expected format: #RRGGBB)", err)
 	}

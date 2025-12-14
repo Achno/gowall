@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
 	types "github.com/Achno/gowall/internal/types"
@@ -268,7 +269,7 @@ func loadThemeFromJson(jsonTheme string) (string, error) {
 	if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
 		return "", fmt.Errorf("json file does not contain a name or colors field(s)")
 	}
-	clrs, err := HexToRGBASlice(tm.Colors)
+	clrs, err := cpkg.HexToRGBASlice(tm.Colors)
 	if err != nil {
 		return "", err
 	}

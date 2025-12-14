@@ -46,71 +46,16 @@ func drawBorder(img image.Image, borderThickness int, borderColor color.Color, c
 	}
 
 	if cornerRadius > 0 {
-		applyCornerRounding(newImg, cornerRadius, borderThickness, borderColor)
+		newImg = roundImageCorners(newImg, cornerRadius, borderThickness, borderColor)
 	}
 
 	return newImg
 }
 
-func applyCornerRounding(img *image.RGBA, radius float64, borderThickness int, borderColor color.Color) {
-	bounds := img.Bounds()
-	width := float64(bounds.Dx())
-	height := float64(bounds.Dy())
-
-	for y := 0; y < bounds.Dy(); y++ {
-		for x := 0; x < bounds.Dx(); x++ {
-			fx, fy := float64(x), float64(y)
-
-			var distanceFromCenter float64
-			isInCorner := false
-
-			// Top-left corner
-			if fx < radius && fy < radius {
-				dx := fx - radius
-				dy := fy - radius
-				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
-				isInCorner = true
-			} else if fx > width-radius && fy < radius {
-				// Top-right corner
-				dx := fx - (width - radius)
-				dy := fy - radius
-				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
-				isInCorner = true
-			} else if fx < radius && fy > height-radius {
-				// Bottom-left corner
-				dx := fx - radius
-				dy := fy - (height - radius)
-				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
-				isInCorner = true
-			} else if fx > width-radius && fy > height-radius {
-				// Bottom-right corner
-				dx := fx - (width - radius)
-				dy := fy - (height - radius)
-				distanceFromCenter = math.Sqrt(dx*dx + dy*dy)
-				isInCorner = true
-			}
-
-			if isInCorner {
-				// Check if pixel is outside the outer radius (cut off completely)
-				if distanceFromCenter > radius {
-					img.Set(x, y, color.Transparent)
-				} else if distanceFromCenter > radius-float64(borderThickness) {
-					// Pixel is in the border ring of the rounded corner
-					img.Set(x, y, borderColor)
-				} else if borderThickness > 0 {
-					currentPixel := img.RGBAAt(x, y)
-					bcR, bcG, bcB, bcA := borderColor.RGBA()
-					cpR, cpG, cpB, cpA := currentPixel.RGBA()
-					if cpR == bcR && cpG == bcG && cpB == bcB && cpA == bcA {
-						img.Set(x, y, color.Transparent)
-					}
-				}
-			}
-		}
-	}
-}
-
-func roundImageCorners(img image.Image, radius float64) *image.RGBA {
+// roundImageCorners rounds the corners of an image with optional border support and anti-aliasing.
+// If borderThickness is 0, no border is applied (simple rounding only).
+// If borderThickness > 0, a border is drawn around the rounded corners.
+func roundImageCorners(img image.Image, radius float64, borderThickness int, borderColor color.Color) *image.RGBA {
 	bounds := img.Bounds()
 	dst := image.NewRGBA(bounds)
 	draw.Draw(dst, bounds, img, image.Point{}, draw.Src)
@@ -140,15 +85,47 @@ func roundImageCorners(img image.Image, radius float64) *image.RGBA {
 
 			if inCorner {
 				dist := math.Sqrt(dx*dx + dy*dy)
+
 				if dist > radius {
-					// Outside circle -> Transparent
 					dst.Set(x, y, color.Transparent)
-				} else if dist > radius-1 {
-					// Edge -> Anti-alias
-					alphaRatio := radius - dist
-					c := dst.RGBAAt(x, y)
-					c.A = uint8(float64(c.A) * alphaRatio)
-					dst.SetRGBA(x, y, c)
+				} else if borderThickness > 0 && dist > radius-float64(borderThickness) {
+					dst.Set(x, y, borderColor)
+				} else if dist > radius-4 {
+					samples := 0
+					totalSamples := 8
+					subPixelOffsets := []float64{-0.375, -0.125, 0.125, 0.375}
+
+					for _, offsetX := range subPixelOffsets {
+						for _, offsetY := range subPixelOffsets {
+							subDx := dx + offsetX
+							subDy := dy + offsetY
+							subDist := math.Sqrt(subDx*subDx + subDy*subDy)
+
+							if subDist <= radius && (borderThickness == 0 || subDist < radius-float64(borderThickness)) {
+								samples++
+							}
+						}
+					}
+
+					if samples > 0 && samples < totalSamples {
+						// Partially covered - apply anti-aliasing
+						coverage := float64(samples) / float64(totalSamples)
+						c := dst.RGBAAt(x, y)
+						c.A = uint8(float64(c.A) * coverage)
+						dst.SetRGBA(x, y, c)
+					} else if samples == 0 {
+						// Fully outside
+						dst.Set(x, y, color.Transparent)
+					}
+					// If samples == totalSamples, pixel is fully inside, keep as-is
+				} else if borderThickness > 0 {
+					// Handle border color cleanup for non-corner border pixels
+					currentPixel := dst.RGBAAt(x, y)
+					bcR, bcG, bcB, bcA := borderColor.RGBA()
+					cpR, cpG, cpB, cpA := currentPixel.RGBA()
+					if cpR == bcR && cpG == bcG && cpB == bcB && cpA == bcA {
+						dst.Set(x, y, color.Transparent)
+					}
 				}
 			}
 		}
@@ -162,7 +139,7 @@ type RoundProcessor struct {
 }
 
 func (r *RoundProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
-	newImg := roundImageCorners(img, r.CornerRadius)
+	newImg := roundImageCorners(img, r.CornerRadius, 0, color.Transparent)
 	return newImg, types.ImageMetadata{}, nil
 }
 

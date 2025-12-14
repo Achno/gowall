@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
@@ -195,10 +196,9 @@ func ValidateParseBrightnessCmd(cmd *cobra.Command, flags config.GlobalSubComman
 	return nil
 }
 
-// Tilt Command
 func BuildTiltCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "tilt [INPUT] [OPTIONAL OUTPUT] [--flags]",
+		Use:   "tilt [INPUT]",
 		Short: "Apply 3D tilt effect with rounded corners and gradient background",
 		Long:  `Apply 3D tilt effect with rounded corners and gradient background. Use --preset for quick configurations or customize with individual flags.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -219,7 +219,7 @@ func BuildTiltCmd() *cobra.Command {
 		bgEnd        string
 	)
 
-	flags.StringVarP(&preset, "preset", "p", "", "Use a preset configuration (classic, sharp, subtle, obsidian)")
+	flags.StringVarP(&preset, "preset", "p", "", "Use a preset configuration (p1, p2, p3, p4)")
 	flags.Float64VarP(&tiltX, "tiltx", "x", 5.0, "Tilt angle on X axis (degrees)")
 	flags.Float64VarP(&tiltY, "tilty", "y", -8.0, "Tilt angle on Y axis (degrees)")
 	flags.Float64VarP(&tiltZ, "tiltz", "z", 3.0, "Tilt angle on Z axis / rotation (degrees, positive = clockwise)")
@@ -245,14 +245,12 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 	var preset image.Preset
 
 	if presetName != "" {
-		// Use preset configuration
 		presetConfig, exists := image.TiltPresets[presetName]
 		if !exists {
 			utils.HandleError(fmt.Errorf("unknown preset: %s", presetName), "Error")
 		}
 		preset = presetConfig
 	} else {
-		// Use manual configuration
 		tiltX, err := cmd.Flags().GetFloat64("tiltx")
 		utils.HandleError(err, "Error")
 		tiltY, err := cmd.Flags().GetFloat64("tilty")
@@ -345,6 +343,21 @@ func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags
 	_, err = image.HexToRGBA(bgEnd)
 	if err != nil {
 		return fmt.Errorf("invalid bg-end color format: %v (expected format: #RRGGBB)", err)
+	}
+
+	tiltX, _ := cmd.Flags().GetFloat64("tiltx")
+	tiltY, _ := cmd.Flags().GetFloat64("tilty")
+
+	combinedAngle := math.Sqrt(tiltX*tiltX + tiltY*tiltY)
+	threshold := 30.0 - (scale * 15.0)
+
+	if combinedAngle > threshold {
+		return fmt.Errorf(
+			"combined tilt angle (%.1f°) exceeds 'estimated' safe (lmao i hope) threshold (%.1f°) for scale %.2f. "+
+				"Reduce tiltx/tilty or decrease scale to avoid rendering issues. "+
+				"Combined angle = √(tiltx² + tilty²) = √(%.1f² + %.1f²) = %.1f°",
+			combinedAngle, threshold, scale, tiltX, tiltY, combinedAngle,
+		)
 	}
 
 	return nil

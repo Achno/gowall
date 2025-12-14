@@ -118,7 +118,7 @@ type Preset struct {
 }
 
 var TiltPresets = map[string]Preset{
-	"classic": {
+	"p1": {
 		BackgroundStart: color.RGBA{0, 0, 0, 255},    // Black
 		BackgroundEnd:   color.RGBA{40, 40, 40, 255}, // Dark Gray
 		TiltX:           5.0,
@@ -127,7 +127,7 @@ var TiltPresets = map[string]Preset{
 		Scale:           0.70,
 		CornerRadius:    40.0,
 	},
-	"sharp": {
+	"p2": {
 		BackgroundStart: color.RGBA{0, 0, 0, 255},    // Black
 		BackgroundEnd:   color.RGBA{40, 40, 40, 255}, // Dark Gray
 		TiltX:           -5.0,
@@ -136,23 +136,23 @@ var TiltPresets = map[string]Preset{
 		Scale:           0.70,
 		CornerRadius:    40.0,
 	},
-	"subtle": {
+	"p3": {
 		BackgroundStart: color.RGBA{240, 240, 245, 255}, // Light Gray
 		BackgroundEnd:   color.RGBA{200, 200, 210, 255}, // Medium Gray
 		TiltX:           5.0,
 		TiltY:           -8.0,
 		TiltZ:           0.0,
 		Scale:           0.60,
-		CornerRadius:    50.0,
+		CornerRadius:    40.0,
 	},
-	"obsidian": {
+	"p4": {
 		BackgroundStart: color.RGBA{240, 240, 245, 255}, // Light Gray
 		BackgroundEnd:   color.RGBA{200, 200, 210, 255}, // Medium Gray
-		TiltX:           20.0,                           // Strong backward tilt (top edge far away)
-		TiltY:           15.0,                           // Rotated so right side is further away
+		TiltX:           10.0,
+		TiltY:           5.0,
 		TiltZ:           0.0,
-		Scale:           0.70, // Reduced scale to accommodate the large perspective spread
-		CornerRadius:    30.0, // Smooth rounded corners
+		Scale:           0.70,
+		CornerRadius:    30.0,
 	},
 }
 
@@ -170,7 +170,7 @@ type TiltProcessor struct {
 
 func (p *TiltProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 
-	rounded := roundImageCorners(img, p.Preset.CornerRadius)
+	rounded := roundImageCorners(img, p.Preset.CornerRadius, 0, color.Transparent)
 
 	var rotated image.Image = rounded
 	if p.Preset.TiltZ != 0 {

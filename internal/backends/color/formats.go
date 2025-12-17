@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+
+	"github.com/muesli/gamut"
 )
 
 // HSL represents a color in Hue, Saturation, Lightness color space
@@ -143,6 +145,14 @@ func HexToHsl(hexStr string) (HSL, error) {
 
 func RGBtoHex(c color.RGBA) string {
 	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
+}
+
+func ColorsToHex(colors []color.Color) []string {
+	hexColors := make([]string, len(colors))
+	for i, c := range colors {
+		hexColors[i] = gamut.ToHex(c)
+	}
+	return hexColors
 }
 
 func LabToHex(lab LAB) string {

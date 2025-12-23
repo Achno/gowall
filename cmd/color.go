@@ -32,6 +32,7 @@ func BuildColorCmd() *cobra.Command {
 	cmd.AddCommand(BuildDarkCmd())
 	cmd.AddCommand(BuildBlendCmd())
 	cmd.AddCommand(BuildVariantsCmd())
+	cmd.AddCommand(BuildWheelCmd())
 
 	addGlobalFlags(cmd)
 
@@ -315,84 +316,77 @@ func variantsCompletion(cmd *cobra.Command, args []string, toComplete string) ([
 }
 
 // Wheel Command
-// func BuildWheelCmd() *cobra.Command {
-// 	cmd := &cobra.Command{
-// 		Use:   "wheel [COLOR]",
-// 		Short: "Around the color wheel (Complementary,Constrast,Triadic,Quadratic,Analogous,SplitComplementary)",
-// 		Long:  `Generate a color wheel with a specified number of variants of a color (shades, tints, tones)`,
-// 		PreRunE: func(cmd *cobra.Command, args []string) error {
-// 			return ValidateParseWheelCmd(cmd, shared, args)
-// 		},
-// 		Run: RunVariantsCmd,
-// 	}
+func BuildWheelCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "wheel [COLOR]",
+		Short: "Functions around the color wheel (triadic, quadratic, analogous, split-complementary)",
+		Long:  `Functions around the color wheel (triadic, quadratic, analogous, split-complementary)`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseWheelCmd(cmd, shared, args)
+		},
+		Run: RunWheelCmd,
+	}
 
-// 	flags := cmd.Flags()
-// 	var numShades int
-// 	var variantType string
-// 	flags.StringVarP(&variantType, "type", "t", "shades", "Type of variant to generate (shades, tints, tones)")
-// 	flags.IntVarP(&numShades, "number", "n", 5, "Number of variants to generate")
+	flags := cmd.Flags()
+	var wheelType string
+	flags.StringVarP(&wheelType, "type", "t", "triadic", "Type of color wheel scheme (triadic, quadratic, analogous, split-complementary)")
 
-// 	cmd.RegisterFlagCompletionFunc("type", variantsCompletion)
+	cmd.RegisterFlagCompletionFunc("type", wheelCompletion)
 
-// 	return cmd
-// }
+	return cmd
+}
 
-// func RunWheelCmd(cmd *cobra.Command, args []string) {
-// 	inputColor := args[0]
-// 	numShades, _ := cmd.Flags().GetInt("number")
-// 	variantType, _ := cmd.Flags().GetString("type")
+func RunWheelCmd(cmd *cobra.Command, args []string) {
+	inputColor := args[0]
+	wheelType, _ := cmd.Flags().GetString("type")
 
-// 	hexColor, err := cpkg.ParseColorToHex(inputColor)
-// 	utils.HandleError(err, "Error")
-// 	variationMap := GetvariationMap()
-// 	f := variationMap[variantType]
-// 	variants, err := f(hexColor, numShades)
-// 	utils.HandleError(err, "Error")
+	hexColor, err := cpkg.ParseColorToHex(inputColor)
+	utils.HandleError(err, "Error")
 
-// 	t, err := cpkg.NewTransformation([]string{inputColor}, variants)
-// 	utils.HandleError(err, "Error creating transformation")
+	wheelMap := GetWheelMap()
+	f := wheelMap[wheelType]
+	wheelColors, err := f(hexColor)
+	utils.HandleError(err, "Error")
 
-// 	t.Print()
-// }
+	t, err := cpkg.NewTransformation([]string{inputColor}, wheelColors)
+	utils.HandleError(err, "Error creating transformation")
 
-// func ValidateParseWheelCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
-// 	if err := validateInput(flags, args); err != nil {
-// 		return err
-// 	}
+	t.Print()
+}
 
-// 	variationMap := GetvariationMap()
-// 	variantType, _ := cmd.Flags().GetString("type")
-// 	_, ok := variationMap[variantType]
-// 	if !ok {
-// 		return fmt.Errorf("invalid variant type '%s'", variantType)
-// 	}
+func ValidateParseWheelCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
 
-// 	numShades, _ := cmd.Flags().GetInt("number")
-// 	if numShades < 1 {
-// 		return fmt.Errorf("number of shades must be at least 1, got: %d", numShades)
-// 	}
+	wheelMap := GetWheelMap()
+	wheelType, _ := cmd.Flags().GetString("type")
+	_, ok := wheelMap[wheelType]
+	if !ok {
+		return fmt.Errorf("invalid wheel type '%s'", wheelType)
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
-// func GetvariationMap() map[string]func(string, int) ([]string, error) {
-// 	return map[string]func(string, int) ([]string, error){
-// 		"shades":     cpkg.GenerateShades,
-// 		"tints":      cpkg.GenerateTints,
-// 		"tones":      cpkg.GenerateTones,
-// 		"monochrome": cpkg.GenerateMonochromatic,
-// 	}
-// }
+func GetWheelMap() map[string]func(string) ([]string, error) {
+	return map[string]func(string) ([]string, error){
+		"triadic":             cpkg.GenerateTriadic,
+		"quadratic":           cpkg.GenerateQuadratic,
+		"analogous":           cpkg.GenerateAnalogous,
+		"split-complementary": cpkg.GenerateSplitComplementary,
+	}
+}
 
-// func variantsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-// 	variationMap := GetvariationMap()
-// 	variantTypes := make([]string, 0, len(variationMap))
-// 	for variantType := range variationMap {
-// 		variantTypes = append(variantTypes, variantType)
-// 	}
-// 	sort.Strings(variantTypes)
-// 	return variantTypes, cobra.ShellCompDirectiveNoFileComp
-// }
+func wheelCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	wheelMap := GetWheelMap()
+	wheelTypes := make([]string, 0, len(wheelMap))
+	for wheelType := range wheelMap {
+		wheelTypes = append(wheelTypes, wheelType)
+	}
+	sort.Strings(wheelTypes)
+	return wheelTypes, cobra.ShellCompDirectiveNoFileComp
+}
 
 func init() {
 	rootCmd.AddCommand(BuildColorCmd())

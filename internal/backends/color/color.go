@@ -16,6 +16,12 @@ func DarkenColor(hex string, amount float64) (string, error) {
 	return gamut.ToHex(dc), nil
 }
 
+func GenerateComplementary(hex string) (string, error) {
+	c := gamut.Hex(hex)
+	complementary := gamut.Complementary(c)
+	return gamut.ToHex(complementary), nil
+}
+
 func BlendColors(hex1 string, hex2 string, count int) ([]string, error) {
 	c1 := gamut.Hex(hex1)
 	c2 := gamut.Hex(hex2)
@@ -47,4 +53,28 @@ func GenerateMonochromatic(hex string, count int) ([]string, error) {
 	monochromatic := gamut.Monochromatic(c, count)
 	return ColorsToHex(monochromatic), nil
 
+}
+
+func GenerateTriadic(hex string) ([]string, error) {
+	c := gamut.Hex(hex)
+	triadic := gamut.Triadic(c)
+	return ColorsToHex(triadic), nil
+}
+
+func GenerateQuadratic(hex string) ([]string, error) {
+	c := gamut.Hex(hex)
+	quadratic := gamut.Quadratic(c)
+	return ColorsToHex(quadratic), nil
+}
+
+func GenerateAnalogous(hex string) ([]string, error) {
+	c := gamut.Hex(hex)
+	analogous := gamut.Analogous(c)
+	return ColorsToHex(analogous), nil
+}
+
+func GenerateSplitComplementary(hex string) ([]string, error) {
+	c := gamut.Hex(hex)
+	splitComplementary := gamut.SplitComplementary(c)
+	return ColorsToHex(splitComplementary), nil
 }

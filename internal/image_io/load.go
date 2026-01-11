@@ -33,6 +33,11 @@ var encoders = map[string]func(file *os.File, img image.Image) error{
 }
 
 func LoadImage(imgSrc ImageReader) (image.Image, error) {
+	// For NoInput, return a placeholder image (won't be used by generators)
+	if _, ok := imgSrc.(NoInput); ok {
+		return image.NewRGBA(image.Rect(0, 0, 1, 1)), nil
+	}
+
 	reader, err := imgSrc.Open()
 	if err != nil {
 		return nil, err

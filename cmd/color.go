@@ -7,9 +7,13 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/Achno/gowall/config"
 	cpkg "github.com/Achno/gowall/internal/backends/color"
+	"github.com/Achno/gowall/internal/image"
+	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
@@ -33,6 +37,7 @@ func BuildColorCmd() *cobra.Command {
 	cmd.AddCommand(BuildBlendCmd())
 	cmd.AddCommand(BuildVariantsCmd())
 	cmd.AddCommand(BuildWheelCmd())
+	cmd.AddCommand(BuildGradientCmd())
 
 	addGlobalFlags(cmd)
 
@@ -386,6 +391,142 @@ func wheelCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 	}
 	sort.Strings(wheelTypes)
 	return wheelTypes, cobra.ShellCompDirectiveNoFileComp
+}
+
+// Gradient Command
+func BuildGradientCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gradient [COLORS]",
+		Short: "Generate a gradient image from multiple colors",
+		Long:  `Generate a gradient image from 2 or more colors (comma-separated) with specified dimensions and direction. Example: gradient "#ff0000,#00ff00,#0000ff"`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseGradientCmd(cmd, shared, args)
+		},
+		Run: RunGradientCmd,
+	}
+
+	flags := cmd.Flags()
+	var (
+		dimensions string
+		direction  string
+		width      int
+		height     int
+		method     string
+	)
+
+	flags.StringVarP(&dimensions, "dimensions", "d", "1920x1080", "Dimensions in format WIDTHxHEIGHT (e.g., 1920x1080)")
+	flags.StringVarP(&direction, "direction", "r", "vertical", "Gradient direction: vertical or horizontal")
+	flags.StringVarP(&method, "method", "m", "rgb", "Gradient method: rgb, hcl, lab, hsv, luv, luvlch")
+	// Hidden flags to pass parsed values from PreRunE to Run
+	flags.IntVar(&width, "width", 0, "")
+	flags.IntVar(&height, "height", 0, "")
+	cmd.Flags().MarkHidden("width")
+	cmd.Flags().MarkHidden("height")
+
+	addGlobalFlags(cmd)
+
+	return cmd
+}
+
+func RunGradientCmd(cmd *cobra.Command, args []string) {
+	ops, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	width, err := cmd.Flags().GetInt("width")
+	utils.HandleError(err, "Error")
+	height, err := cmd.Flags().GetInt("height")
+	utils.HandleError(err, "Error")
+	direction, err := cmd.Flags().GetString("direction")
+	utils.HandleError(err, "Error")
+	method, err := cmd.Flags().GetString("method")
+	utils.HandleError(err, "Error")
+
+	// Parse colors from first argument (comma-separated)
+	var hexColors []string
+	if len(args) > 0 && args[0] != "-" {
+		colorStrings := strings.SplitSeq(args[0], ",")
+		for colorStr := range colorStrings {
+			colorStr = strings.TrimSpace(colorStr)
+			if colorStr == "" {
+				continue
+			}
+			hexColor, err := cpkg.ParseColorToHex(colorStr)
+			utils.HandleError(err, "Error parsing color: "+colorStr)
+			hexColors = append(hexColors, hexColor)
+		}
+	}
+
+	processor := &image.GradientProcessor{}
+	processor.SetOptions(
+		image.WithColors(hexColors),
+		image.WithGradientWidth(width),
+		image.WithGradientHeight(height),
+		image.WithDirection(direction),
+		image.WithGradientMethod(method),
+	)
+
+	logger.Print("Generating gradient...")
+	gradientImages, err := image.ProcessImgs(processor, ops, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(shared, args, gradientImages[0])
+}
+
+func ValidateParseGradientCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	// Check that we have at least one argument with colors
+	if len(args) == 0 {
+		return fmt.Errorf("gradient requires colors as first argument (comma-separated, e.g., \"#ff0000,#00ff00,#0000ff\")")
+	}
+
+	// Parse and count colors
+	colorStrings := strings.Split(args[0], ",")
+	validColors := 0
+	for _, colorStr := range colorStrings {
+		if strings.TrimSpace(colorStr) != "" {
+			validColors++
+		}
+	}
+
+	if validColors < 2 {
+		return fmt.Errorf("gradient requires at least 2 colors, got %d", validColors)
+	}
+
+	dimensions, _ := cmd.Flags().GetString("dimensions")
+	if dimensions == "" {
+		return fmt.Errorf("dimensions cannot be empty, use format WIDTHxHEIGHT (e.g., 1920x1080)")
+	}
+
+	parts := strings.Split(dimensions, "x")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid dimensions format: %s, use format WIDTHxHEIGHT (e.g., 1920x1080)", dimensions)
+	}
+
+	width, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return fmt.Errorf("invalid width value: %s", parts[0])
+	}
+
+	height, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return fmt.Errorf("invalid height value: %s", parts[1])
+	}
+
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("width and height must be positive integers")
+	}
+
+	direction, _ := cmd.Flags().GetString("direction")
+	if direction != "vertical" && direction != "horizontal" {
+		return fmt.Errorf("direction must be either 'vertical' or 'horizontal', got: %s", direction)
+	}
+
+	cmd.Flags().Set("width", strconv.Itoa(width))
+	cmd.Flags().Set("height", strconv.Itoa(height))
+
+	return nil
 }
 
 func init() {

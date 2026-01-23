@@ -1,11 +1,9 @@
 package image
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
-	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,7 +12,6 @@ import (
 	"sync/atomic"
 
 	"github.com/Achno/gowall/config"
-	cpkg "github.com/Achno/gowall/internal/backends/color"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
 	types "github.com/Achno/gowall/internal/types"
@@ -136,7 +133,7 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts Proc
 			}
 			// optionally specify a temporary theme via json file in runtime
 			if strings.HasSuffix(theme, ".json") {
-				theme, err = loadThemeFromJson(theme)
+				theme, err = LoadThemeFromJson(theme)
 				if err != nil {
 					errChan <- fmt.Errorf("file %s : %w", currentImgOp.ImageInput, err)
 					return
@@ -245,38 +242,4 @@ func MultiProcessImgs(processor MultiImageProcessor, imageOps []imageio.ImageIO,
 		logger.Printf("::: Multi-image processing completed & saved in %s :::\n", output.String())
 	}
 	return output.String(), nil
-}
-
-// returns themeName that was inserted to the theme map
-func loadThemeFromJson(jsonTheme string) (string, error) {
-	reader, err := os.Open(jsonTheme)
-	if err != nil {
-		return "", fmt.Errorf("error opening image file")
-	}
-	defer reader.Close()
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return "", fmt.Errorf("while reading the json file")
-	}
-	var tm struct {
-		Name   string   `json:"name"`
-		Colors []string `json:"colors"`
-	}
-
-	if err := json.Unmarshal(data, &tm); err != nil {
-		return "", fmt.Errorf("while parsing json theme file, ensure your .json is written correctly")
-	}
-	if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
-		return "", fmt.Errorf("json file does not contain a name or colors field(s)")
-	}
-	clrs, err := cpkg.HexToRGBASlice(tm.Colors)
-	if err != nil {
-		return "", err
-	}
-	themes[strings.ToLower(tm.Name)] = Theme{
-		Name:   tm.Name,
-		Colors: clrs,
-	}
-
-	return tm.Name, nil
 }

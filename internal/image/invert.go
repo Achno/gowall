@@ -3,8 +3,8 @@ package image
 import (
 	"errors"
 	"image"
-	"image/color"
 
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -30,7 +30,7 @@ func invertImage(img image.Image) (image.Image, error) {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			originalColor := img.At(x, y)
-			newColor := invertColor(originalColor)
+			newColor := cpkg.InvertColor(originalColor)
 			newImg.Set(x, y, newColor)
 		}
 	}
@@ -40,18 +40,5 @@ func invertImage(img image.Image) (image.Image, error) {
 	}
 
 	return newImg, nil
-
-}
-
-// You can invert a color
-func invertColor(clr color.Color) color.Color {
-	r, g, b, a := clr.RGBA()
-
-	return color.RGBA{
-		R: uint8(255 - r/257),
-		G: uint8(255 - g/257),
-		B: uint8(255 - b/257),
-		A: uint8(a / 257),
-	}
 
 }

@@ -1,8 +1,6 @@
 package image
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"image"
@@ -14,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	haldclut "github.com/Achno/gowall/internal/backends/colorthief/haldClut"
 	types "github.com/Achno/gowall/internal/types"
 )
@@ -44,7 +43,7 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string, format s
 	if err != nil {
 		return nil, types.ImageMetadata{}, err
 	}
-	hash := hashPalette(clrs)
+	hash := cpkg.HashPalette(clrs)
 	clutPath := fmt.Sprintf("%s_%s.png", theme, hash)
 
 	clutMutex.Lock()
@@ -58,7 +57,7 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string, format s
 			return nil, types.ImageMetadata{}, fmt.Errorf("could not generate Identity CLUT")
 		}
 		mapper := &haldclut.RBFMapper{}
-		palette, err := toRGBA(selectedTheme.Colors)
+		palette, err := cpkg.ToRGBA(selectedTheme.Colors)
 		if err != nil {
 			clutMutex.Unlock()
 			return nil, types.ImageMetadata{}, fmt.Errorf("could not parse colors to RGBA")
@@ -123,7 +122,7 @@ func nearestColor(clr color.Color, theme Theme) color.Color {
 		// Convert from 16-bit to 8-bit
 		tr, tg, tb = tr>>8, tg>>8, tb>>8
 
-		distance := colorDistance(tr, tg, tb, r, g, b)
+		distance := cpkg.ColorDistance(tr, tg, tb, r, g, b)
 
 		if distance < minDist {
 			minDist = distance
@@ -133,32 +132,4 @@ func nearestColor(clr color.Color, theme Theme) color.Color {
 	}
 
 	return nearestClr
-}
-
-func colorDistance(r1, g1, b1, r2, g2, b2 uint32) float64 {
-	return math.Sqrt(float64((r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2)))
-}
-
-func toRGBA(clrs []color.Color) ([]color.RGBA, error) {
-	rgbaColors := make([]color.RGBA, len(clrs))
-
-	for i, c := range clrs {
-		if rgba, ok := c.(color.RGBA); ok {
-			rgbaColors[i] = rgba
-		} else {
-			return nil, fmt.Errorf("while converting theme color at index %d is not color.RGBA: %T", i, c)
-		}
-	}
-
-	return rgbaColors, nil
-}
-
-func hashPalette(colors []string) string {
-	hasher := md5.New()
-	for _, color := range colors {
-		hasher.Write([]byte(color))
-	}
-	// shorten hash
-	r := hex.EncodeToString(hasher.Sum(nil))[:16]
-	return r
 }

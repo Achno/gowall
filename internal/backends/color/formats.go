@@ -24,6 +24,8 @@ type LAB struct {
 	B float64 // Blue-Yellow: -128 to 127
 }
 
+//-------------------            HexTo<Method> methods              ---------------------//
+
 func HexToRGBA(hexStr string) (color.RGBA, error) {
 	if len(hexStr) != 7 || hexStr[0] != '#' {
 		return color.RGBA{}, errors.New("invalid hex color format")
@@ -243,4 +245,19 @@ func HslToHex(hsl HSL) string {
 	}
 
 	return RGBtoHex(rgba)
+}
+
+// -------------------            Other methods              ---------------------//
+func ToRGBA(clrs []color.Color) ([]color.RGBA, error) {
+	rgbaColors := make([]color.RGBA, len(clrs))
+
+	for i, c := range clrs {
+		if rgba, ok := c.(color.RGBA); ok {
+			rgbaColors[i] = rgba
+		} else {
+			return nil, fmt.Errorf("while converting theme color at index %d is not color.RGBA: %T", i, c)
+		}
+	}
+
+	return rgbaColors, nil
 }

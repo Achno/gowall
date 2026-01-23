@@ -3,9 +3,11 @@ package image
 import (
 	"fmt"
 	"image"
+	"image/draw"
 	"strings"
 
 	"github.com/disintegration/imaging"
+	drawx "golang.org/x/image/draw"
 
 	types "github.com/Achno/gowall/internal/types"
 )
@@ -94,4 +96,34 @@ func mapMethodNameToFilter(method string) (imaging.ResampleFilter, error) {
 	}
 
 	return imaging.ResampleFilter{}, fmt.Errorf("invalid resampling method: %s", method)
+}
+
+// ResizeWithPadding resizes an image to the specified width and height while preserving aspect ratio and padding the image to the target dimensions.
+func ResizeWithPadding(img image.Image, width, height int) image.Image {
+	srcBounds := img.Bounds()
+	srcWidth := srcBounds.Dx()
+	srcHeight := srcBounds.Dy()
+
+	widthRatio := float64(width) / float64(srcWidth)
+	heightRatio := float64(height) / float64(srcHeight)
+
+	// Use the smaller ratio to ensure the image fits within the target dimensions
+	ratio := min(heightRatio, widthRatio)
+	newWidth := int(float64(srcWidth) * ratio)
+	newHeight := int(float64(srcHeight) * ratio)
+	dstRect := image.Rect(0, 0, newWidth, newHeight)
+
+	dst := image.NewRGBA(dstRect)
+	drawx.CatmullRom.Scale(dst, dstRect, img, img.Bounds(), draw.Over, nil)
+
+	// Center the image in the target dimensions if needed
+	if newWidth < width || newHeight < height {
+		centered := image.NewRGBA(image.Rect(0, 0, width, height))
+		offsetX := (width - newWidth) / 2
+		offsetY := (height - newHeight) / 2
+		draw.Draw(centered, centered.Bounds(), dst, image.Point{-offsetX, -offsetY}, draw.Over)
+		return centered
+	}
+
+	return dst
 }

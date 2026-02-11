@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"math"
 
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -86,9 +87,9 @@ func (p *BrightnessProcessor) Process(img image.Image, theme string, format stri
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			origColor := color.RGBAModel.Convert(img.At(x, y)).(color.RGBA)
 
-			newR := uint8(clamp(int(float64(origColor.R)*p.Factor), 0, 255))
-			newG := uint8(clamp(int(float64(origColor.G)*p.Factor), 0, 255))
-			newB := uint8(clamp(int(float64(origColor.B)*p.Factor), 0, 255))
+			newR := uint8(cpkg.Clamp(int(float64(origColor.R)*p.Factor), 0, 255))
+			newG := uint8(cpkg.Clamp(int(float64(origColor.G)*p.Factor), 0, 255))
+			newB := uint8(cpkg.Clamp(int(float64(origColor.B)*p.Factor), 0, 255))
 			newA := origColor.A
 
 			newImg.Set(x, y, color.RGBA{R: newR, G: newG, B: newB, A: newA})
@@ -96,15 +97,6 @@ func (p *BrightnessProcessor) Process(img image.Image, theme string, format stri
 	}
 
 	return newImg, types.ImageMetadata{}, nil
-}
-
-func clamp(val, min, max int) int {
-	if val < min {
-		return min
-	} else if val > max {
-		return max
-	}
-	return val
 }
 
 type Preset struct {

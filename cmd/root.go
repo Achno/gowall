@@ -41,9 +41,6 @@ func validateFlagsCompatibility(cmd *cobra.Command, args []string) error {
 	if len(shared.InputFiles) > 0 && len(shared.InputDir) > 0 {
 		return fmt.Errorf("cannot use --batch and --dir flags together, use one or the other")
 	}
-	if isInputBatch(shared) && len(args) > 0 {
-		return fmt.Errorf("you cant use --batch and normal input or stdout")
-	}
 	if (len(args) == 2 && args[1] == "-") && shared.OutputDestination != "" {
 		return fmt.Errorf("cannot use - pseudofile for stdout and --output flag at the same time")
 	}

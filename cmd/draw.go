@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -73,7 +74,7 @@ func RunBorderCmd(cmd *cobra.Command, args []string) {
 	cornerRadius, err := cmd.Flags().GetFloat64("radius")
 	utils.HandleError(err, "Error")
 
-	clr, err := image.HexToRGBA(hex)
+	clr, err := cpkg.HexToRGBA(hex)
 	utils.HandleError(err, "Error")
 
 	processor := &image.BorderProcessor{
@@ -101,7 +102,7 @@ func ValidateParseBorderCmd(cmd *cobra.Command, flags config.GlobalSubCommandFla
 		return fmt.Errorf("color must be specified (use --color or -c with a hex color like #5D3FD3)")
 	}
 
-	_, err := image.HexToRGBA(colorStr)
+	_, err := cpkg.HexToRGBA(colorStr)
 	if err != nil {
 		return fmt.Errorf("invalid color format: %v (expected format: #RRGGBB, e.g., #5D3FD3)", err)
 	}

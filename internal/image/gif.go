@@ -9,8 +9,6 @@ import (
 	"sync"
 
 	types "github.com/Achno/gowall/internal/types"
-
-	drawx "golang.org/x/image/draw"
 )
 
 const (
@@ -66,36 +64,6 @@ func (g *GifProcessor) Composite(images []image.Image, theme string, format stri
 	return nil, metadata, nil
 }
 
-// resizeImage resizes an image to the specified width and height while preserving aspect ratio
-func resizeImage(img image.Image, width, height int) image.Image {
-	srcBounds := img.Bounds()
-	srcWidth := srcBounds.Dx()
-	srcHeight := srcBounds.Dy()
-
-	widthRatio := float64(width) / float64(srcWidth)
-	heightRatio := float64(height) / float64(srcHeight)
-
-	// Use the smaller ratio to ensure the image fits within the target dimensions
-	ratio := min(heightRatio, widthRatio)
-	newWidth := int(float64(srcWidth) * ratio)
-	newHeight := int(float64(srcHeight) * ratio)
-	dstRect := image.Rect(0, 0, newWidth, newHeight)
-
-	dst := image.NewRGBA(dstRect)
-	drawx.CatmullRom.Scale(dst, dstRect, img, img.Bounds(), draw.Over, nil)
-
-	// Center the image in the target dimensions if needed
-	if newWidth < width || newHeight < height {
-		centered := image.NewRGBA(image.Rect(0, 0, width, height))
-		offsetX := (width - newWidth) / 2
-		offsetY := (height - newHeight) / 2
-		draw.Draw(centered, centered.Bounds(), dst, image.Point{-offsetX, -offsetY}, draw.Over)
-		return centered
-	}
-
-	return dst
-}
-
 // palleted holds the result of image processing
 type palleted struct {
 	paletted *image.Paletted
@@ -124,7 +92,7 @@ func paletteFramesFromImages(images []image.Image, maxWidth, maxHeight int, mode
 				defer wg.Done()
 
 				if mode == Resize {
-					img = resizeImage(img, maxWidth, maxHeight)
+					img = ResizeWithPadding(img, maxWidth, maxHeight)
 				}
 
 				// Convert to paletted

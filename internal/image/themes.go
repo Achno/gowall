@@ -1,14 +1,17 @@
 package image
 
 import (
-	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image/color"
+	"io"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 )
 
 type Theme struct {
@@ -66,7 +69,7 @@ func LoadCustomThemes() {
 		}
 
 		for i, hexColor := range tw.Colors {
-			col, err := HexToRGBA(hexColor)
+			col, err := cpkg.HexToRGBA(hexColor)
 			if err != nil {
 				log.Printf("invalid color %s in theme %s: %v", hexColor, tw.Name, err)
 				valid = false
@@ -80,33 +83,6 @@ func LoadCustomThemes() {
 			themes[strings.ToLower(theme.Name)] = theme
 		}
 	}
-}
-
-func HexToRGBA(hexStr string) (color.RGBA, error) {
-	if len(hexStr) != 7 || hexStr[0] != '#' {
-		return color.RGBA{}, errors.New("invalid hex color format")
-	}
-	bytes, err := hex.DecodeString(hexStr[1:])
-	if err != nil {
-		return color.RGBA{}, err
-	}
-	return color.RGBA{R: bytes[0], G: bytes[1], B: bytes[2], A: 255}, nil
-}
-
-func HexToRGBASlice(hexColors []string) ([]color.Color, error) {
-	var rgbaColors []color.Color
-	for _, hex := range hexColors {
-		rgba, err := HexToRGBA(hex)
-		if err != nil {
-			return nil, err
-		}
-		rgbaColors = append(rgbaColors, rgba)
-	}
-	return rgbaColors, nil
-}
-
-func RGBtoHex(c color.RGBA) string {
-	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
 }
 
 func ListThemes() []string {
@@ -134,6 +110,40 @@ func themeExists(theme string) bool {
 	return exists
 }
 
+// returns themeName that was inserted to the theme map
+func LoadThemeFromJson(jsonTheme string) (string, error) {
+	reader, err := os.Open(jsonTheme)
+	if err != nil {
+		return "", fmt.Errorf("while opening json file: %w", err)
+	}
+	defer reader.Close()
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return "", fmt.Errorf("while reading the json file")
+	}
+	var tm struct {
+		Name   string   `json:"name"`
+		Colors []string `json:"colors"`
+	}
+
+	if err := json.Unmarshal(data, &tm); err != nil {
+		return "", fmt.Errorf("while parsing json theme file, ensure your .json is written correctly")
+	}
+	if len(tm.Name) <= 0 || len(tm.Colors) < 1 {
+		return "", fmt.Errorf("json file does not contain a name or colors field(s)")
+	}
+	clrs, err := cpkg.HexToRGBASlice(tm.Colors)
+	if err != nil {
+		return "", err
+	}
+	themes[strings.ToLower(tm.Name)] = Theme{
+		Name:   tm.Name,
+		Colors: clrs,
+	}
+
+	return tm.Name, nil
+}
+
 // returns the colors of the theme in hex code format
 func GetThemeColors(theme string) ([]string, error) {
 	var colors []string
@@ -150,7 +160,7 @@ func GetThemeColors(theme string) ([]string, error) {
 		if !ok {
 			return nil, fmt.Errorf("color is not of type color.RGBA")
 		}
-		hexCode := RGBtoHex(rgba)
+		hexCode := cpkg.RGBtoHex(rgba)
 		colors = append(colors, hexCode)
 	}
 

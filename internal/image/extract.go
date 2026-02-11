@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/backends/colorthief"
 	types "github.com/Achno/gowall/internal/types"
 )
@@ -25,7 +26,7 @@ func (e *ExtractProcessor) Process(img image.Image, theme string, format string)
 		if !ok {
 			return nil, types.ImageMetadata{}, fmt.Errorf("while RGB casting")
 		}
-		fmt.Println(RGBtoHex(rgba))
+		fmt.Println(cpkg.RGBtoHex(rgba))
 	}
 
 	return nil, types.ImageMetadata{}, nil

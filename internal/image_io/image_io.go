@@ -40,8 +40,9 @@ type FileWriter struct {
 }
 
 type (
-	Stdin  struct{}
-	Stdout struct{}
+	Stdin   struct{}
+	Stdout  struct{}
+	NoInput struct{} // For commands that generate images without input
 )
 
 func (fr FileReader) Open() (*os.File, error) {
@@ -93,10 +94,26 @@ func (so Stdout) String() string {
 	return "/dev/stdout"
 }
 
+func (ni NoInput) Open() (*os.File, error) {
+	// Return nil - no actual file to open for generated images
+	return nil, nil
+}
+
+func (ni NoInput) String() string {
+	return "generated"
+}
+
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.
 func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
 	// Check if this is a multi-input-single-output command
 	isMultiInputSingleOutput := cmd.Name() == "gif" // Add more commands here as needed
+
+	// Check if this is a zero-input command (generates image from scratch)
+	isZeroInputCommand := cmd.Name() == "gradient" // Add more as needed
+
+	if isZeroInputCommand {
+		return zeroInputIO(flags, args, cmd)
+	}
 
 	// Process by priority: directory > batch files > single file/stdin
 	if flags.InputDir != "" {
@@ -129,7 +146,23 @@ func SingleIO(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Comm
 	input := determineInput(args)
 	output, ext, err := determineOutput(flags, args, input, cmd)
 	if err != nil {
-		return nil, fmt.Errorf("could not determine output: ")
+		return nil, fmt.Errorf("could not determine output: %w", err)
+	}
+	return []ImageIO{
+		{
+			ImageInput:  input,
+			ImageOutput: output,
+			Format:      ext,
+		},
+	}, nil
+}
+
+// zeroInputIO handles commands that generate images without any input (e.g., gradient)
+func zeroInputIO(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
+	input := NoInput{}
+	output, ext, err := determineOutput(flags, args, input, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("could not determine output: %w", err)
 	}
 	return []ImageIO{
 		{
@@ -394,6 +427,18 @@ func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input 
 
 // generateFileName creates a filename with an extension for an image
 func generateFileName(flags config.GlobalSubCommandFlags, args []string, input ImageReader, cmd *cobra.Command) (string, error) {
+	// For NoInput commands, generate timestamp-based filename
+	if _, ok := input.(NoInput); ok {
+		ts := time.Now().Format("20060102-150405")
+		cmdName := cmd.Name()
+		filename := fmt.Sprintf("%s-%s", cmdName, ts)
+		ext, err := determineFileExt(flags, input, nil, cmd)
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(filename + "." + ext), nil
+	}
+
 	// For stdin input, generate timestamp-based filename
 	if len(args) > 0 && args[0] == "-" {
 		ts := time.Now().Format("20060102-150405")
@@ -460,6 +505,11 @@ func determineFileExt(flags config.GlobalSubCommandFlags, input ImageReader, out
 
 	//? If there is a file in stdin assume its a png, so it gets encoded later
 	if _, ok := input.(Stdin); ok {
+		return "png", nil
+	}
+
+	// For NoInput commands, default to png
+	if _, ok := input.(NoInput); ok {
 		return "png", nil
 	}
 

@@ -59,12 +59,48 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 	return fmt.Errorf("no input was given")
 }
 
-// Add common global flags to command
+// cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
+// cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
+// cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
+// cmd.PersistentFlags().StringVar(&shared.PreviewFlag, "preview", "", "Usage: --preview true/false enables or disables image previewing (overrides config)")
+
+// GlobalFlagBuilder provides a fluent API for adding flags to a cobra command.
+type GlobalFlagBuilder struct {
+	cmd *cobra.Command
+}
+
+// addFlags returns a FlagBuilder for chaining flag registration methods.
+func addFlags(cmd *cobra.Command) *GlobalFlagBuilder {
+	return &GlobalFlagBuilder{cmd: cmd}
+}
+
+// WithBatch adds the --batch flag for batch processing individual files.
+func (f *GlobalFlagBuilder) WithBatch() *GlobalFlagBuilder {
+	f.cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
+	return f
+}
+
+// WithDir adds the --dir flag for batch processing an entire directory.
+func (f *GlobalFlagBuilder) WithDir() *GlobalFlagBuilder {
+	f.cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
+	return f
+}
+
+// WithOutput adds the --output flag to specify the output destination.
+func (f *GlobalFlagBuilder) WithOutput() *GlobalFlagBuilder {
+	f.cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
+	return f
+}
+
+// WithPreview adds the --preview flag to enable or disable image previewing.
+func (f *GlobalFlagBuilder) WithPreview() *GlobalFlagBuilder {
+	f.cmd.PersistentFlags().StringVar(&shared.PreviewFlag, "preview", "", "Usage: --preview true/false enables or disables image previewing (overrides config)")
+	return f
+}
+
+// addGlobalFlags adds all common global flags to the command.
 func addGlobalFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
-	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
-	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
-	cmd.PersistentFlags().StringVar(&shared.PreviewFlag, "preview", "", "Usage: --preview true/false enables or disables image previewing (overrides config)")
+	addFlags(cmd).WithBatch().WithDir().WithOutput().WithPreview()
 }
 
 // Configure logger, spinner with quiet modes for Unix pipes and redirections and validates flags

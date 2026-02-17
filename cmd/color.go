@@ -39,8 +39,6 @@ func BuildColorCmd() *cobra.Command {
 	cmd.AddCommand(BuildWheelCmd())
 	cmd.AddCommand(BuildGradientCmd())
 
-	addGlobalFlags(cmd)
-
 	return cmd
 }
 
@@ -423,7 +421,9 @@ func BuildGradientCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("width")
 	cmd.Flags().MarkHidden("height")
 
-	addGlobalFlags(cmd)
+	addFlags(cmd).
+		WithOutput().
+		WithPreview()
 
 	return cmd
 }

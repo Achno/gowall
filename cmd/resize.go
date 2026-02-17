@@ -76,7 +76,7 @@ func RunResizeCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, resizedImages[0])
+	openImageInViewer(cmd, shared, args, resizedImages[0])
 }
 
 func ValidateParseResizeCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

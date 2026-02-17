@@ -26,10 +26,15 @@ func isInputBatch(flags config.GlobalSubCommandFlags) bool {
 	return len(flags.InputFiles) > 0 || len(flags.InputDir) > 0
 }
 
-func openImageInViewer(flags config.GlobalSubCommandFlags, args []string, path string) {
+func openImageInViewer(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string, path string) {
 	if isInputBatch(shared) || imageio.IsStdoutOutput(flags, args) {
 		return
 	}
+
+	if cmd.Flags().Changed("preview") {
+		config.GowallConfig.EnableImagePreviewing = flags.PreviewFlag == "true"
+	}
+
 	err := image.OpenImageInViewer(path)
 	if err != nil {
 		logger.Error("Error opening image: ", err)
@@ -59,6 +64,7 @@ func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
 	cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
 	cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
+	cmd.PersistentFlags().StringVar(&shared.PreviewFlag, "preview", "", "Usage: --preview true/false enables or disables image previewing (overrides config)")
 }
 
 // Configure logger, spinner with quiet modes for Unix pipes and redirections and validates flags

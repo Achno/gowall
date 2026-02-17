@@ -70,7 +70,7 @@ func RunCompressCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, compressedImages[0])
+	openImageInViewer(cmd, shared, args, compressedImages[0])
 }
 
 func ValidateParseCompressCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

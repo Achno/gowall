@@ -59,7 +59,7 @@ func RunPixelateCmd(cmd *cobra.Command, args []string) {
 		logger.Error(err, "The following images had errors while processing")
 	}
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParsePixelateCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

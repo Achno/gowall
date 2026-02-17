@@ -25,6 +25,7 @@ type GlobalSubCommandFlags struct {
 	InputDir          string
 	InputFiles        []string
 	Format            string
+	PreviewFlag       string
 }
 
 type themeWrapper struct {

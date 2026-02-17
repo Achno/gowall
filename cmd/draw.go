@@ -89,7 +89,7 @@ func RunBorderCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseBorderCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -169,7 +169,7 @@ func RunGridCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseGridCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -216,7 +216,7 @@ func RunRoundCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseRoundCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

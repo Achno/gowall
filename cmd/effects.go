@@ -65,7 +65,7 @@ func RunFlipCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseFlipCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -101,7 +101,7 @@ func RunMirrorCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseMirrorCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -137,7 +137,7 @@ func RunGrayscaleCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseGrayscaleCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -181,7 +181,7 @@ func RunBrightnessCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseBrightnessCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
@@ -293,7 +293,7 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

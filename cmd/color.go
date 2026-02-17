@@ -472,7 +472,7 @@ func RunGradientCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, gradientImages[0])
+	openImageInViewer(cmd, shared, args, gradientImages[0])
 }
 
 func ValidateParseGradientCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

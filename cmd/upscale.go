@@ -71,7 +71,7 @@ func RunUpscaleCmd(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Error(err, "The following images had errors while processing")
 	}
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseUpscaleCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

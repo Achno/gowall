@@ -88,7 +88,7 @@ func RunConvertCmd(cmd *cobra.Command, args []string) {
 	})
 	utils.HandleError(err, "Error")
 
-	openImageInViewer(shared, args, processedImages[0])
+	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
 func ValidateParseConvertCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {

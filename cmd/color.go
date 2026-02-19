@@ -322,8 +322,8 @@ func variantsCompletion(cmd *cobra.Command, args []string, toComplete string) ([
 func BuildWheelCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "wheel [COLOR]",
-		Short: "Functions around the color wheel (triadic, quadratic, analogous, split-complementary)",
-		Long:  `Functions around the color wheel (triadic, quadratic, analogous, split-complementary)`,
+		Short: "Functions around the color wheel (triadic, quadratic, analogous, split-complementary, contrast, complementary)",
+		Long:  `Functions around the color wheel (triadic, quadratic, analogous, split-complementary, contrast, complementary)`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return ValidateParseWheelCmd(cmd, shared, args)
 		},
@@ -373,11 +373,20 @@ func ValidateParseWheelCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlag
 }
 
 func GetWheelMap() map[string]func(string) ([]string, error) {
+
 	return map[string]func(string) ([]string, error){
 		"triadic":             cpkg.GenerateTriadic,
 		"quadratic":           cpkg.GenerateQuadratic,
 		"analogous":           cpkg.GenerateAnalogous,
 		"split-complementary": cpkg.GenerateSplitComplementary,
+		"contrast": func(hex string) ([]string, error) {
+			c, err := cpkg.GenerateContrast(hex)
+			return []string{c}, err
+		},
+		"complementary": func(hex string) ([]string, error) {
+			c, err := cpkg.GenerateComplementary(hex)
+			return []string{c}, err
+		},
 	}
 }
 

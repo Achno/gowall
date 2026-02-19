@@ -29,6 +29,12 @@ func GenerateComplementary(hex string) (string, error) {
 	return gamut.ToHex(complementary), nil
 }
 
+func GenerateContrast(hex string) (string, error) {
+	c := gamut.Hex(hex)
+	contrast := gamut.Contrast(c)
+	return gamut.ToHex(contrast), nil
+}
+
 func BlendColors(hex1 string, hex2 string, count int) ([]string, error) {
 	c1 := gamut.Hex(hex1)
 	c2 := gamut.Hex(hex2)

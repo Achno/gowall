@@ -413,13 +413,15 @@ func BuildGradientCmd() *cobra.Command {
 	)
 
 	flags.StringVarP(&dimensions, "dimensions", "d", "1920x1080", "Dimensions in format WIDTHxHEIGHT (e.g., 1920x1080)")
-	flags.StringVarP(&direction, "direction", "r", "vertical", "Gradient direction: vertical or horizontal")
+	flags.StringVarP(&direction, "direction", "r", "horizontal", "Gradient direction: 'horizontal', 'vertical', or a degree angle 0-360")
 	flags.StringVarP(&method, "method", "m", "rgb", "Gradient method: rgb, hcl, lab, hsv, luv, luvlch")
 	// Hidden flags to pass parsed values from PreRunE to Run
 	flags.IntVar(&width, "width", 0, "")
 	flags.IntVar(&height, "height", 0, "")
+	flags.Float64Var(new(float64), "angle", 0, "")
 	cmd.Flags().MarkHidden("width")
 	cmd.Flags().MarkHidden("height")
+	cmd.Flags().MarkHidden("angle")
 
 	addFlags(cmd).
 		WithOutput().
@@ -436,7 +438,7 @@ func RunGradientCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	height, err := cmd.Flags().GetInt("height")
 	utils.HandleError(err, "Error")
-	direction, err := cmd.Flags().GetString("direction")
+	angle, err := cmd.Flags().GetFloat64("angle")
 	utils.HandleError(err, "Error")
 	method, err := cmd.Flags().GetString("method")
 	utils.HandleError(err, "Error")
@@ -461,7 +463,7 @@ func RunGradientCmd(cmd *cobra.Command, args []string) {
 		image.WithColors(hexColors),
 		image.WithGradientWidth(width),
 		image.WithGradientHeight(height),
-		image.WithDirection(direction),
+		image.WithAngle(angle),
 		image.WithGradientMethod(method),
 	)
 
@@ -476,12 +478,10 @@ func RunGradientCmd(cmd *cobra.Command, args []string) {
 }
 
 func ValidateParseGradientCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
-	// Check that we have at least one argument with colors
 	if len(args) == 0 {
 		return fmt.Errorf("gradient requires colors as first argument (comma-separated, e.g., \"#ff0000,#00ff00,#0000ff\")")
 	}
 
-	// Parse and count colors
 	colorStrings := strings.Split(args[0], ",")
 	validColors := 0
 	for _, colorStr := range colorStrings {
@@ -519,12 +519,22 @@ func ValidateParseGradientCmd(cmd *cobra.Command, flags config.GlobalSubCommandF
 	}
 
 	direction, _ := cmd.Flags().GetString("direction")
-	if direction != "vertical" && direction != "horizontal" {
-		return fmt.Errorf("direction must be either 'vertical' or 'horizontal', got: %s", direction)
+	var angle float64
+	switch direction {
+	case "horizontal":
+		angle = 0
+	case "vertical":
+		angle = 90
+	default:
+		angle, err = strconv.ParseFloat(direction, 64)
+		if err != nil || angle < 0 || angle > 360 {
+			return fmt.Errorf("direction must be 'horizontal', 'vertical', or a number 0-360, got: %s", direction)
+		}
 	}
 
 	cmd.Flags().Set("width", strconv.Itoa(width))
 	cmd.Flags().Set("height", strconv.Itoa(height))
+	cmd.Flags().Set("angle", strconv.FormatFloat(angle, 'f', -1, 64))
 
 	return nil
 }

@@ -14,11 +14,11 @@ type GradientProcessor struct {
 
 // Options with the functional options pattern so you can pick options and set defaults
 type GradientOptions struct {
-	Colors    []string
-	Width     int
-	Height    int
-	Direction string // "horizontal" or "vertical"
-	Method    string // "rgb", "hcl", "lab", "hsv", "luv", "luvlch"
+	Colors []string
+	Width  int
+	Height int
+	Angle  float64 // Gradient angle in degrees: 0=left→right, 90=top→bottom, 180=right→left, 270=bottom→top
+	Method string  // "rgb", "hcl", "lab", "hsv", "luv", "luvlch"
 }
 
 type GradientOption func(*GradientOptions)
@@ -41,9 +41,9 @@ func WithGradientHeight(height int) GradientOption {
 	}
 }
 
-func WithDirection(direction string) GradientOption {
+func WithAngle(angle float64) GradientOption {
 	return func(go_ *GradientOptions) {
-		go_.Direction = direction
+		go_.Angle = angle
 	}
 }
 
@@ -53,14 +53,14 @@ func WithGradientMethod(method string) GradientOption {
 	}
 }
 
-// Available options: WithColors, WithGradientWidth, WithGradientHeight, WithDirection
+// Available options: WithColors, WithGradientWidth, WithGradientHeight, WithAngle, WithGradientMethod
 func (p *GradientProcessor) SetOptions(options ...GradientOption) {
 	opts := GradientOptions{
-		Colors:    []string{},
-		Width:     1920,
-		Height:    1080,
-		Direction: "horizontal",
-		Method:    "rgb",
+		Colors: []string{},
+		Width:  1920,
+		Height: 1080,
+		Angle:  0,
+		Method: "rgb",
 	}
 
 	for _, option := range options {
@@ -76,7 +76,7 @@ func (p *GradientProcessor) Process(img image.Image, theme string, format string
 		p.options.Colors,
 		p.options.Width,
 		p.options.Height,
-		p.options.Direction,
+		p.options.Angle,
 		p.options.Method,
 	)
 	if err != nil {

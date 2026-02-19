@@ -3,7 +3,7 @@ package color
 import (
 	"fmt"
 	"image"
-	"image/draw"
+	"math"
 
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/gamut"
@@ -137,13 +137,12 @@ func (gt GradientTable) GetInterpolatedColorFor(t float64, method string) (color
 	return gt[len(gt)-1].Color, nil
 }
 
-// GenerateGradient creates a gradient image from a list of hex colors
-// direction: "horizontal" or "vertical"
-// hexColors: list of hex color strings (e.g., "#ff0000")
-// width, height: dimensions of the output image
-func GenerateGradient(hexColors []string, width, height int, direction string, interpolationMethod string) (image.Image, error) {
+// GenerateGradient creates a gradient image from a list of hex colors.
+// angle: gradient direction in degrees (0=left→right, 90=top→bottom, 180=right→left, 270=bottom→top).
+// hexColors: list of hex color strings (e.g., "#ff0000").
+// width, height: dimensions of the output image.
+func GenerateGradient(hexColors []string, width, height int, angle float64, interpolationMethod string) (image.Image, error) {
 	if len(hexColors) < 2 {
-		// Need at least 2 colors for a gradient
 		return nil, nil
 	}
 
@@ -160,27 +159,32 @@ func GenerateGradient(hexColors []string, width, height int, direction string, i
 		}
 	}
 
-	// Create the image
+	rad := angle * math.Pi / 180.0
+	dx := math.Cos(rad)
+	dy := math.Sin(rad)
+
+	cx := float64(width) / 2.0
+	cy := float64(height) / 2.0
+
+	halfLen := (math.Abs(float64(width)*dx) + math.Abs(float64(height)*dy)) / 2.0
+
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	switch direction {
-	case "horizontal":
-		// Horizontal gradient (left to right)
+	for y := range height {
 		for x := range width {
-			c, err := keypoints.GetInterpolatedColorFor(float64(x)/float64(width), interpolationMethod)
+			proj := (float64(x)-cx)*dx + (float64(y)-cy)*dy
+			t := (proj + halfLen) / (2.0 * halfLen)
+			if t < 0 {
+				t = 0
+			} else if t > 1 {
+				t = 1
+			}
+
+			c, err := keypoints.GetInterpolatedColorFor(t, interpolationMethod)
 			if err != nil {
 				return nil, err
 			}
-			draw.Draw(img, image.Rect(x, 0, x+1, height), &image.Uniform{c}, image.Point{}, draw.Src)
-		}
-	case "vertical":
-		// Vertical gradient (top to bottom)
-		for y := range height {
-			c, err := keypoints.GetInterpolatedColorFor(float64(y)/float64(height), interpolationMethod)
-			if err != nil {
-				return nil, err
-			}
-			draw.Draw(img, image.Rect(0, y, width, y+1), &image.Uniform{c}, image.Point{}, draw.Src)
+			img.Set(x, y, c)
 		}
 	}
 

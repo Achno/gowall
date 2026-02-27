@@ -11,7 +11,18 @@ import (
 func GetWallpaperOfTheDay() (string, error) {
 	url := config.WallOfTheDayUrl
 
-	response, err := http.Get(url)
+	// http.Get() doesn't send a User-Agent header, Reddit blocks it with a 429
+	// so we build the request manually so we can add one
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	// Reddit blocks requests that don't look like they're coming from a browser
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; gowall/1.0)")
+
+	client := &http.Client{}
+	response, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +45,6 @@ func GetWallpaperOfTheDay() (string, error) {
 		imgUrl, exists := selection.Attr("src")
 
 		if exists {
-			// logger.Print("index %d %s\n", index, imgUrl)
 			imageUrls = append(imageUrls, imgUrl)
 		}
 	})

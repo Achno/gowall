@@ -6,6 +6,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/api"
@@ -39,7 +41,13 @@ func openImageInViewer(cmd *cobra.Command, flags config.GlobalSubCommandFlags, a
 		config.GowallConfig.EnableImagePreviewing = flags.PreviewFlag == "true"
 	}
 
-	err := image.OpenImageInViewer(path)
+	var err error
+	if strings.EqualFold(filepath.Ext(path), ".gif") {
+		err = image.OpenGifInViewer(path)
+	} else {
+		err = image.OpenImageInViewer(path)
+	}
+
 	if err != nil {
 		logger.Error("Error opening image: ", err)
 	}

@@ -42,6 +42,22 @@ func (p *NoOpImageProcessor) Process(img image.Image, options string, format str
 	return img, types.ImageMetadata{}, nil
 }
 
+// OpenGifInViewer currently supports GIF preview only in Kitty via `kitty icat`.
+func OpenGifInViewer(filePath string) error {
+	if !config.GowallConfig.EnableImagePreviewing {
+		return nil
+	}
+
+	if !terminal.IsKittyTerminalRunning() {
+		return fmt.Errorf("gif preview is only supported in kitty terminal via `kitty icat`")
+	}
+
+	cmd := exec.Command("kitty", "icat", filePath)
+	cmd.Stdout = os.Stdout
+
+	return cmd.Run()
+}
+
 // Opens the image on the default viewing application of every operating system.
 // or in the terminal for kitty,wezterm,ghostty and konsole
 func OpenImageInViewer(filePath string) error {

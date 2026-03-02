@@ -60,10 +60,11 @@ func RunGifCmd(cmd *cobra.Command, args []string) {
 		Mode:  resize,
 	}
 
-	_, err = image.MultiProcessImgs(processor, imageOps, image.MultiProcessOptions{
+	path, err := image.MultiProcessImgs(processor, imageOps, image.MultiProcessOptions{
 		Theme:      "",
 		OnComplete: nil,
 	})
+	openImageInViewer(cmd, shared, args, path)
 	utils.HandleError(err, "Error")
 }
 

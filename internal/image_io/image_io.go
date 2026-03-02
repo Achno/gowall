@@ -103,10 +103,19 @@ func (ni NoInput) String() string {
 	return "generated"
 }
 
+func IsMultiInputSingleOutputCommand(cmdName string) bool {
+	switch cmdName {
+	case "gif", "stack":
+		return true
+	default:
+		return false
+	}
+}
+
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.
 func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
 	// Check if this is a multi-input-single-output command
-	isMultiInputSingleOutput := cmd.Name() == "gif" || cmd.Name() == "stack" // Add more commands here as needed
+	isMultiInputSingleOutput := IsMultiInputSingleOutputCommand(cmd.Name())
 
 	// Check if this is a zero-input command (generates image from scratch)
 	isZeroInputCommand := cmd.Name() == "gradient" // Add more as needed

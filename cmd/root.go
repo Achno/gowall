@@ -27,7 +27,11 @@ func isInputBatch(flags config.GlobalSubCommandFlags) bool {
 }
 
 func openImageInViewer(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string, path string) {
-	if isInputBatch(shared) || imageio.IsStdoutOutput(flags, args) {
+	if imageio.IsStdoutOutput(flags, args) {
+		return
+	}
+
+	if isInputBatch(shared) && !imageio.IsMultiInputSingleOutputCommand(cmd.Name()) {
 		return
 	}
 

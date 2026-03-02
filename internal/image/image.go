@@ -191,23 +191,20 @@ type MultiProcessOptions struct {
 func MultiProcessImgs(processor MultiImageProcessor, imageOps []imageio.ImageIO, opts MultiProcessOptions) (string, error) {
 
 	var wg sync.WaitGroup
-	var mu sync.Mutex
-	images := make([]image.Image, 0, len(imageOps))
+	images := make([]image.Image, len(imageOps))
 	errChan := make(chan error, len(imageOps))
 
-	for _, imageOp := range imageOps {
+	for i, imageOp := range imageOps {
 		wg.Add(1)
-		go func(currentImgOp imageio.ImageIO) {
+		go func(index int, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
 			img, err := imageio.LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image %s: %w", currentImgOp.ImageInput.String(), err)
 				return
 			}
-			mu.Lock()
-			images = append(images, img)
-			mu.Unlock()
-		}(imageOp)
+			images[index] = img
+		}(i, imageOp)
 	}
 	wg.Wait()
 	close(errChan)

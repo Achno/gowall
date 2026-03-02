@@ -59,11 +59,6 @@ func validateInput(flags config.GlobalSubCommandFlags, args []string) error {
 	return fmt.Errorf("no input was given")
 }
 
-// cmd.PersistentFlags().StringSliceVar(&shared.InputFiles, "batch", nil, "Usage: --batch file1.png,file2.png... Batch process individual files")
-// cmd.PersistentFlags().StringVar(&shared.InputDir, "dir", "", "Usage --dir [/path/to/dir] Batch process an entire directory")
-// cmd.PersistentFlags().StringVar(&shared.OutputDestination, "output", "", "Usage: --output ~/Folder (works on --dir and --batch also) or --output ~/NewDir/img.png")
-// cmd.PersistentFlags().StringVar(&shared.PreviewFlag, "preview", "", "Usage: --preview true/false enables or disables image previewing (overrides config)")
-
 // GlobalFlagBuilder provides a fluent API for adding flags to a cobra command.
 type GlobalFlagBuilder struct {
 	cmd *cobra.Command

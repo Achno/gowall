@@ -22,7 +22,6 @@ func BuildResizeCmd() *cobra.Command {
 		Short: "Resize an image, Aspect ratio is preserved",
 		Long:  "Resize an image with specified width, height, and resampling method. Aspect ratio is preserved.",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			//TODO: refactor all the other commands to use this style of validating flags and parsing/splitting args here.
 			return ValidateParseResizeCmd(cmd, shared, args)
 		},
 		Run: RunResizeCmd,

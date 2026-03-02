@@ -106,7 +106,7 @@ func (ni NoInput) String() string {
 // DetermineImageOperations generates ImageIO structs based on program flags and command io arguments.
 func DetermineImageOperations(flags config.GlobalSubCommandFlags, args []string, cmd *cobra.Command) ([]ImageIO, error) {
 	// Check if this is a multi-input-single-output command
-	isMultiInputSingleOutput := cmd.Name() == "gif" // Add more commands here as needed
+	isMultiInputSingleOutput := cmd.Name() == "gif" || cmd.Name() == "stack" // Add more commands here as needed
 
 	// Check if this is a zero-input command (generates image from scratch)
 	isZeroInputCommand := cmd.Name() == "gradient" // Add more as needed
@@ -284,7 +284,7 @@ func generateSingleOutput(flags config.GlobalSubCommandFlags, cmd *cobra.Command
 	if IsStdoutOutput(flags, nil) {
 		ext := flags.Format
 		if ext == "" {
-			ext = cmdKey
+			ext = defaultMultiOutputExt(cmdKey)
 		}
 		return Stdout{}, ext, nil
 	}
@@ -301,7 +301,7 @@ func generateSingleOutput(flags config.GlobalSubCommandFlags, cmd *cobra.Command
 		if filepath.Ext(flags.OutputDestination) != "" {
 			ext := strings.TrimPrefix(filepath.Ext(flags.OutputDestination), ".")
 			if ext == "" {
-				ext = cmdKey
+				ext = defaultMultiOutputExt(cmdKey)
 			}
 			return FileWriter{Path: flags.OutputDestination}, ext, nil
 		}
@@ -313,12 +313,20 @@ func generateSingleOutput(flags config.GlobalSubCommandFlags, cmd *cobra.Command
 	timestamp := time.Now().Format("20060102-150405")
 	ext := flags.Format
 	if ext == "" {
-		ext = cmdKey
+		ext = defaultMultiOutputExt(cmdKey)
 	}
 	fileName := fmt.Sprintf("%s-%s.%s", cmdKey, timestamp, ext)
 	outputPath := filepath.Join(dir, fileName)
 
 	return FileWriter{Path: outputPath}, ext, nil
+}
+
+func defaultMultiOutputExt(cmdName string) string {
+	if cmdName == "gif" {
+		return "gif"
+	}
+
+	return "png"
 }
 
 // batchIO handles the case when a list of input files is provided

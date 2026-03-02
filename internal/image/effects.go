@@ -1,13 +1,16 @@
 package image
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"math"
+	"strings"
 
 	cpkg "github.com/Achno/gowall/internal/backends/color"
 	types "github.com/Achno/gowall/internal/types"
+	"github.com/disintegration/imaging"
 )
 
 type FlipProcessor struct{}
@@ -97,6 +100,45 @@ func (p *BrightnessProcessor) Process(img image.Image, theme string, format stri
 	}
 
 	return newImg, types.ImageMetadata{}, nil
+}
+
+type ContrastProcessor struct {
+	Mode          string
+	Factor        float64
+	Midpoint      float64
+	SigmoidFactor float64
+}
+
+const (
+	ContrastModeNormal  = "normal"
+	ContrastModeSigmoid = "sigmoid"
+)
+
+func (p *ContrastProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
+	switch strings.ToLower(p.Mode) {
+	case ContrastModeNormal:
+		return imaging.AdjustContrast(img, p.Factor), types.ImageMetadata{}, nil
+	case ContrastModeSigmoid:
+		return imaging.AdjustSigmoid(img, p.Midpoint, p.SigmoidFactor), types.ImageMetadata{}, nil
+	default:
+		return nil, types.ImageMetadata{}, fmt.Errorf("invalid contrast mode: %s", p.Mode)
+	}
+}
+
+type GammaProcessor struct {
+	Gamma float64
+}
+
+func (p *GammaProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
+	return imaging.AdjustGamma(img, p.Gamma), types.ImageMetadata{}, nil
+}
+
+type SaturationProcessor struct {
+	Percentage float64
+}
+
+func (p *SaturationProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
+	return imaging.AdjustSaturation(img, p.Percentage), types.ImageMetadata{}, nil
 }
 
 type Preset struct {

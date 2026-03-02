@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/Achno/gowall/config"
 	cpkg "github.com/Achno/gowall/internal/backends/color"
@@ -32,6 +33,9 @@ func BuildEffectsCmd() *cobra.Command {
 	cmd.AddCommand(BuildMirrorCmd())
 	cmd.AddCommand(BuildGrayscaleCmd())
 	cmd.AddCommand(BuildBrightnessCmd())
+	cmd.AddCommand(BuildContrastCmd())
+	cmd.AddCommand(BuildGammaCmd())
+	cmd.AddCommand(BuildSaturationCmd())
 	cmd.AddCommand(BuildTiltCmd())
 
 	addGlobalFlags(cmd)
@@ -192,6 +196,218 @@ func ValidateParseBrightnessCmd(cmd *cobra.Command, flags config.GlobalSubComman
 	factor, _ := cmd.Flags().GetFloat64("factor")
 	if factor <= 0.0 || factor > 10.0 {
 		return fmt.Errorf("factor must be in range (0.0, 10.0], got: %.2f", factor)
+	}
+
+	return nil
+}
+
+// Contrast Command
+func BuildContrastCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "contrast [INPUT]",
+		Short: "Adjust image contrast (normal or sigmoidal mode)",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseContrastCmd(cmd, shared, args)
+		},
+		Run: RunContrastCmd,
+	}
+
+	flags := cmd.Flags()
+	var (
+		mode          string
+		factor        float64
+		midpoint      float64
+		sigmoidFactor float64
+	)
+
+	flags.StringVarP(&mode, "mode", "m", image.ContrastModeNormal, "Contrast mode: normal or sigmoid")
+	flags.Float64VarP(&factor, "factor", "f", 0.0, "Normal contrast percentage in range (-100.0, 100.0)")
+	flags.Float64VarP(&midpoint, "midpoint", "p", 0.5, "Sigmoid midpoint in range [0.0, 1.0]")
+	flags.Float64VarP(&sigmoidFactor, "sigmoid-factor", "s", 0.0, "Sigmoid contrast factor in range (-10.0, 10.0)")
+
+	cmd.RegisterFlagCompletionFunc("mode", contrastModeCompletion)
+
+	return cmd
+}
+
+func RunContrastCmd(cmd *cobra.Command, args []string) {
+	logger.Print("Processing image...")
+
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	mode, err := cmd.Flags().GetString("mode")
+	utils.HandleError(err, "Error")
+	factor, err := cmd.Flags().GetFloat64("factor")
+	utils.HandleError(err, "Error")
+	midpoint, err := cmd.Flags().GetFloat64("midpoint")
+	utils.HandleError(err, "Error")
+	sigmoidFactor, err := cmd.Flags().GetFloat64("sigmoid-factor")
+	utils.HandleError(err, "Error")
+
+	processor := &image.ContrastProcessor{
+		Mode:          strings.ToLower(mode),
+		Factor:        factor,
+		Midpoint:      midpoint,
+		SigmoidFactor: sigmoidFactor,
+	}
+
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(cmd, shared, args, processedImages[0])
+}
+
+func ValidateParseContrastCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	mode, _ := cmd.Flags().GetString("mode")
+	mode = strings.ToLower(mode)
+
+	if mode != image.ContrastModeNormal && mode != image.ContrastModeSigmoid {
+		return fmt.Errorf("invalid mode '%s', valid modes: %s, %s", mode, image.ContrastModeNormal, image.ContrastModeSigmoid)
+	}
+
+	if mode == image.ContrastModeNormal {
+		if cmd.Flags().Changed("midpoint") || cmd.Flags().Changed("sigmoid-factor") {
+			return fmt.Errorf("--midpoint and --sigmoid-factor can only be used with --mode sigmoid")
+		}
+
+		factor, _ := cmd.Flags().GetFloat64("factor")
+		if factor <= -100.0 || factor >= 100.0 {
+			return fmt.Errorf("factor must be in range (-100.0, 100.0), got: %.2f", factor)
+		}
+
+		return nil
+	}
+
+	if cmd.Flags().Changed("factor") {
+		return fmt.Errorf("--factor can only be used with --mode normal")
+	}
+
+	midpoint, _ := cmd.Flags().GetFloat64("midpoint")
+	if midpoint < 0.0 || midpoint > 1.0 {
+		return fmt.Errorf("midpoint must be in range [0.0, 1.0], got: %.2f", midpoint)
+	}
+
+	sigmoidFactor, _ := cmd.Flags().GetFloat64("sigmoid-factor")
+	if sigmoidFactor <= -10.0 || sigmoidFactor >= 10.0 {
+		return fmt.Errorf("sigmoid-factor must be in range (-10.0, 10.0), got: %.2f", sigmoidFactor)
+	}
+
+	return nil
+}
+
+func contrastModeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{image.ContrastModeNormal, image.ContrastModeSigmoid}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// Gamma Command
+func BuildGammaCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gamma [INPUT] [OPTIONAL OUTPUT] [--flags]",
+		Short: "Apply gamma correction",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseGammaCmd(cmd, shared, args)
+		},
+		Run: RunGammaCmd,
+	}
+
+	flags := cmd.Flags()
+	var gamma float64
+	flags.Float64VarP(&gamma, "gamma", "g", 1.0, "Gamma correction factor (> 0.0)")
+
+	return cmd
+}
+
+func RunGammaCmd(cmd *cobra.Command, args []string) {
+	logger.Print("Processing image...")
+
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	gamma, err := cmd.Flags().GetFloat64("gamma")
+	utils.HandleError(err, "Error")
+
+	processor := &image.GammaProcessor{
+		Gamma: gamma,
+	}
+
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(cmd, shared, args, processedImages[0])
+}
+
+func ValidateParseGammaCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	gamma, _ := cmd.Flags().GetFloat64("gamma")
+	if gamma <= 0.0 {
+		return fmt.Errorf("gamma must be > 0.0, got: %.2f", gamma)
+	}
+
+	return nil
+}
+
+// Saturation Command
+func BuildSaturationCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "saturation [INPUT] [OPTIONAL OUTPUT] [--flags]",
+		Short: "Adjust image saturation",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return ValidateParseSaturationCmd(cmd, shared, args)
+		},
+		Run: RunSaturationCmd,
+	}
+
+	flags := cmd.Flags()
+	var percentage float64
+	flags.Float64VarP(&percentage, "percentage", "p", 0.0, "Saturation percentage in range [-100.0, 100.0]")
+
+	return cmd
+}
+
+func RunSaturationCmd(cmd *cobra.Command, args []string) {
+	logger.Print("Processing image...")
+
+	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
+	utils.HandleError(err, "Error")
+
+	percentage, err := cmd.Flags().GetFloat64("percentage")
+	utils.HandleError(err, "Error")
+
+	processor := &image.SaturationProcessor{
+		Percentage: percentage,
+	}
+
+	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
+		Theme:      "",
+		OnComplete: nil,
+	})
+	utils.HandleError(err, "Error")
+
+	openImageInViewer(cmd, shared, args, processedImages[0])
+}
+
+func ValidateParseSaturationCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
+	if err := validateInput(flags, args); err != nil {
+		return err
+	}
+
+	percentage, _ := cmd.Flags().GetFloat64("percentage")
+	if percentage < -100.0 || percentage > 100.0 {
+		return fmt.Errorf("percentage must be in range [-100.0, 100.0], got: %.2f", percentage)
 	}
 
 	return nil

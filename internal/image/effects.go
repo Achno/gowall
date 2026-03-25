@@ -144,11 +144,22 @@ func (p *SaturationProcessor) Process(img image.Image, theme string, format stri
 type Preset struct {
 	BackgroundStart color.RGBA
 	BackgroundEnd   color.RGBA
+	BackgroundImage image.Image // Optional: if set, used instead of gradient
 	TiltX           float64
 	TiltY           float64
 	TiltZ           float64 // Z-axis rotation in degrees (positive = clockwise)
 	Scale           float64
 	CornerRadius    float64
+}
+
+var DefaultTiltPreset = Preset{
+	BackgroundStart: color.RGBA{18, 18, 18, 255},
+	BackgroundEnd:   color.RGBA{40, 40, 40, 255},
+	TiltX:           5.0,
+	TiltY:           -8.0,
+	TiltZ:           3.0,
+	Scale:           0.65,
+	CornerRadius:    40.0,
 }
 
 var TiltPresets = map[string]Preset{
@@ -186,7 +197,7 @@ var TiltPresets = map[string]Preset{
 		TiltY:           5.0,
 		TiltZ:           0.0,
 		Scale:           0.70,
-		CornerRadius:    30.0,
+		CornerRadius:    40.0,
 	},
 }
 
@@ -196,6 +207,19 @@ func GetTiltPresetNames() []string {
 		names = append(names, k)
 	}
 	return names
+}
+
+func GetTiltPreset(name string) (Preset, error) {
+	if name == "" {
+		return DefaultTiltPreset, nil
+	}
+
+	preset, exists := TiltPresets[name]
+	if !exists {
+		return Preset{}, fmt.Errorf("invalid preset '%s'. Valid presets: %v", name, GetTiltPresetNames())
+	}
+
+	return preset, nil
 }
 
 type TiltProcessor struct {
@@ -217,15 +241,10 @@ func (p *TiltProcessor) Process(img image.Image, theme string, format string) (i
 	outW, outH := 1920, 1080
 	final := image.NewRGBA(image.Rect(0, 0, outW, outH))
 
-	// Draw Gradient
-	for y := range outH {
-		for x := range outW {
-			progress := float64(x+y) / float64(outW+outH)
-			r := uint8(float64(p.Preset.BackgroundStart.R)*(1-progress) + float64(p.Preset.BackgroundEnd.R)*progress)
-			g := uint8(float64(p.Preset.BackgroundStart.G)*(1-progress) + float64(p.Preset.BackgroundEnd.G)*progress)
-			b := uint8(float64(p.Preset.BackgroundStart.B)*(1-progress) + float64(p.Preset.BackgroundEnd.B)*progress)
-			final.Set(x, y, color.RGBA{r, g, b, 255})
-		}
+	if p.Preset.BackgroundImage != nil {
+		p.drawBackgroundImage(final, outW, outH)
+	} else {
+		p.drawBackgroundGradient(final, outW, outH)
 	}
 
 	contentBounds := trimmed.Bounds()
@@ -235,6 +254,25 @@ func (p *TiltProcessor) Process(img image.Image, theme string, format string) (i
 	draw.Draw(final, image.Rect(targetX, targetY, targetX+contentBounds.Dx(), targetY+contentBounds.Dy()), trimmed, image.Point{}, draw.Over)
 
 	return final, types.ImageMetadata{}, nil
+}
+
+func (p *TiltProcessor) drawBackgroundGradient(final *image.RGBA, outW, outH int) {
+	for y := range outH {
+		for x := range outW {
+			progress := float64(x+y) / float64(outW+outH)
+			r := uint8(float64(p.Preset.BackgroundStart.R)*(1-progress) + float64(p.Preset.BackgroundEnd.R)*progress)
+			g := uint8(float64(p.Preset.BackgroundStart.G)*(1-progress) + float64(p.Preset.BackgroundEnd.G)*progress)
+			b := uint8(float64(p.Preset.BackgroundStart.B)*(1-progress) + float64(p.Preset.BackgroundEnd.B)*progress)
+			final.Set(x, y, color.RGBA{r, g, b, 255})
+		}
+	}
+}
+
+func (p *TiltProcessor) drawBackgroundImage(final *image.RGBA, outW, outH int) {
+	bgImg := p.Preset.BackgroundImage
+	// Scale/crop the background image to fill the output canvas (cover mode)
+	resized := imaging.Fill(bgImg, outW, outH, imaging.Center, imaging.Lanczos)
+	draw.Draw(final, final.Bounds(), resized, image.Point{}, draw.Src)
 }
 
 func rotate2D(src image.Image, angleDegrees float64) *image.RGBA {

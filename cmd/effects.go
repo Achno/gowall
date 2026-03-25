@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"strings"
 
@@ -434,6 +435,7 @@ func BuildTiltCmd() *cobra.Command {
 		cornerRadius float64
 		bgStart      string
 		bgEnd        string
+		bgImage      string
 	)
 
 	flags.StringVarP(&preset, "preset", "p", "", "Use a preset configuration (p1, p2, p3, p4)")
@@ -444,6 +446,7 @@ func BuildTiltCmd() *cobra.Command {
 	flags.Float64VarP(&cornerRadius, "radius", "r", 40.0, "Corner radius for rounding")
 	flags.StringVarP(&bgStart, "bg-start", "b", "#121212", "Gradient start color (hex)")
 	flags.StringVarP(&bgEnd, "bg-end", "e", "#282828", "Gradient end color (hex)")
+	flags.StringVarP(&bgImage, "bg-image", "i", "", "Background image path (overrides gradient)")
 
 	cmd.RegisterFlagCompletionFunc("preset", presetCompletion)
 
@@ -456,48 +459,8 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
-	presetName, err := cmd.Flags().GetString("preset")
+	preset, err := buildTiltPreset(cmd)
 	utils.HandleError(err, "Error")
-
-	var preset image.Preset
-
-	if presetName != "" {
-		presetConfig, exists := image.TiltPresets[presetName]
-		if !exists {
-			utils.HandleError(fmt.Errorf("unknown preset: %s", presetName), "Error")
-		}
-		preset = presetConfig
-	} else {
-		tiltX, err := cmd.Flags().GetFloat64("tiltx")
-		utils.HandleError(err, "Error")
-		tiltY, err := cmd.Flags().GetFloat64("tilty")
-		utils.HandleError(err, "Error")
-		tiltZ, err := cmd.Flags().GetFloat64("tiltz")
-		utils.HandleError(err, "Error")
-		scale, err := cmd.Flags().GetFloat64("scale")
-		utils.HandleError(err, "Error")
-		cornerRadius, err := cmd.Flags().GetFloat64("radius")
-		utils.HandleError(err, "Error")
-		bgStart, err := cmd.Flags().GetString("bg-start")
-		utils.HandleError(err, "Error")
-		bgEnd, err := cmd.Flags().GetString("bg-end")
-		utils.HandleError(err, "Error")
-
-		bgStartColor, err := cpkg.HexToRGBA(bgStart)
-		utils.HandleError(err, "Error parsing bg-start color")
-		bgEndColor, err := cpkg.HexToRGBA(bgEnd)
-		utils.HandleError(err, "Error parsing bg-end color")
-
-		preset = image.Preset{
-			BackgroundStart: bgStartColor,
-			BackgroundEnd:   bgEndColor,
-			TiltX:           tiltX,
-			TiltY:           tiltY,
-			TiltZ:           tiltZ,
-			Scale:           scale,
-			CornerRadius:    cornerRadius,
-		}
-	}
 
 	processor := &image.TiltProcessor{
 		Preset: preset,
@@ -512,68 +475,113 @@ func RunTiltCmd(cmd *cobra.Command, args []string) {
 	openImageInViewer(cmd, shared, args, processedImages[0])
 }
 
+func buildTiltPreset(cmd *cobra.Command) (image.Preset, error) {
+	presetName, err := cmd.Flags().GetString("preset")
+	if err != nil {
+		return image.Preset{}, err
+	}
+
+	preset, err := image.GetTiltPreset(presetName)
+	if err != nil {
+		return image.Preset{}, err
+	}
+
+	return applyTiltFlagOverrides(cmd, preset)
+}
+
+func applyTiltFlagOverrides(cmd *cobra.Command, preset image.Preset) (image.Preset, error) {
+	floatOverrides := []struct {
+		flag  string
+		field *float64
+	}{
+		{"tiltx", &preset.TiltX},
+		{"tilty", &preset.TiltY},
+		{"tiltz", &preset.TiltZ},
+		{"scale", &preset.Scale},
+		{"radius", &preset.CornerRadius},
+	}
+
+	for _, o := range floatOverrides {
+		if cmd.Flags().Changed(o.flag) {
+			val, err := cmd.Flags().GetFloat64(o.flag)
+			if err != nil {
+				return preset, err
+			}
+			*o.field = val
+		}
+	}
+
+	// Color overrides
+	colorOverrides := []struct {
+		flag  string
+		field *color.RGBA
+	}{
+		{"bg-start", &preset.BackgroundStart},
+		{"bg-end", &preset.BackgroundEnd},
+	}
+
+	for _, o := range colorOverrides {
+		if cmd.Flags().Changed(o.flag) {
+			val, err := cmd.Flags().GetString(o.flag)
+			if err != nil {
+				return preset, err
+			}
+			clr, err := cpkg.HexToRGBA(val)
+			if err != nil {
+				return preset, fmt.Errorf("invalid %s color format: %v (expected format: #RRGGBB)", o.flag, err)
+			}
+			*o.field = clr
+		}
+	}
+
+	// Background image override
+	if cmd.Flags().Changed("bg-image") {
+		bgImagePath, err := cmd.Flags().GetString("bg-image")
+		if err != nil {
+			return preset, err
+		}
+		bgImg, err := imageio.LoadImage(imageio.FileReader{Path: bgImagePath})
+		if err != nil {
+			return preset, fmt.Errorf("failed to load background image: %v", err)
+		}
+		preset.BackgroundImage = bgImg
+	}
+
+	return preset, nil
+}
+
 func ValidateParseTiltCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
 	if err := validateInput(flags, args); err != nil {
 		return err
 	}
 
-	presetName, _ := cmd.Flags().GetString("preset")
-
-	// Check if any manual flags were changed
-	manualFlagsUsed := cmd.Flags().Changed("tiltx") ||
-		cmd.Flags().Changed("tilty") ||
-		cmd.Flags().Changed("tiltz") ||
-		cmd.Flags().Changed("scale") ||
-		cmd.Flags().Changed("radius") ||
-		cmd.Flags().Changed("bg-start") ||
-		cmd.Flags().Changed("bg-end")
-
-	if presetName != "" && manualFlagsUsed {
-		return fmt.Errorf("cannot use preset flag (-p/--preset) together with manual configuration flags (x, y, z, s, r, b, e) either choose a preset or make your own")
+	// Validate bg-image and bg-start/bg-end are mutually exclusive
+	if cmd.Flags().Changed("bg-image") && (cmd.Flags().Changed("bg-start") || cmd.Flags().Changed("bg-end")) {
+		return fmt.Errorf("cannot use --bg-image together with --bg-start or --bg-end; choose either a background image or gradient colors")
 	}
 
-	if presetName != "" {
-		if _, exists := image.TiltPresets[presetName]; !exists {
-			validPresets := image.GetTiltPresetNames()
-			return fmt.Errorf("invalid preset '%s'. Valid presets: %v", presetName, validPresets)
-		}
-		return nil
-	}
-
-	scale, _ := cmd.Flags().GetFloat64("scale")
-	if scale <= 0.0 || scale > 1.0 {
-		return fmt.Errorf("scale must be in range (0.0, 1.0], got: %.2f", scale)
-	}
-
-	cornerRadius, _ := cmd.Flags().GetFloat64("radius")
-	if cornerRadius < 0 {
-		return fmt.Errorf("corner radius must be >= 0, got: %.2f", cornerRadius)
-	}
-
-	bgStart, _ := cmd.Flags().GetString("bg-start")
-	_, err := cpkg.HexToRGBA(bgStart)
+	preset, err := buildTiltPreset(cmd)
 	if err != nil {
-		return fmt.Errorf("invalid bg-start color format: %v (expected format: #RRGGBB)", err)
+		return err
 	}
 
-	bgEnd, _ := cmd.Flags().GetString("bg-end")
-	_, err = cpkg.HexToRGBA(bgEnd)
-	if err != nil {
-		return fmt.Errorf("invalid bg-end color format: %v (expected format: #RRGGBB)", err)
+	if preset.Scale <= 0.0 || preset.Scale > 1.0 {
+		return fmt.Errorf("scale must be in range (0.0, 1.0], got: %.2f", preset.Scale)
 	}
 
-	tiltX, _ := cmd.Flags().GetFloat64("tiltx")
-	tiltY, _ := cmd.Flags().GetFloat64("tilty")
+	if preset.CornerRadius < 0 {
+		return fmt.Errorf("corner radius must be >= 0, got: %.2f", preset.CornerRadius)
+	}
 
-	combinedAngle := math.Sqrt(tiltX*tiltX + tiltY*tiltY)
-	threshold := 30.0 - (scale * 15.0)
+	combinedAngle := math.Sqrt(preset.TiltX*preset.TiltX + preset.TiltY*preset.TiltY)
+	threshold := 30.0 - (preset.Scale * 15.0)
 
 	if combinedAngle > threshold {
 		return fmt.Errorf(
 			"combined tilt angle (%.1f°) exceeds 'estimated' safe (lmao i hope) threshold (%.1f°) for scale %.2f. "+
 				"Reduce tiltx/tilty or decrease scale to avoid rendering issues. "+
 				"Combined angle = √(tiltx² + tilty²) = √(%.1f² + %.1f²) = %.1f°",
-			combinedAngle, threshold, scale, tiltX, tiltY, combinedAngle,
+			combinedAngle, threshold, preset.Scale, preset.TiltX, preset.TiltY, combinedAngle,
 		)
 	}
 

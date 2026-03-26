@@ -5,6 +5,7 @@ import (
 	"image"
 	"strings"
 
+	"github.com/Achno/gowall/internal/backends/compression/avif"
 	"github.com/Achno/gowall/internal/backends/compression/jpg"
 	png "github.com/Achno/gowall/internal/backends/compression/png"
 	"github.com/Achno/gowall/internal/backends/compression/webp"
@@ -102,6 +103,9 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 		"lossywebp-webp": func(quality int, speed int) (CompressionStrategy, error) {
 			return webp.NewLossyWebpStrategy(quality)
 		},
+		"lossyavif-avif": func(quality int, speed int) (CompressionStrategy, error) {
+			return avif.NewLossyAvifStrategy(quality, speed)
+		},
 	}
 
 	return strategies
@@ -121,6 +125,8 @@ func (p *CompressionProcessor) GetDefaultStrategyNameForFormat(format string) (s
 		defaultStrategyName = "lossyjpg"
 	case "webp":
 		defaultStrategyName = "lossywebp"
+	case "avif":
+		defaultStrategyName = "lossyavif"
 	}
 
 	return defaultStrategyName, nil

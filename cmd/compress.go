@@ -84,7 +84,7 @@ func ValidateParseCompressCmd(cmd *cobra.Command, flags config.GlobalSubCommandF
 	}
 
 	speed, _ := cmd.Flags().GetInt("speed")
-	if speed < 0 || speed > 11 {
+	if speed < 0 || speed > 10 {
 		return fmt.Errorf("speed must be between 1 and 10, got: %d", speed)
 	}
 

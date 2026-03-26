@@ -17,6 +17,7 @@ import (
 	types "github.com/Achno/gowall/internal/types"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
+	_ "github.com/gen2brain/avif"
 	_ "golang.org/x/image/webp"
 )
 

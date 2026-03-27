@@ -54,6 +54,13 @@ func RunCompressCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	quality, err := cmd.Flags().GetInt("quality")
 	utils.HandleError(err, "Error")
+
+	if !cmd.Flags().Changed("quality") {
+		if method == "lossyavif" || (method == "" && len(ops) > 0 && ops[0].Format == "avif") {
+			quality = 55
+		}
+	}
+
 	speed, err := cmd.Flags().GetInt("speed")
 	utils.HandleError(err, "Error")
 

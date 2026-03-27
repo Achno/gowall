@@ -1,6 +1,7 @@
 package avif
 
 import (
+	"fmt"
 	"image"
 	"io"
 
@@ -22,9 +23,12 @@ func NewLossyAvifStrategy(quality int, speed int) (*LossyAvifStrategy, error) {
 }
 
 func (l *LossyAvifStrategy) Compress(img image.Image) (image.Image, types.ImageMetadata, error) {
+	fmt.Println(l.Quality)
 	avifOptions := avifpkg.Options{
-		Quality: l.Quality,
-		Speed:   l.Speed,
+		Quality:           l.Quality,
+		QualityAlpha:      l.Quality,
+		Speed:             l.Speed,
+		ChromaSubsampling: image.YCbCrSubsampleRatio420,
 	}
 
 	encoderFunc := func(w io.Writer, img image.Image) error {

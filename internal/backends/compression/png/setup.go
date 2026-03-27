@@ -2,7 +2,6 @@ package png
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 
@@ -12,20 +11,6 @@ import (
 )
 
 func SetupPngquant() error {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("while getting home directory : %w", err)
-	}
-	// Choose archive extension based on OS to match the actual download format
-	archiveExt := ".zip"
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		archiveExt = ".tar.bz2"
-	case "windows":
-		archiveExt = ".zip"
-	}
-
-	archivePath := filepath.Join(homeDir, "pngquant"+archiveExt)
 	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "compression", "pngquant")
 
 	urls := map[string]string{
@@ -41,30 +26,9 @@ func SetupPngquant() error {
 
 	logger.Print(utils.BlueColor + " ➜ Downloading pngquant binary, sit back and relax" + utils.ResetColor)
 
-	err = utils.DownloadUrl(url, archivePath)
-	if err != nil {
-		return fmt.Errorf("while downloading pngquant : %v", err)
+	if err := utils.DownloadAndExtract(url, destFolder, config.PngquantBinaryName, true); err != nil {
+		return fmt.Errorf("setup pngquant: %w", err)
 	}
-
-	// create ~/Pictures/gowall/compression/pngquant
-	err = os.MkdirAll(destFolder, 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create folder: %v", err)
-	}
-	logger.Print(utils.BlueColor + " ➜ Folder created" + utils.ResetColor)
-
-	// Extract based on archive format
-	err = utils.ExtractArchiveBinary(archivePath, destFolder, config.PngquantBinaryName)
-	if err != nil {
-		return fmt.Errorf("while extracting archive : %v", err)
-	}
-
-	// Cleanup
-	err = os.Remove(archivePath)
-	if err != nil {
-		return fmt.Errorf("while cleaning up : %v", err)
-	}
-	logger.Print(utils.BlueColor + " ➜ Cleaning up" + utils.ResetColor)
 
 	logger.Print(utils.BlueColor + " ➜ Process complete. Pngquant setup" + utils.ResetColor)
 	return nil

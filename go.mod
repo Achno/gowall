@@ -16,6 +16,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/synoptiq/go-fluxus v1.1.1
 	github.com/theckman/yacspin v0.13.12
+	github.com/yalue/onnxruntime_go v1.21.0
 	golang.org/x/image v0.33.0
 	golang.org/x/term v0.30.0
 	golang.org/x/time v0.11.0

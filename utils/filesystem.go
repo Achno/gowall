@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/bzip2"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -66,130 +67,229 @@ func FindBinary(binaryNames map[string]string, destFolder string) (string, error
 	return binaryPath, nil
 }
 
-func ExtractArchiveBinary(src, dest, binary string) error {
-	if strings.HasSuffix(strings.ToLower(src), ".tar.bz2") {
-		return extractTarBz2Binary(src, dest, binary)
-	} else if strings.HasSuffix(strings.ToLower(src), ".zip") {
-		return extractZipBinary(src, dest, binary)
+// safeExtractPath validates and returns a safe extraction path, preventing zip-slip attacks.
+func safeExtractPath(dest, name string) (string, error) {
+	targetPath := filepath.Join(dest, name)
+	cleanDest := filepath.Clean(dest) + string(os.PathSeparator)
+	cleanTarget := filepath.Clean(targetPath)
+
+	if cleanTarget != filepath.Clean(dest) && !strings.HasPrefix(cleanTarget, cleanDest) {
+		return "", fmt.Errorf("archive entry %q escapes destination %q", name, dest)
 	}
-	return fmt.Errorf("unsupported format")
+
+	return cleanTarget, nil
 }
 
-// extractZipBinary extracts the zip file containing a binary to the dest folder and gives it exec permissions.
-func extractZipBinary(src, dest, binary string) error {
+// ExtractZip extracts a zip archive to the destination directory.
+func ExtractZip(src, dest string) error {
 	reader, err := zip.OpenReader(src)
 	if err != nil {
-		return fmt.Errorf("failed to open zip file: %v", err)
+		return fmt.Errorf("open zip archive: %w", err)
 	}
 	defer reader.Close()
 
-	// Create the structure. Create all the directories,subdirectories and blank files.
-	// then just io.Copy() all the content from the zip to the structure and lastly,
-	// give chmod permissions to the binary for the upscaler.
-
 	for _, file := range reader.File {
+		targetPath, err := safeExtractPath(dest, file.Name)
+		if err != nil {
+			return err
+		}
 
-		filePath := filepath.Join(dest, file.Name)
-
-		// for every dir in the zip create its directory
 		if file.FileInfo().IsDir() {
-
-			err := os.MkdirAll(filePath, 0755)
-			if err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
+			if err := os.MkdirAll(targetPath, 0o755); err != nil {
+				return fmt.Errorf("create directory %q: %w", targetPath, err)
 			}
+			continue
+		}
 
-		} else {
+		if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
+			return fmt.Errorf("create directory for %q: %w", targetPath, err)
+		}
 
-			// create the nested directories
-			err := os.MkdirAll(filepath.Dir(filePath), 0755)
-			if err != nil {
-				return fmt.Errorf("failed to create directory for file: %v", err)
-			}
-
-			// open the file for writing only,create it if it doesn't exist,truncate length to 0 if exists
-			outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
-			if err != nil {
-				return fmt.Errorf("failed to create file: %v", err)
-			}
-
-			rc, err := file.Open()
-			if err != nil {
-				return fmt.Errorf("failed to open zip file entry: %v", err)
-			}
-
-			_, err = io.Copy(outFile, rc)
-			outFile.Close()
-			rc.Close()
-			if err != nil {
-				return fmt.Errorf("failed to extract file: %v", err)
-			}
-
-			// give the binary execute permissions
-			targetFileName := binary
-			if filepath.Base(file.Name) == targetFileName {
-				err := os.Chmod(filePath, file.Mode()|0755)
-				if err != nil {
-					return fmt.Errorf("failed to chmod file: %v", err)
-				}
-			}
+		if err := extractZipFile(file, targetPath); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func extractTarBz2Binary(src, dest, binary string) error {
+func extractZipFile(file *zip.File, targetPath string) error {
+	srcFile, err := file.Open()
+	if err != nil {
+		return fmt.Errorf("open zip member %q: %w", file.Name, err)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, file.Mode())
+	if err != nil {
+		return fmt.Errorf("create extracted file %q: %w", targetPath, err)
+	}
+	defer dstFile.Close()
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		return fmt.Errorf("extract %q: %w", file.Name, err)
+	}
+
+	return nil
+}
+
+// ExtractTgz extracts a .tar.gz or .tgz archive to the destination directory.
+func ExtractTgz(src, dest string) error {
 	file, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
+		return fmt.Errorf("open tar.gz archive: %w", err)
+	}
+	defer file.Close()
+
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("open gzip stream: %w", err)
+	}
+	defer gzipReader.Close()
+
+	return extractTar(tar.NewReader(gzipReader), dest)
+}
+
+// ExtractBz2 extracts a .tar.bz2 archive to the destination directory.
+func ExtractBz2(src, dest string) error {
+	file, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open tar.bz2 archive: %w", err)
 	}
 	defer file.Close()
 
 	bz2Reader := bzip2.NewReader(file)
-	tarReader := tar.NewReader(bz2Reader)
+	return extractTar(tar.NewReader(bz2Reader), dest)
+}
 
+// extractTar is the shared tar extraction logic for both tgz and bz2.
+func extractTar(tarReader *tar.Reader, dest string) error {
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to read tar header: %v", err)
+			return fmt.Errorf("read tar entry: %w", err)
 		}
 
-		filePath := filepath.Join(dest, header.Name)
-		// for every dir in the tar create its directory
-		if header.Typeflag == tar.TypeDir {
-			err := os.MkdirAll(filePath, 0755)
-			if err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
+		targetPath, err := safeExtractPath(dest, header.Name)
+		if err != nil {
+			return err
+		}
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(targetPath, 0o755); err != nil {
+				return fmt.Errorf("create directory %q: %w", targetPath, err)
 			}
-		} else if header.Typeflag == tar.TypeReg {
-			// create the nested directories
-			err := os.MkdirAll(filepath.Dir(filePath), 0755)
-			if err != nil {
-				return fmt.Errorf("failed to create directory for file: %v", err)
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
+				return fmt.Errorf("create directory for %q: %w", targetPath, err)
 			}
-			// open the file for writing only,create it if it doesn't exist,truncate length to 0 if exists
-			outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
-			if err != nil {
-				return fmt.Errorf("failed to create file: %v", err)
-			}
-			_, err = io.Copy(outFile, tarReader)
-			outFile.Close()
-			if err != nil {
-				return fmt.Errorf("failed to extract file: %v", err)
-			}
-			// give the binary execute permissions
-			targetFileName := binary
-			if filepath.Base(header.Name) == targetFileName {
-				err := os.Chmod(filePath, os.FileMode(header.Mode)|0755)
-				if err != nil {
-					return fmt.Errorf("failed to chmod file: %v", err)
-				}
+
+			if err := extractTarFile(tarReader, targetPath, header.Mode); err != nil {
+				return err
 			}
 		}
 	}
+
 	return nil
+}
+
+func extractTarFile(tarReader *tar.Reader, targetPath string, mode int64) error {
+	dstFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(mode))
+	if err != nil {
+		return fmt.Errorf("create extracted file %q: %w", targetPath, err)
+	}
+	defer dstFile.Close()
+
+	if _, err := io.Copy(dstFile, tarReader); err != nil {
+		return fmt.Errorf("extract %q: %w", targetPath, err)
+	}
+
+	return nil
+}
+
+// ExtractArchive auto-detects the archive format and extracts it.
+func ExtractArchive(src, dest string) error {
+	lower := strings.ToLower(src)
+	switch {
+	case strings.HasSuffix(lower, ".zip"):
+		return ExtractZip(src, dest)
+	case strings.HasSuffix(lower, ".tgz"), strings.HasSuffix(lower, ".tar.gz"):
+		return ExtractTgz(src, dest)
+	case strings.HasSuffix(lower, ".tar.bz2"):
+		return ExtractBz2(src, dest)
+	default:
+		return fmt.Errorf("unsupported archive format: %s", src)
+	}
+}
+
+// GiveExecutePerms adds execute permissions to a file.
+func GiveExecutePerms(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("stat file %q: %w", path, err)
+	}
+	return os.Chmod(path, info.Mode()|0755)
+}
+
+// ExtractBinary extracts an archive and gives execute permissions to the specified binary.
+func ExtractBinary(src, dest, binaryName string) error {
+	if err := ExtractArchive(src, dest); err != nil {
+		return err
+	}
+
+	// Find and chmod the binary
+	return filepath.WalkDir(dest, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && filepath.Base(path) == binaryName {
+			return GiveExecutePerms(path)
+		}
+		return nil
+	})
+}
+
+// DownloadAndExtract downloads an archive from url, extracts it to dest.
+// If targetName is specified, only that file is kept (others are removed).
+// If giveExec is true, execute permissions are added to the target file.
+// The archive is cleaned up after extraction.
+func DownloadAndExtract(url, dest, targetName string, giveExec bool) error {
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("create destination folder: %w", err)
+	}
+
+	// Determine archive path from URL
+	archiveName := filepath.Base(url)
+	archivePath := filepath.Join(dest, archiveName)
+
+	if err := DownloadUrl(url, archivePath); err != nil {
+		return fmt.Errorf("download: %w", err)
+	}
+	defer os.Remove(archivePath)
+
+	if err := ExtractArchive(archivePath, dest); err != nil {
+		return err
+	}
+
+	if targetName != "" && giveExec {
+		return findAndChmod(dest, targetName)
+	}
+
+	return nil
+}
+
+func findAndChmod(dest, targetName string) error {
+	return filepath.WalkDir(dest, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && filepath.Base(path) == targetName {
+			return GiveExecutePerms(path)
+		}
+		return nil
+	})
 }

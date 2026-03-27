@@ -8,11 +8,11 @@ import (
 
 type DownloadOptions struct {
 	DestPath string
-	Os       string
 }
 
 type Model interface {
 	Name() string
+	DownloadURL() string
 	Download(DownloadOptions) error
 	Normalize(img image.Image) ([]ort.Value, error)
 	Predict(img image.Image, outputs []ort.Value) ([]image.Image, error)

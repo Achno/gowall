@@ -17,6 +17,7 @@ type BackgroundProcessor struct {
 func GetBgStrategyNames() []string {
 	strategies := []string{
 		"kmeans",
+		"u2net",
 	}
 
 	slices.Sort(strategies)

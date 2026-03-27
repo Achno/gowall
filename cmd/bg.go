@@ -49,6 +49,9 @@ func BuildBgCmd() *cobra.Command {
 }
 
 func RunBgCmd(cmd *cobra.Command, args []string) {
+	// Background removal always outputs PNG to preserve transparency
+	shared.Format = "png"
+
 	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
@@ -74,6 +77,11 @@ func RunBgCmd(cmd *cobra.Command, args []string) {
 			SampleRate:  sampleRate,
 			NumRoutines: numRoutines,
 		})
+	case "u2net":
+		u2netStrategy, err := bgremoval.NewU2NetStrategy()
+		utils.HandleError(err, "Error initializing U2Net")
+		defer u2netStrategy.Close()
+		strategy = u2netStrategy
 	default:
 		utils.HandleError(fmt.Errorf("invalid background removal method %q", method), "Error")
 	}

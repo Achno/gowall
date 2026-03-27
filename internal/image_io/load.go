@@ -10,6 +10,7 @@ import (
 	"os"
 
 	webp "github.com/chai2010/webp"
+	avif "github.com/gen2brain/avif"
 	_ "golang.org/x/image/webp"
 )
 
@@ -29,6 +30,9 @@ var encoders = map[string]func(file *os.File, img image.Image) error{
 	},
 	"webp": func(file *os.File, img image.Image) error {
 		return webp.Encode(file, img, nil)
+	},
+	"avif": func(file *os.File, img image.Image) error {
+		return avif.Encode(file, img)
 	},
 }
 

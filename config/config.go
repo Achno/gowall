@@ -14,6 +14,7 @@ var SupportedImageExtensions = map[string]bool{
 	".jpeg": true,
 	".jpg":  true,
 	".webp": true,
+	".avif": true,
 }
 
 var SupportedTextExtensions = map[string]bool{

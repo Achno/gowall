@@ -4,6 +4,8 @@ Copyright © 2024 Achno <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -13,6 +15,8 @@ import (
 )
 
 func BuildBgCmd() *cobra.Command {
+	methods := image.GetBgStrategyNames()
+
 	cmd := &cobra.Command{
 		Use:   "bg [INPUT]",
 		Short: "Removes the background of the image",
@@ -25,12 +29,14 @@ func BuildBgCmd() *cobra.Command {
 
 	flags := cmd.Flags()
 	var (
+		method      string
 		maxIter     int
 		convergence float64
 		sampleRate  float64
 		numRoutines int
 	)
 
+	flags.StringVarP(&method, "method", "m", "kmeans", "Background removal method. Available methods: "+fmt.Sprint(methods))
 	flags.IntVarP(&maxIter, "iterations", "i", 100, "Maximum iterations for background removal")
 	flags.IntVarP(&numRoutines, "routines", "r", 4, "Number of goroutines to use")
 	flags.Float64VarP(&convergence, "conv", "c", 0.001, "Convergence threshold")
@@ -42,9 +48,14 @@ func BuildBgCmd() *cobra.Command {
 }
 
 func RunBgCmd(cmd *cobra.Command, args []string) {
+	// Force png as the output for transparency for now
+	//TODO : figure out why jpeg,webp are not preserving transparency
+	shared.Format = "png"
 	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
+	method, err := cmd.Flags().GetString("method")
+	utils.HandleError(err, "Error")
 	maxIter, err := cmd.Flags().GetInt("iterations")
 	utils.HandleError(err, "Error")
 	numRoutines, err := cmd.Flags().GetInt("routines")
@@ -56,13 +67,13 @@ func RunBgCmd(cmd *cobra.Command, args []string) {
 
 	logger.Print("Removing background...")
 
-	processor := &image.BackgroundProcessor{}
-	processor.SetOptions(
-		image.WithConvergence(convergence),
-		image.WithMaxIter(maxIter),
-		image.WithNumRoutines(numRoutines),
-		image.WithSampleRate(sampleRate),
-	)
+	strategy, cleanup, err := image.GetBgStrategy(method, maxIter, convergence, sampleRate, numRoutines)
+	utils.HandleError(err, "Error")
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	processor := image.NewBackgroundProcessor(strategy)
 
 	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
 		Theme:      "",
@@ -80,6 +91,15 @@ func RunBgCmd(cmd *cobra.Command, args []string) {
 func ValidateParseBgCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, args []string) error {
 	if err := validateInput(flags, args); err != nil {
 		return err
+	}
+
+	method, err := cmd.Flags().GetString("method")
+	if err != nil {
+		return err
+	}
+
+	if !image.IsValidBgStrategy(method) {
+		return fmt.Errorf("invalid background removal method %q", method)
 	}
 
 	return nil

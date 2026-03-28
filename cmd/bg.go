@@ -82,6 +82,11 @@ func RunBgCmd(cmd *cobra.Command, args []string) {
 		utils.HandleError(err, "Error initializing U2Net")
 		defer u2netStrategy.Close()
 		strategy = u2netStrategy
+	case "bria-rmbg":
+		briaRmBgStrategy, err := bgremoval.NewBriaRmBgStrategy()
+		utils.HandleError(err, "Error initializing Bria RMBG")
+		defer briaRmBgStrategy.Close()
+		strategy = briaRmBgStrategy
 	default:
 		utils.HandleError(fmt.Errorf("invalid background removal method %q", method), "Error")
 	}

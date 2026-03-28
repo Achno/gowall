@@ -18,6 +18,7 @@ func GetBgStrategyNames() []string {
 	strategies := []string{
 		"kmeans",
 		"u2net",
+		"bria-rmbg",
 	}
 
 	slices.Sort(strategies)

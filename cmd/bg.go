@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/Achno/gowall/config"
-	bgremoval "github.com/Achno/gowall/internal/backends/bgRemoval"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -49,9 +48,9 @@ func BuildBgCmd() *cobra.Command {
 }
 
 func RunBgCmd(cmd *cobra.Command, args []string) {
-	// Background removal always outputs PNG to preserve transparency
+	// Force png as the output for transparency for now
+	//TODO : figure out why jpeg,webp are not preserving transparency
 	shared.Format = "png"
-
 	imageOps, err := imageio.DetermineImageOperations(shared, args, cmd)
 	utils.HandleError(err, "Error")
 
@@ -68,27 +67,10 @@ func RunBgCmd(cmd *cobra.Command, args []string) {
 
 	logger.Print("Removing background...")
 
-	var strategy bgremoval.BgRemovalStrategy
-	switch method {
-	case "kmeans":
-		strategy = bgremoval.NewKMeansStrategy(bgremoval.KMeansOptions{
-			MaxIter:     maxIter,
-			Convergence: convergence,
-			SampleRate:  sampleRate,
-			NumRoutines: numRoutines,
-		})
-	case "u2net":
-		u2netStrategy, err := bgremoval.NewU2NetStrategy()
-		utils.HandleError(err, "Error initializing U2Net")
-		defer u2netStrategy.Close()
-		strategy = u2netStrategy
-	case "bria-rmbg":
-		briaRmBgStrategy, err := bgremoval.NewBriaRmBgStrategy()
-		utils.HandleError(err, "Error initializing Bria RMBG")
-		defer briaRmBgStrategy.Close()
-		strategy = briaRmBgStrategy
-	default:
-		utils.HandleError(fmt.Errorf("invalid background removal method %q", method), "Error")
+	strategy, cleanup, err := image.GetBgStrategy(method, maxIter, convergence, sampleRate, numRoutines)
+	utils.HandleError(err, "Error")
+	if cleanup != nil {
+		defer cleanup()
 	}
 
 	processor := image.NewBackgroundProcessor(strategy)

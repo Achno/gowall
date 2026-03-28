@@ -43,6 +43,7 @@ func (s *U2NetStrategy) Close() error {
 	return nil
 }
 
+// TODO: move this to image.go
 // applyMask applies a grayscale mask to an image, setting alpha based on mask values
 // The mask should have high values (white) for foreground and low values (black) for background
 func applyMask(img image.Image, mask image.Image) image.Image {

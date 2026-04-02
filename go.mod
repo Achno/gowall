@@ -4,7 +4,6 @@ go 1.24.0
 
 require (
 	dario.cat/mergo v1.0.2
-	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/chai2010/webp v1.4.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/gen2brain/avif v0.4.4
@@ -28,7 +27,6 @@ require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
-	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

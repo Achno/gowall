@@ -1,59 +1,69 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/Achno/gowall/config"
-	"github.com/PuerkitoBio/goquery"
 )
 
-func GetWallpaperOfTheDay() (string, error) {
-	url := config.WallOfTheDayUrl
+type redditListing struct {
+	Data struct {
+		Children []struct {
+			Data redditPost `json:"data"`
+		} `json:"children"`
+	} `json:"data"`
+}
 
-	// http.Get() doesn't send a User-Agent header, Reddit blocks it with a 429
-	// so we build the request manually so we can add one
-	req, err := http.NewRequest("GET", url, nil)
+type redditPost struct {
+	PostHint            string `json:"post_hint"`
+	URL                 string `json:"url"`
+	URLOverriddenByDest string `json:"url_overridden_by_dest"`
+	Over18              bool   `json:"over_18"`
+	IsVideo             bool   `json:"is_video"`
+}
+
+func GetWallpaperOfTheDay() (string, error) {
+	req, err := http.NewRequest("GET", config.WallOfTheDayUrl+".json?t=day&limit=10&raw_json=1", nil)
 	if err != nil {
 		return "", err
 	}
 
-	// Reddit blocks requests that don't look like they're coming from a browser
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; gowall/1.0)")
+	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
+	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("request failed with status code: %d %s", response.StatusCode, http.StatusText(response.StatusCode))
 	}
 
-	defer response.Body.Close()
-
-	// Parse the html and select the top wallpaper of the day
-	doc, err := goquery.NewDocumentFromReader(response.Body)
-	if err != nil {
+	var listing redditListing
+	if err := json.NewDecoder(response.Body).Decode(&listing); err != nil {
 		return "", err
 	}
 
-	var imageUrls []string
+	for _, child := range listing.Data.Children {
+		post := child.Data
 
-	doc.Find("img.i18n-post-media-img").Each(func(index int, selection *goquery.Selection) {
-		imgUrl, exists := selection.Attr("src")
-
-		if exists {
-			imageUrls = append(imageUrls, imgUrl)
+		if post.Over18 || post.IsVideo || post.PostHint != "image" {
+			continue
 		}
-	})
 
-	// if no posts were found
-	if len(imageUrls) == 0 {
-		return "", fmt.Errorf("there wasn't a top wallpaper today :( check later")
+		if post.URLOverriddenByDest != "" {
+			return post.URLOverriddenByDest, nil
+		}
+
+		if post.URL != "" {
+			return post.URL, nil
+		}
 	}
 
-	// we return the second url : example https://i.redd.it/xhupkp01d5id1.png with correct dimensions instead of the preview img
-	return imageUrls[1], nil
+	return "", fmt.Errorf("reddit returned no image posts in the top wallpaper feed")
 }

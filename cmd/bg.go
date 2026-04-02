@@ -36,7 +36,7 @@ func BuildBgCmd() *cobra.Command {
 		numRoutines int
 	)
 
-	flags.StringVarP(&method, "method", "m", "kmeans", "Background removal method. Available methods: "+fmt.Sprint(methods))
+	flags.StringVarP(&method, "method", "m", "u2net", "Background removal method. Available methods: "+fmt.Sprint(methods))
 	flags.IntVarP(&maxIter, "iterations", "i", 100, "Maximum iterations for background removal")
 	flags.IntVarP(&numRoutines, "routines", "r", 4, "Number of goroutines to use")
 	flags.Float64VarP(&convergence, "conv", "c", 0.001, "Convergence threshold")
@@ -104,15 +104,29 @@ func ValidateParseBgCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, 
 		return fmt.Errorf("invalid background removal method %q", method)
 	}
 
-	if method == "bria-rmbg" && isInputBatch(flags) {
-		prompt := fmt.Sprintf(
-			`%s ◈ Buddy are you sure you want to run --dir or --batch with bria-rmbg? Dont be surprised when your CPU spikes to 100%% and your screen freezes in the next 3 seconds when you select 'y'.I recommend just using it on one image at a time. %s`,
-			utils.BlueColor,
-			utils.ResetColor,
-		)
-		if !utils.Confirm(prompt) {
-			return fmt.Errorf("background removal declined by user")
+	if !imageio.IsStdoutOutput(flags, args) {
+		switch method {
+		case "bria-rmbg":
+			var prompt string
+			if isInputBatch(flags) {
+				prompt = fmt.Sprintf(
+					`%s ◈ Buddy are you sure you want to run --dir or --batch with bria-rmbg? Dont be surprised when your CPU spikes to 100%% and your screen freezes in the next 3 seconds when you select 'y'.I recommend just using it on one image at a time, because i doubt have enough memory for this, except if you have 32GB or 5/16GB %s`,
+					utils.BlueColor,
+					utils.ResetColor,
+				)
+			} else {
+				prompt = fmt.Sprintf(
+					`%s ◈ Buddy are you sure you have like 7GB of ram free to do this or will your system freeze? If you are feeling dangerous press 'y' %s`,
+					utils.BlueColor,
+					utils.ResetColor,
+				)
+			}
+
+			if !utils.Confirm(prompt) {
+				return fmt.Errorf("background removal declined by user")
+			}
 		}
+
 	}
 
 	return nil

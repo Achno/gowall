@@ -42,6 +42,8 @@ func BuildBgCmd() *cobra.Command {
 	flags.Float64VarP(&convergence, "conv", "c", 0.001, "Convergence threshold")
 	flags.Float64VarP(&sampleRate, "sRate", "s", 0.5, "Sample rate")
 
+	cmd.RegisterFlagCompletionFunc("method", bgMethodCompletion)
+
 	addGlobalFlags(cmd)
 
 	return cmd
@@ -114,6 +116,10 @@ func ValidateParseBgCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, 
 	}
 
 	return nil
+}
+
+func bgMethodCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return image.GetBgStrategyNames(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

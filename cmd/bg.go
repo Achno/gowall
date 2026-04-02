@@ -102,6 +102,17 @@ func ValidateParseBgCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags, 
 		return fmt.Errorf("invalid background removal method %q", method)
 	}
 
+	if method == "bria-rmbg" && isInputBatch(flags) {
+		prompt := fmt.Sprintf(
+			`%s ◈ Buddy are you sure you want to run --dir or --batch with bria-rmbg? Dont be surprised when your CPU spikes to 100%% and your screen freezes in the next 3 seconds when you select 'y'.I recommend just using it on one image at a time. %s`,
+			utils.BlueColor,
+			utils.ResetColor,
+		)
+		if !utils.Confirm(prompt) {
+			return fmt.Errorf("background removal declined by user")
+		}
+	}
+
 	return nil
 }
 

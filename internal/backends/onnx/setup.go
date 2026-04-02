@@ -5,17 +5,15 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
+	"github.com/Achno/gowall/config"
 	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/utils"
+	ort "github.com/yalue/onnxruntime_go"
 )
 
-const onnxRuntimeVersion = "1.24.4"
-
-func OnnxRuntimeFolder() string {
-	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, ".u2net")
-}
+var onnxRuntimeVersion = config.OnnxRuntimeVersion
 
 // SharedLibraryName returns the platform-specific shared library name
 func SharedLibraryName() string {
@@ -29,6 +27,74 @@ func SharedLibraryName() string {
 	default:
 		return ""
 	}
+}
+
+func ensureRuntimeAvailable() (string, error) {
+	runtimePath, err := CheckOnnxRuntimeInstalled()
+	if err == nil {
+		return runtimePath, nil
+	}
+
+	prompt := fmt.Sprintf("%s ◈ ONNX Runtime is not installed. Would you like to set it up?%s", utils.BlueColor, utils.ResetColor)
+	if !utils.Confirm(prompt) {
+		return "", fmt.Errorf("onnx runtime download declined")
+	}
+
+	if err := SetupOnnxRuntime(); err != nil {
+		return "", err
+	}
+
+	return CheckOnnxRuntimeInstalled()
+}
+
+func ensureEnvironment(libraryPath string) error {
+	ort.SetSharedLibraryPath(libraryPath)
+	if err := ort.InitializeEnvironment(); err != nil {
+		return fmt.Errorf("initialize onnxruntime: %w", err)
+	}
+
+	return nil
+}
+
+func ensureModelAvailable(model Model) (string, error) {
+	baseDir := config.OnnxModelFolderPath
+	modelPath := modelCachePath(baseDir, model)
+
+	if _, err := os.Stat(modelPath); err == nil {
+		return modelPath, nil
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("check model path %q: %w", modelPath, err)
+	}
+
+	prompt := fmt.Sprintf("%s ◈ Model %q is missing. Download it?%s", utils.BlueColor, model.Name(), utils.ResetColor)
+	if !utils.Confirm(prompt) {
+		return "", fmt.Errorf("model download declined for %q", model.Name())
+	}
+
+	// Get file size for progress info
+	size := utils.GetRemoteFileSize(model.DownloadURL())
+	sizeInfo := ""
+	if size != "" {
+		sizeInfo = fmt.Sprintf(" size: %s,", size)
+	}
+
+	logger.Print(fmt.Sprintf("%s ➜ Downloading %s,%s sit back and relax%s", utils.BlueColor, model.Name(), sizeInfo, utils.ResetColor))
+
+	if err := os.MkdirAll(filepath.Dir(modelPath), 0o755); err != nil {
+		return "", fmt.Errorf("create model directory: %w", err)
+	}
+
+	if err := model.Download(DownloadOptions{DestPath: modelPath}); err != nil {
+		return "", fmt.Errorf("download model %q: %w", model.Name(), err)
+	}
+
+	if _, err := os.Stat(modelPath); err != nil {
+		return "", fmt.Errorf("model %q was not written to %s: %w", model.Name(), modelPath, err)
+	}
+
+	logger.Print(fmt.Sprintf("%s ➜ Process complete. Model %s downloaded%s", utils.BlueColor, model.Name(), utils.ResetColor))
+
+	return modelPath, nil
 }
 
 func runtimeDownloadURL() (string, error) {
@@ -47,7 +113,7 @@ func runtimeDownloadURL() (string, error) {
 
 // SetupOnnxRuntime downloads and extracts only the ONNX runtime shared library
 func SetupOnnxRuntime() error {
-	destFolder := OnnxRuntimeFolder()
+	destFolder := config.OnnxRuntimeFolderPath
 
 	url, err := runtimeDownloadURL()
 	if err != nil {
@@ -89,7 +155,7 @@ func SetupOnnxRuntime() error {
 
 // CheckOnnxRuntimeInstalled checks if the ONNX runtime shared library is available
 func CheckOnnxRuntimeInstalled() (string, error) {
-	destFolder := OnnxRuntimeFolder()
+	destFolder := config.OnnxRuntimeFolderPath
 	libName := SharedLibraryName()
 
 	if libName == "" {
@@ -107,4 +173,41 @@ func CheckOnnxRuntimeInstalled() (string, error) {
 	}
 
 	return libPath, nil
+}
+
+// modelCachePath returns ~/.u2net/<model>.onnx
+func modelCachePath(baseDir string, model Model) string {
+	name := strings.TrimSpace(model.Name())
+	fileName := name
+	if filepath.Ext(fileName) == "" {
+		fileName += ".onnx"
+	}
+	return filepath.Join(baseDir, fileName)
+}
+
+func namesFromIO(infos []ort.InputOutputInfo) []string {
+	names := make([]string, 0, len(infos))
+	for _, info := range infos {
+		names = append(names, info.Name)
+	}
+	return names
+}
+
+func cloneIOInfo(infos []ort.InputOutputInfo) []ort.InputOutputInfo {
+	if len(infos) == 0 {
+		return nil
+	}
+
+	cloned := make([]ort.InputOutputInfo, len(infos))
+	copy(cloned, infos)
+	return cloned
+}
+
+func destroyValues(values []ort.Value) {
+	for _, value := range values {
+		if value == nil {
+			continue
+		}
+		value.Destroy()
+	}
 }

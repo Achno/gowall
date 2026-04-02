@@ -3,13 +3,7 @@ package onnx
 import (
 	"fmt"
 	"image"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 
-	"github.com/Achno/gowall/internal/logger"
-	"github.com/Achno/gowall/utils"
 	ort "github.com/yalue/onnxruntime_go"
 )
 
@@ -19,16 +13,8 @@ type Session struct {
 	runtimePath string
 	inputs      []ort.InputOutputInfo
 	outputs     []ort.InputOutputInfo
-	inputNames  []string
-	outputNames []string
 	session     *ort.DynamicAdvancedSession
 }
-
-var (
-	envMu          sync.Mutex
-	envInitialized bool
-	envLibraryPath string
-)
 
 func NewSession(model Model) (*Session, error) {
 	if model == nil {
@@ -74,8 +60,6 @@ func NewSession(model Model) (*Session, error) {
 		runtimePath: runtimePath,
 		inputs:      cloneIOInfo(inputs),
 		outputs:     cloneIOInfo(outputs),
-		inputNames:  append([]string(nil), inputNames...),
-		outputNames: append([]string(nil), outputNames...),
 		session:     dynamicSession,
 	}, nil
 }
@@ -101,7 +85,7 @@ func (s *Session) Predict(img image.Image) ([]image.Image, error) {
 	}
 	defer destroyValues(inputs)
 
-	outputs := make([]ort.Value, len(s.outputNames))
+	outputs := make([]ort.Value, len(s.outputs))
 	if err := s.Run(inputs, outputs); err != nil {
 		destroyValues(outputs)
 		return nil, fmt.Errorf("run session: %w", err)
@@ -122,162 +106,4 @@ func (s *Session) Run(inputs, outputs []ort.Value) error {
 	}
 
 	return s.session.Run(inputs, outputs)
-}
-
-func (s *Session) InputInfo() []ort.InputOutputInfo {
-	return cloneIOInfo(s.inputs)
-}
-
-func (s *Session) OutputInfo() []ort.InputOutputInfo {
-	return cloneIOInfo(s.outputs)
-}
-
-func (s *Session) InputNames() []string {
-	return append([]string(nil), s.inputNames...)
-}
-
-func (s *Session) OutputNames() []string {
-	return append([]string(nil), s.outputNames...)
-}
-
-func (s *Session) ModelPath() string {
-	return s.modelPath
-}
-
-func (s *Session) RuntimePath() string {
-	return s.runtimePath
-}
-
-func Shutdown() error {
-	envMu.Lock()
-	defer envMu.Unlock()
-
-	if !envInitialized {
-		return nil
-	}
-
-	if err := ort.DestroyEnvironment(); err != nil {
-		return err
-	}
-
-	envInitialized = false
-	envLibraryPath = ""
-	return nil
-}
-
-func ensureRuntimeAvailable() (string, error) {
-	runtimePath, err := CheckOnnxRuntimeInstalled()
-	if err == nil {
-		return runtimePath, nil
-	}
-
-	prompt := fmt.Sprintf("%s ◈ ONNX Runtime is not installed. Would you like to set it up?%s", utils.BlueColor, utils.ResetColor)
-	if !utils.Confirm(prompt) {
-		return "", fmt.Errorf("onnx runtime download declined")
-	}
-
-	if err := SetupOnnxRuntime(); err != nil {
-		return "", err
-	}
-
-	return CheckOnnxRuntimeInstalled()
-}
-
-func ensureEnvironment(libraryPath string) error {
-	envMu.Lock()
-	defer envMu.Unlock()
-
-	if envInitialized {
-		if envLibraryPath != libraryPath {
-			return fmt.Errorf("onnx runtime already initialized with %q", envLibraryPath)
-		}
-		return nil
-	}
-
-	ort.SetSharedLibraryPath(libraryPath)
-	if err := ort.InitializeEnvironment(); err != nil {
-		return fmt.Errorf("initialize onnxruntime: %w", err)
-	}
-
-	envInitialized = true
-	envLibraryPath = libraryPath
-	return nil
-}
-
-func ensureModelAvailable(model Model) (string, error) {
-	baseDir := OnnxRuntimeFolder()
-	modelPath := modelCachePath(baseDir, model)
-
-	if _, err := os.Stat(modelPath); err == nil {
-		return modelPath, nil
-	} else if !os.IsNotExist(err) {
-		return "", fmt.Errorf("check model path %q: %w", modelPath, err)
-	}
-
-	prompt := fmt.Sprintf("%s ◈ Model %q is missing. Download it?%s", utils.BlueColor, model.Name(), utils.ResetColor)
-	if !utils.Confirm(prompt) {
-		return "", fmt.Errorf("model download declined for %q", model.Name())
-	}
-
-	// Get file size for progress info
-	size := utils.GetRemoteFileSize(model.DownloadURL())
-	sizeInfo := ""
-	if size != "" {
-		sizeInfo = fmt.Sprintf(" size: %s,", size)
-	}
-
-	logger.Print(fmt.Sprintf("%s ➜ Downloading %s,%s sit back and relax%s", utils.BlueColor, model.Name(), sizeInfo, utils.ResetColor))
-
-	if err := os.MkdirAll(filepath.Dir(modelPath), 0o755); err != nil {
-		return "", fmt.Errorf("create model directory: %w", err)
-	}
-
-	if err := model.Download(DownloadOptions{DestPath: modelPath}); err != nil {
-		return "", fmt.Errorf("download model %q: %w", model.Name(), err)
-	}
-
-	if _, err := os.Stat(modelPath); err != nil {
-		return "", fmt.Errorf("model %q was not written to %s: %w", model.Name(), modelPath, err)
-	}
-
-	logger.Print(fmt.Sprintf("%s ➜ Process complete. Model %s downloaded%s", utils.BlueColor, model.Name(), utils.ResetColor))
-
-	return modelPath, nil
-}
-
-// modelCachePath returns ~/.u2net/<model>.onnx
-func modelCachePath(baseDir string, model Model) string {
-	name := strings.TrimSpace(model.Name())
-	fileName := name
-	if filepath.Ext(fileName) == "" {
-		fileName += ".onnx"
-	}
-	return filepath.Join(baseDir, fileName)
-}
-
-func namesFromIO(infos []ort.InputOutputInfo) []string {
-	names := make([]string, 0, len(infos))
-	for _, info := range infos {
-		names = append(names, info.Name)
-	}
-	return names
-}
-
-func cloneIOInfo(infos []ort.InputOutputInfo) []ort.InputOutputInfo {
-	if len(infos) == 0 {
-		return nil
-	}
-
-	cloned := make([]ort.InputOutputInfo, len(infos))
-	copy(cloned, infos)
-	return cloned
-}
-
-func destroyValues(values []ort.Value) {
-	for _, value := range values {
-		if value == nil {
-			continue
-		}
-		value.Destroy()
-	}
 }

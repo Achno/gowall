@@ -1,0 +1,16 @@
+name: Feature Request
+description: Suggest a new feature 
+labels: ["Feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What would you like?
+      placeholder: Describe the feature you'd like supported.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: How would it work? (Optional)
+      placeholder: Any technical details , reference github repos's for algorithms, color schemes for new themes, high level architecture etc...

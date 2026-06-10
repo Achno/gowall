@@ -40,6 +40,7 @@ func CheckPngquantInstalled() (string, error) {
 		"linux":   config.PngquantBinaryName,
 		"windows": config.PngquantBinaryName + ".exe",
 		"darwin":  config.PngquantBinaryName,
+		"freebsd": config.PngquantBinaryName,
 	}
 
 	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "compression", "pngquant")

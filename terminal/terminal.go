@@ -14,9 +14,8 @@ import (
 	"golang.org/x/term"
 )
 
-// RenderKittyImg renders an image with the Kitty protocol and aspect-ratio scaling,
+// RenderKittyImg renders an image using the Kitty protocol and aspect-ratio scaling.
 func RenderKittyImg(filePath string) error {
-
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("opening image file: %w", err)
@@ -67,9 +66,9 @@ func RenderKittyImg(filePath string) error {
 	return nil
 }
 
-// getTerminalDimensions retrieves terminal size in text cells needed for the kitty protocol and pixels
+// getTerminalDimensions retrieves the terminal dimensions (text cells and pixel sizes) required for the Kitty protocol.
 func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
-	// Open /dev/tty for Linux & MacOS , CONOUT$ on Windows
+	// Open tty for writing; try "CONOUT$" (Windows) then "/dev/tty" (Linux/MacOS)
 	ttyWrite, err := os.OpenFile("CONOUT$", os.O_WRONLY, 0)
 	if err != nil {
 		ttyWrite, err = os.OpenFile("/dev/tty", os.O_WRONLY, 0)
@@ -79,7 +78,7 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 	}
 	defer ttyWrite.Close()
 
-	// Open terminal for reading responses
+	// Open tty for reading
 	ttyRead, err := os.OpenFile("CONOUT$", os.O_RDONLY, 0)
 	if err != nil {
 		ttyRead, err = os.OpenFile("/dev/tty", os.O_RDONLY, 0)
@@ -89,60 +88,75 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 	}
 	defer ttyRead.Close()
 
-	// Switch to raw mode and ensure it gets restored
+	// Set raw mode so we can read terminal responses directly.
 	oldState, err := term.MakeRaw(int(ttyRead.Fd()))
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("failed to set raw mode: %w", err)
 	}
 	defer term.Restore(int(ttyRead.Fd()), oldState)
 
-	// query the terminal for its dimensions via ANSI escape codes
-	_, err = ttyWrite.Write([]byte("\033[18t\033[14t"))
-	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("failed to set raw mode: %w", err)
+	// Query the terminal for its dimensions via ANSI escape codes.
+	// \033[18t requests text cell dimensions; \033[14t requests pixel dimensions.
+	if _, err = ttyWrite.Write([]byte("\033[18t\033[14t")); err != nil {
+		return 0, 0, 0, 0, fmt.Errorf("failed to send terminal query: %w", err)
 	}
 
-	// Read response
+	// Read the terminal response.
 	var buf [32]byte
 	var response []byte
 	for {
 		n, err := ttyRead.Read(buf[:])
-		if err != nil || n == 0 {
+		if err != nil {
+			return 0, 0, 0, 0, fmt.Errorf("failed to read terminal response: %w", err)
+		}
+		if n == 0 {
 			break
 		}
 		response = append(response, buf[:n]...)
-		if bytes.Count(response, []byte("t")) >= 2 {
+		// Break if expected escape sequences for text and pixel dimensions are detected.
+		if bytes.Contains(response, []byte("\033[8;")) && bytes.Contains(response, []byte("\033[4;")) {
 			break
 		}
 	}
 
+	// Parse text dimensions: "\033[8;<rows>;<cols>t"
 	reText := regexp.MustCompile(`\033\[8;(\d+);(\d+)t`)
 	matchesText := reText.FindStringSubmatch(string(response))
 	if len(matchesText) == 3 {
-		rows, _ = strconv.Atoi(matchesText[1])
-		cols, _ = strconv.Atoi(matchesText[2])
+		rows, err = strconv.Atoi(matchesText[1])
+		if err != nil {
+			return 0, 0, 0, 0, fmt.Errorf("converting rows: %w", err)
+		}
+		cols, err = strconv.Atoi(matchesText[2])
+		if err != nil {
+			return 0, 0, 0, 0, fmt.Errorf("converting cols: %w", err)
+		}
 	}
 
+	// Parse pixel dimensions: "\033[4;<pxHeight>;<pxWidth>t"
 	rePixel := regexp.MustCompile(`\033\[4;(\d+);(\d+)t`)
 	matchesPixel := rePixel.FindStringSubmatch(string(response))
 	if len(matchesPixel) == 3 {
-		pxHeight, _ = strconv.Atoi(matchesPixel[1])
-		pxWidth, _ = strconv.Atoi(matchesPixel[2])
+		pxHeight, err = strconv.Atoi(matchesPixel[1])
+		if err != nil {
+			return 0, 0, 0, 0, fmt.Errorf("converting pixel height: %w", err)
+		}
+		pxWidth, err = strconv.Atoi(matchesPixel[2])
+		if err != nil {
+			return 0, 0, 0, 0, fmt.Errorf("converting pixel width: %w", err)
+		}
 	}
 
 	return rows, cols, pxWidth, pxHeight, nil
 }
 
-// aspectRatio returns the aspect ratio of the image
+// aspectRatio returns the aspect ratio of the image.
 func aspectRatio(img image.Image) float64 {
-	imgWidth := img.Bounds().Dx()
-	imgHeight := img.Bounds().Dy()
-
-	return float64(imgWidth) / float64(imgHeight)
+	return float64(img.Bounds().Dx()) / float64(img.Bounds().Dy())
 }
 
-// textCells calculates and returns the desired number of text cells (r and c)
-// that should be used for the image, preserving its aspect ratio.
+// textCells calculates and returns the desired number of text cells (rows and columns)
+// to display the image, preserving its aspect ratio.
 func textCells(img image.Image) (int, int, error) {
 	termRows, termCols, termPxWidth, termPxHeight, err := getTerminalDimensions()
 	if err != nil {
@@ -151,23 +165,23 @@ func textCells(img image.Image) (int, int, error) {
 
 	imgAspect := aspectRatio(img)
 
-	// Compute the size of one cell (in pixels).
+	// Calculate the size of one text cell in pixels.
 	cellWidth := float64(termPxWidth) / float64(termCols)
 	cellHeight := float64(termPxHeight) / float64(termRows)
 	cellAspect := cellWidth / cellHeight
 
-	// Adjust image aspect ratio to account for the non-square text cells.
+	// Adjust image aspect ratio to account for non-square text cells.
 	effectiveAspect := imgAspect / cellAspect
 
-	// Use 90% of available text cells as the maximum.
+	// Use 90% of available text cells as the maximum area.
 	maxCols := float64(termCols) * 0.9
 	maxRows := float64(termRows) * 0.9
 
-	// Start with the maximum width and compute the height from the effective aspect ratio.
+	// Start with maximum width and compute the height using the effective aspect ratio.
 	desiredCols := maxCols
 	desiredRows := desiredCols / effectiveAspect
 
-	// If the computed rows exceed the maximum available, recalc based on height.
+	// If computed rows exceed the maximum available, recalc based on maximum rows.
 	if desiredRows > maxRows {
 		desiredRows = maxRows
 		desiredCols = desiredRows * effectiveAspect

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 	PngquantBinaryName = "pngquant"
 	EnvFilePath        = ".gowall/.env"
 	OnnxRuntimeVersion = "1.24.4"
+	UploadImageTimeout = 2 * time.Minute
 )
 
 var (

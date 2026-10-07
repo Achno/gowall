@@ -27,6 +27,10 @@ type EnvConfig struct {
 
 	// Gemini
 	GEMINI_API_KEY string
+
+	// Image upload
+	FREEIMAGE_API_KEY string
+	IMGBB_API_KEY     string
 }
 
 func GetEnvConfig(envFilePath string) *EnvConfig {
@@ -47,6 +51,8 @@ func GetEnvConfig(envFilePath string) *EnvConfig {
 		DOCLING_BASE_URL:                      GetString("DOCLING_BASE_URL", ""),
 		MISTRAL_API_KEY:                       GetString("MISTRAL_API_KEY", ""),
 		GEMINI_API_KEY:                        GetString("GEMINI_API_KEY", ""),
+		FREEIMAGE_API_KEY:                     GetString("FREEIMAGE_API_KEY", ""),
+		IMGBB_API_KEY:                         GetString("IMGBB_API_KEY", ""),
 	}
 }
 

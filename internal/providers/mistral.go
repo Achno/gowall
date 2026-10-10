@@ -1,23 +1,27 @@
 package providers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	cf "github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	request "github.com/Achno/gowall/pkg/requests"
+)
+
+const (
+	mistralHost    = "api.mistral.ai"
+	mistralOCRPath = "/v1/ocr"
 )
 
 // MistralProvider implements the Provider Interface
 type MistralProvider struct {
-	config  Config
-	client  *http.Client
-	baseURL string
-	apiKey  string
+	config Config
+	client *request.Client
+	apiKey string
 }
 
 // Mistral single Image OCR request
@@ -74,10 +78,9 @@ func NewMistralProvider(config Config) (OCRProvider, error) {
 	}
 
 	return &MistralProvider{
-		config:  config,
-		client:  &http.Client{},
-		baseURL: "https://api.mistral.ai/v1",
-		apiKey:  apiKey,
+		config: config,
+		client: request.NewClient("https", mistralHost, 0),
+		apiKey: apiKey,
 	}, nil
 }
 
@@ -88,35 +91,19 @@ func (m *MistralProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, 
 		return nil, fmt.Errorf("failed to convert input to messages: %w", err)
 	}
 
-	bodyBytes, err := json.Marshal(payload)
+	respData, err := request.Post[MistralOcrResponse](m.client, mistralOCRPath, payload,
+		request.WithContext(ctx),
+		request.WithHeader(request.Header{"Authorization": "Bearer " + m.apiKey}),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to JSON-encode payload: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.baseURL+"/ocr", bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+m.apiKey)
-
-	res, err := m.client.Do(req)
-	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return nil, fmt.Errorf("unexpected status: %d %s", statusErr.Code, http.StatusText(statusErr.Code))
+		}
 		return nil, fmt.Errorf("request error: %w", err)
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status: %s", res.Status)
-	}
-
-	var respData MistralOcrResponse
-	if err := json.NewDecoder(res.Body).Decode(&respData); err != nil {
-		return nil, fmt.Errorf("failed to decode response JSON: %w", err)
-	}
-
-	return MistralToOCRResult(&respData)
+	return MistralToOCRResult(respData)
 }
 
 func (m *MistralProvider) GetConfig() Config {

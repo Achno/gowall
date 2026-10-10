@@ -111,6 +111,11 @@ func sendRequest[T any](c *Client, method, path string, opts ...Opt) (*T, error)
 	}
 
 	var rr T
+	// T = []byte gives back the raw body, for responses that aren't json like HTML
+	if raw, ok := any(&rr).(*[]byte); ok {
+		*raw = b
+		return &rr, nil
+	}
 	if err := json.Unmarshal(b, &rr); err != nil {
 		return nil, err
 	}

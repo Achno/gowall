@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -8,27 +10,25 @@ import (
 	"strings"
 
 	"github.com/Achno/gowall/config"
+	request "github.com/Achno/gowall/pkg/requests"
 	"github.com/PuerkitoBio/goquery"
 )
 
 func GetWallpaperOfTheDay() (string, error) {
-	req, err := http.NewRequest(http.MethodGet, config.WallOfTheDayUrl+"?sort=top&t=day", nil)
+	body, err := request.Get[[]byte](request.NewURLClient(0), config.WallOfTheDayUrl+"?sort=top&t=day",
+		request.WithHeader(request.Header{
+			"User-Agent": "Mozilla/5.0 (compatible; gowall/1.0)",
+			"Accept":     "text/html",
+		}),
+	)
 	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return "", fmt.Errorf("request failed with status code: %d %s", statusErr.Code, http.StatusText(statusErr.Code))
+		}
 		return "", err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; gowall/1.0)")
-	req.Header.Set("Accept", "text/html")
-
-	response, err := (&http.Client{}).Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("request failed with status code: %d %s", response.StatusCode, http.StatusText(response.StatusCode))
-	}
-	doc, err := goquery.NewDocumentFromReader(response.Body)
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(*body))
 	if err != nil {
 		return "", err
 	}

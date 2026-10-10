@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -87,7 +88,9 @@ func sendRequest[T any](c *Client, method, path string, opts ...Opt) (*T, error)
 	for k, v := range ctx.header {
 		req.Header.Add(k, v)
 	}
-	req.Header.Set("Content-Type", contentType)
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -114,11 +117,16 @@ func sendRequest[T any](c *Client, method, path string, opts ...Opt) (*T, error)
 	return &rr, nil
 }
 
-// encodeBody returns the request body and its Content-Type.
+// encodeBody returns the request body and its Content-Type, no body means no Content-Type.
 func encodeBody(ctx *Ctx) (io.Reader, string, error) {
+	if ctx.contentType == "multipart/form-data" {
+		return encodeMultipart(ctx) // can be just a file, without fields
+	}
+	if ctx.body == nil {
+		return nil, "", nil
+	}
+
 	switch ctx.contentType {
-	case "multipart/form-data":
-		return encodeMultipart(ctx)
 	case "application/x-www-form-urlencoded":
 		fields, err := toStringMap(ctx.body)
 		if err != nil {
@@ -129,15 +137,14 @@ func encodeBody(ctx *Ctx) (io.Reader, string, error) {
 			data.Add(k, v)
 		}
 		return strings.NewReader(data.Encode()), ctx.contentType, nil
-	default:
-		if ctx.body == nil {
-			return nil, "application/json", nil
-		}
+	case "", "application/json":
 		bs, err := json.Marshal(ctx.body)
 		if err != nil {
 			return nil, "", err
 		}
 		return bytes.NewReader(bs), "application/json", nil
+	default:
+		return nil, "", fmt.Errorf("unsupported content type %q", ctx.contentType)
 	}
 }
 

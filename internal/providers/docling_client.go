@@ -3,16 +3,15 @@ package providers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	request "github.com/Achno/gowall/pkg/requests"
 )
 
 // ╔═════════════════╗
@@ -20,7 +19,7 @@ import (
 // ╚═════════════════╝
 
 type DoclingClient struct {
-	Client  *http.Client
+	Client  *request.Client
 	BaseURL string
 }
 
@@ -32,7 +31,7 @@ func WithDoclingBaseURL(baseURL string) func(*DoclingClient) {
 
 func NewDoclingClient(opts ...func(*DoclingClient)) *DoclingClient {
 	client := &DoclingClient{
-		Client:  &http.Client{},
+		Client:  request.NewURLClient(0),
 		BaseURL: doclingDefaultBaseURL,
 	}
 
@@ -44,25 +43,13 @@ func NewDoclingClient(opts ...func(*DoclingClient)) *DoclingClient {
 }
 
 func (d *DoclingClient) HealthCheck(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.BaseURL+doclingHealthPath, nil)
+	healthResponse, err := request.Get[DoclingHealthResponse](d.Client, d.BaseURL+doclingHealthPath, request.WithContext(ctx))
 	if err != nil {
-		return fmt.Errorf("while creating health req: %w", err)
-	}
-
-	resp, err := d.Client.Do(req)
-	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return fmt.Errorf("health check failed with status %d: %s", statusErr.Code, string(statusErr.Body))
+		}
 		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("health check failed with status %d: %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	var healthResponse DoclingHealthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&healthResponse); err != nil {
-		return fmt.Errorf("while decoding health check response: %w", err)
 	}
 
 	if healthResponse.Status != "ok" {
@@ -72,63 +59,25 @@ func (d *DoclingClient) HealthCheck(ctx context.Context) error {
 }
 
 func (d *DoclingClient) ProcessFile(ctx context.Context, imageBytes []byte, filename string, options map[string]string) (*DoclingConvertDocumentResponse, error) {
-	var requestBody bytes.Buffer
-	writer := multipart.NewWriter(&requestBody)
-
-	part, err := writer.CreateFormFile("files", filename)
-	if err != nil {
-		return nil, fmt.Errorf("while creating form file for image '%s': %w", filename, err)
-	}
-	_, err = io.Copy(part, bytes.NewReader(imageBytes))
-	if err != nil {
-		return nil, fmt.Errorf("while copying image data '%s': %w", filename, err)
-	}
-
-	for key, value := range options {
-		if err := writer.WriteField(key, value); err != nil {
-			return nil, fmt.Errorf("while writing field '%s' with value '%s': %w", key, value, err)
-		}
-	}
-
-	err = writer.Close()
-	if err != nil {
-		return nil, fmt.Errorf("while closing multipart writer: %w", err)
-	}
-
 	reqURL := d.BaseURL + doclingConvertPath
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, &requestBody)
+	convertResponse, err := request.Post[DoclingConvertDocumentResponse](d.Client, reqURL, options,
+		request.WithContext(ctx),
+		request.WithHeader(request.Header{"Accept": "application/json"}),
+		request.WithFile("files", filename, bytes.NewReader(imageBytes)),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("while creating convert request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := d.Client.Do(req)
-	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return nil, fmt.Errorf("req to %s failed with status %d: %s", reqURL, statusErr.Code, string(statusErr.Body))
+		}
 		return nil, fmt.Errorf("request to %s failed: %w", reqURL, err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, fmt.Errorf("while reading res body (status %d): %w", resp.StatusCode, readErr)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("req to %s failed with status %d: %s", reqURL, resp.StatusCode, string(bodyBytes))
-	}
-
-	var convertResponse DoclingConvertDocumentResponse
-	if err := json.Unmarshal(bodyBytes, &convertResponse); err != nil {
-		return nil, fmt.Errorf("while json unmarshalling response. Error: %w", err)
 	}
 
 	if convertResponse.Status != "success" && convertResponse.Status != "partial_success" {
 		return nil, fmt.Errorf("unmarshalling failed status: %s", convertResponse.Status)
 	}
 
-	return &convertResponse, nil
+	return convertResponse, nil
 }
 
 // ╔═════════════════╗

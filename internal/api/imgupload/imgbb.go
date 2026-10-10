@@ -1,26 +1,26 @@
 package imgupload
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/Achno/gowall/config"
+	request "github.com/Achno/gowall/pkg/requests"
 )
 
-const imgbbURL = "https://api.imgbb.com/1/upload"
+const (
+	imgbbHost = "api.imgbb.com"
+	imgbbPath = "/1/upload"
+)
 
 type ImgBB struct {
-	BaseURL string
-	APIKey  string
-	Client  *http.Client
+	APIKey string
+	client *request.Client
 }
 
 type ImgBBResponse struct {
@@ -44,73 +44,42 @@ func NewImgBBClient(apiKey string) (*ImgBB, error) {
 	if apiKey == "" {
 		return nil, errors.New("imgbb needs IMGBB_API_KEY in your .env, get one at https://api.imgbb.com")
 	}
-	return &ImgBB{BaseURL: imgbbURL, APIKey: apiKey, Client: http.DefaultClient}, nil
+	return &ImgBB{
+		APIKey: apiKey,
+		client: request.NewClient("https", imgbbHost, config.UploadImageTimeout),
+	}, nil
 }
 
 func (c *ImgBB) Upload(ctx context.Context, img io.Reader, filename string) (ImgBBResponse, error) {
-	var body bytes.Buffer
-	form := multipart.NewWriter(&body)
-
-	part, err := form.CreateFormFile("image", filename)
-	if err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: %w", err)
-	}
-	if _, err := io.Copy(part, img); err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: reading image: %w", err)
-	}
-	if err := form.Close(); err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: %w", err)
-	}
-
-	endpoint, err := url.Parse(c.BaseURL)
-	if err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: %w", err)
-	}
-	endpoint.RawQuery = url.Values{"key": {c.APIKey}}.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(), &body)
-	if err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: %w", err)
-	}
-	req.Header.Set("Content-Type", form.FormDataContentType())
-	req.Header.Set("User-Agent", "gowall/"+config.Version)
-
-	res, err := c.Client.Do(req)
+	res, err := request.Post[imgbbAPIResponse](c.client, imgbbPath, nil,
+		request.WithContext(ctx),
+		request.WithQuery(request.Query{"key": c.APIKey}),
+		request.WithHeader(request.Header{"User-Agent": "gowall/" + config.Version}),
+		request.WithFile("image", filename, img),
+	)
 	if err != nil {
 		// *url.Error prints the full url, which has the api key in it
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
 			err = urlErr.Err
 		}
+
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			var body imgbbAPIResponse
+			if json.Unmarshal(statusErr.Body, &body) == nil && body.Error.Message != "" {
+				return ImgBBResponse{}, fmt.Errorf("imgbb: %d %s: %s", statusErr.Code, http.StatusText(statusErr.Code), body.Error.Message)
+			}
+		}
 		return ImgBBResponse{}, fmt.Errorf("imgbb: %w", err)
 	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: reading response: %w", err)
-	}
-
-	var parsed imgbbAPIResponse
-	jsonErr := json.Unmarshal(data, &parsed)
-
-	if res.StatusCode != http.StatusOK {
-		msg := parsed.Error.Message
-		if jsonErr != nil || msg == "" {
-			msg = strings.TrimSpace(string(data))
-		}
-		return ImgBBResponse{}, fmt.Errorf("imgbb: %s: %s", res.Status, msg)
-	}
-	if jsonErr != nil {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: reading response: %w", jsonErr)
-	}
-	if parsed.Data.URL == "" {
-		return ImgBBResponse{}, fmt.Errorf("imgbb: response has no link: %s", strings.TrimSpace(string(data)))
+	if res.Data.URL == "" {
+		return ImgBBResponse{}, errors.New("imgbb: response has no link")
 	}
 
 	return ImgBBResponse{
-		URL:       parsed.Data.URL,
-		ViewerURL: parsed.Data.ViewerURL,
-		DeleteURL: parsed.Data.DeleteURL,
+		URL:       res.Data.URL,
+		ViewerURL: res.Data.ViewerURL,
+		DeleteURL: res.Data.DeleteURL,
 	}, nil
 }

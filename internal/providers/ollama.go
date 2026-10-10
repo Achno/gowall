@@ -1,21 +1,20 @@
 package providers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
 
 	cf "github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
+	request "github.com/Achno/gowall/pkg/requests"
 )
 
 // OllamaProvider implements the Provider Interface
 type OllamaProvider struct {
 	config Config
 	host   string
+	client *request.Client
 }
 
 type OllamaRequest struct {
@@ -51,6 +50,7 @@ func NewOllamaProvider(config Config) (OCRProvider, error) {
 	return &OllamaProvider{
 		config: config,
 		host:   host,
+		client: request.NewURLClient(0),
 	}, nil
 }
 
@@ -84,27 +84,13 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		},
 	}
 
-	reqBody, err := json.Marshal(req)
+	ollamaResp, err := request.Post[OllamaResponse](o.client, o.host+"/api/chat", req, request.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// Send request to Ollama
-	resp, err := http.Post(o.host+"/api/chat", "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return nil, fmt.Errorf("ollama API error (status %d): %s", statusErr.Code, string(statusErr.Body))
+		}
 		return nil, fmt.Errorf("failed to send request to Ollama: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("ollama API error (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	// Parse response
-	var ollamaResp OllamaResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	// Extract text and metadata
@@ -146,27 +132,13 @@ func (o *OllamaProvider) Complete(ctx context.Context, text string) (string, err
 		},
 	}
 
-	reqBody, err := json.Marshal(req)
+	ollamaResp, err := request.Post[OllamaResponse](o.client, o.host+"/api/chat", req, request.WithContext(ctx))
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// Send request to Ollama
-	resp, err := http.Post(o.host+"/api/chat", "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
+		var statusErr *request.StatusError
+		if errors.As(err, &statusErr) {
+			return "", fmt.Errorf("ollama API error (status %d): %s", statusErr.Code, string(statusErr.Body))
+		}
 		return "", fmt.Errorf("failed to send request to Ollama: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("ollama API error (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	// Parse response
-	var ollamaResp OllamaResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
-		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	return ollamaResp.Message.Content, nil

@@ -11,7 +11,7 @@ const (
 	OutputFolder       = "Pictures/gowall"
 	configFile         = "config.yml"
 	OCRSchemaFile      = "schema.yml"
-	WallOfTheDayUrl    = "https://old.reddit.com/r/wallpaper/top/"
+	WallOfTheDayUrl    = "https://www.reddit.com/r/wallpaper/top/.rss"
 	HexCodeVisualUrl   = "https://lawlesscreation.github.io/hex-color-visualiser/"
 	UpscalerBinaryName = "realesrgan-ncnn-vulkan"
 	PngquantBinaryName = "pngquant"

@@ -27,6 +27,7 @@ var (
 	ThemesDefault                = []themeWrapper{}
 	OnnxRuntimeFolderPath        = OnnxRuntimeFolder()
 	OnnxModelFolderPath          = OnnxRuntimeFolder()
+	LastRunFilePath              = LastRunFile()
 )
 
 func defaultConfig() Options {
@@ -44,4 +45,9 @@ func defaultConfig() Options {
 func OnnxRuntimeFolder() string {
 	homeDir, _ := os.UserHomeDir()
 	return filepath.Join(homeDir, ".u2net")
+}
+
+func LastRunFile() string {
+	cacheDir, _ := os.UserCacheDir()
+	return filepath.Join(cacheDir, "gowall", "last-run.json")
 }

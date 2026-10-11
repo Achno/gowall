@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
@@ -11,9 +14,14 @@ func BuildCompareCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "compare [ORIGINAL] [EDITED]",
 		Short: "Compare two images with an interactive before/after slider",
-		Long:  `Compare two images with an interactive before/after slider, move it with the arrow keys or by dragging with the mouse. Use --side to place them side by side instead. Needs a terminal with the kitty image protocol`,
-		Args:  cobra.ExactArgs(2),
-		Run:   RunCompareCmd,
+		Long:  `Compare two images with an interactive before/after slider, move it with the arrow keys or by dragging with the mouse. Use -s to place them side by side instead. Without args it compares the input and output of your last single image command like gowall convert. Needs a terminal with the kitty image protocol`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 0 && len(args) != 2 {
+				return fmt.Errorf("give 2 images, or none to compare your last gowall run")
+			}
+			return nil
+		},
+		Run: RunCompareCmd,
 	}
 
 	var sideBySide bool
@@ -23,6 +31,12 @@ func BuildCompareCmd() *cobra.Command {
 }
 
 func RunCompareCmd(cmd *cobra.Command, args []string) {
+	if len(args) == 0 {
+		last, err := config.ReadLastRun()
+		utils.HandleError(err, "Error")
+		args = []string{last.Original, last.Edited}
+	}
+
 	original, err := imageio.LoadImage(imageio.FileReader{Path: args[0]})
 	utils.HandleError(err, "Error")
 

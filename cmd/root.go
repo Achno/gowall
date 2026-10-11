@@ -37,6 +37,9 @@ func openImageInViewer(cmd *cobra.Command, flags config.GlobalSubCommandFlags, a
 		return
 	}
 
+	//TODO: honestly pretty hacky way to put it here, might want to refactor to before,after hooks or some shi
+	saveLastRun(cmd, args, path)
+
 	if cmd.Flags().Changed("preview") {
 		config.GowallConfig.EnableImagePreviewing = flags.PreviewFlag == "true"
 	}
@@ -50,6 +53,28 @@ func openImageInViewer(cmd *cobra.Command, flags config.GlobalSubCommandFlags, a
 
 	if err != nil {
 		logger.Error("Error opening image: ", err)
+	}
+}
+
+// saveLastRun remembers the input and output of single image commands for `gowall compare` without args.
+func saveLastRun(cmd *cobra.Command, args []string, output string) {
+	if len(args) == 0 || imageio.IsMultiInputSingleOutputCommand(cmd.Name()) {
+		return
+	}
+	// skips stdin `-` and args that aren't files like `gowall color gradient``
+	if info, err := os.Stat(args[0]); err != nil || info.IsDir() {
+		return
+	}
+	original, err := filepath.Abs(args[0])
+	if err != nil {
+		return
+	}
+	edited, err := filepath.Abs(output)
+	if err != nil {
+		return
+	}
+	if err := config.SaveLastRun(config.LastRun{Original: original, Edited: edited}); err != nil {
+		logger.Error("Error saving the last run for gowall compare: ", err)
 	}
 }
 

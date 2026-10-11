@@ -86,6 +86,10 @@ func RenderKittySideBySide(original, edited image.Image) error {
 // openCompareScreen fits the images so that `panels` of them fit next to each other, uploads them,
 // switches to the alt screen and places the original in the top left. closeScreen undoes all of it.
 func openCompareScreen(original, edited image.Image, panels int, help string) (s *slider, closeScreen func(), err error) {
+	supportsKitty := IsKittyTerminalRunning() || IsWeztermTerminalRunning() || IsKonsoleTerminalRunning() || IsGhosttyTerminalRunning()
+	if !supportsKitty {
+		return nil, nil, fmt.Errorf("gowall compare needs a terminal with the kitty image protocol: kitty, wezterm, konsole or ghostty. ")
+	}
 	fd := int(os.Stdin.Fd())
 	if !term.IsTerminal(fd) {
 		return nil, nil, fmt.Errorf("comparing images needs an interactive terminal")

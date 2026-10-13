@@ -49,7 +49,7 @@ func OpenGifInViewer(filePath string) error {
 		return nil
 	}
 
-	cmd := exec.Command("kitty", "icat", filePath)
+	cmd := exec.Command("kitty", "icat", "--image-id", config.GifPreviewImageID, filePath)
 	cmd.Stdout = os.Stdout
 
 	return cmd.Run()

@@ -18,6 +18,9 @@ const (
 	EnvFilePath        = ".gowall/.env"
 	OnnxRuntimeVersion = "1.24.4"
 	UploadImageTimeout = 2 * time.Minute
+	// GifPreviewImageID is the kitty image id every gif preview reuses, so each one replaces the previous in kitty's memory
+	// instead of piling up frames until kitty's image quota is full and animations stop
+	GifPreviewImageID = "7140"
 )
 
 var (

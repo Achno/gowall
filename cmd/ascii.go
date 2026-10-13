@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	imgbackend "github.com/Achno/gowall/internal/backends/image"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -20,7 +21,8 @@ func BuildAsciiCmd() *cobra.Command {
 		Short: "Turns an image or an animated gif into ASCII art",
 		Long: `Turns an image or an animated gif into ASCII art, gifs stay animated. The output keeps the size of the input.
 The detail flag [0-100] controls how many characters are used, the higher the number the more and smaller characters.
-The mode flag picks the colors: color (keeps the colors of the image), white (white on black), black (black on white)`,
+The mode flag picks the colors: color (keeps the colors of the image), white (white on black), black (black on white).
+The bg flag overrides the background color of the mode`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return ValidateParseAsciiCmd(cmd, shared, args)
 		},
@@ -31,10 +33,12 @@ The mode flag picks the colors: color (keeps the colors of the image), white (wh
 	var (
 		detail int
 		mode   string
+		bg     string
 	)
 
 	flags.IntVarP(&detail, "detail", "d", 50, "Usage: --detail [0-100] (The higher the number == more and smaller characters)")
 	flags.StringVarP(&mode, "mode", "m", string(imgbackend.AsciiColor), "Usage: --mode ["+strings.Join(imgbackend.AsciiModes(), ",")+"]")
+	flags.StringVarP(&bg, "bg", "b", cpkg.RGBtoHex(imgbackend.AsciiDark), "Usage: --bg [#hex] background color, --mode black defaults to "+cpkg.RGBtoHex(imgbackend.AsciiLight))
 
 	cmd.RegisterFlagCompletionFunc("mode", asciiModeCompletion)
 
@@ -51,11 +55,17 @@ func RunAsciiCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	mode, err := cmd.Flags().GetString("mode")
 	utils.HandleError(err, "Error")
+	bgStr, err := cmd.Flags().GetString("bg")
+	utils.HandleError(err, "Error")
+
+	bg, err := cpkg.HexToRGBA(bgStr)
+	utils.HandleError(err, "Error")
 
 	logger.Print("Converting to ASCII...")
 	processor := image.NewAsciiProcessor(
 		image.WithAsciiDetail(detail),
 		image.WithAsciiMode(imgbackend.AsciiMode(mode)),
+		image.WithAsciiBackground(bg),
 	)
 
 	processedImages, err := image.ProcessImgs(processor, imageOps, image.ProcessOptions{
@@ -80,6 +90,15 @@ func ValidateParseAsciiCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlag
 	mode, _ := cmd.Flags().GetString("mode")
 	if !slices.Contains(imgbackend.AsciiModes(), mode) {
 		return fmt.Errorf("unsupported mode %q, use one of: %s", mode, strings.Join(imgbackend.AsciiModes(), ", "))
+	}
+
+	if mode == string(imgbackend.AsciiBlack) && !cmd.Flags().Changed("bg") {
+		cmd.Flags().Set("bg", cpkg.RGBtoHex(imgbackend.AsciiLight))
+	}
+
+	bg, _ := cmd.Flags().GetString("bg")
+	if _, err := cpkg.HexToRGBA(bg); err != nil {
+		return fmt.Errorf("--bg must be a hex color like #1E1E2E, got: %s", bg)
 	}
 
 	return nil

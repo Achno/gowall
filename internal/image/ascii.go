@@ -2,6 +2,7 @@ package image
 
 import (
 	"image"
+	"image/color"
 	"io"
 	"strings"
 
@@ -25,6 +26,12 @@ func WithAsciiDetail(detail int) AsciiOption {
 func WithAsciiMode(mode imgbackend.AsciiMode) AsciiOption {
 	return func(o *imgbackend.AsciiOptions) {
 		o.Mode = mode
+	}
+}
+
+func WithAsciiBackground(background color.RGBA) AsciiOption {
+	return func(o *imgbackend.AsciiOptions) {
+		o.Background = background
 	}
 }
 

@@ -37,8 +37,8 @@ const (
 )
 
 var (
-	asciiDark  = color.RGBA{R: 20, G: 20, B: 20, A: 255}
-	asciiLight = color.RGBA{R: 244, G: 244, B: 242, A: 255}
+	AsciiDark  = color.RGBA{R: 20, G: 20, B: 20, A: 255}
+	AsciiLight = color.RGBA{R: 244, G: 244, B: 242, A: 255}
 )
 
 // AsciiMode decides the colors of the characters and the background
@@ -55,14 +55,16 @@ func AsciiModes() []string {
 }
 
 type AsciiOptions struct {
-	Detail int // 0-100, how many characters fit in the output width: 0 is chunky, 100 is the densest
-	Mode   AsciiMode
+	Detail     int // 0-100, how many characters fit in the output width: 0 is chunky, 100 is the densest
+	Mode       AsciiMode
+	Background color.RGBA
 }
 
 func DefaultAsciiOptions() AsciiOptions {
 	return AsciiOptions{
-		Detail: 50,
-		Mode:   AsciiColor,
+		Detail:     50,
+		Mode:       AsciiColor,
+		Background: AsciiDark,
 	}
 }
 
@@ -82,7 +84,6 @@ type AsciiConverter struct {
 	AsciiOptions
 
 	ramp          []rune
-	background    color.RGBA
 	colors        []color.RGBA // the character colors, a single one unless the mode is color
 	palette       color.Palette
 	width, height int // of the output in px
@@ -92,15 +93,9 @@ type AsciiConverter struct {
 }
 
 func NewAsciiConverter(opts AsciiOptions) *AsciiConverter {
-	background := asciiDark
-	if opts.Mode == AsciiBlack {
-		background = asciiLight
-	}
-
 	return &AsciiConverter{
 		AsciiOptions: opts,
 		ramp:         []rune(asciiRamp),
-		background:   background,
 	}
 }
 
@@ -226,14 +221,14 @@ func (c *AsciiConverter) thicken(tile *image.Alpha) {
 func (c *AsciiConverter) pickColors(smalls []*image.NRGBA) {
 	switch c.Mode {
 	case AsciiBlack:
-		c.colors = []color.RGBA{asciiDark}
+		c.colors = []color.RGBA{AsciiDark}
 		return
 	case AsciiWhite:
-		c.colors = []color.RGBA{asciiLight}
+		c.colors = []color.RGBA{AsciiLight}
 		return
 	}
 
-	c.colors = []color.RGBA{asciiLight}
+	c.colors = []color.RGBA{AsciiLight}
 	if !HasOpaque(smalls[0]) {
 		return
 	}
@@ -259,7 +254,7 @@ func (c *AsciiConverter) buildPalette() {
 	c.palette = make(color.Palette, 0, len(c.colors)*shades)
 	for _, clr := range c.colors {
 		for shade := range shades {
-			c.palette = append(c.palette, cpkg.BlendColor(c.background, clr, float64(shade)/float64(shades-1)))
+			c.palette = append(c.palette, cpkg.BlendColor(c.Background, clr, float64(shade)/float64(shades-1)))
 		}
 	}
 }

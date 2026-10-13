@@ -36,6 +36,8 @@ The mode flag picks the colors: color (keeps the colors of the image), white (wh
 	flags.IntVarP(&detail, "detail", "d", 50, "Usage: --detail [0-100] (The higher the number == more and smaller characters)")
 	flags.StringVarP(&mode, "mode", "m", string(imgbackend.AsciiColor), "Usage: --mode ["+strings.Join(imgbackend.AsciiModes(), ",")+"]")
 
+	cmd.RegisterFlagCompletionFunc("mode", asciiModeCompletion)
+
 	addGlobalFlags(cmd)
 
 	return cmd
@@ -81,6 +83,10 @@ func ValidateParseAsciiCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlag
 	}
 
 	return nil
+}
+
+func asciiModeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return imgbackend.AsciiModes(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

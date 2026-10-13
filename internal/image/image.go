@@ -43,14 +43,10 @@ func (p *NoOpImageProcessor) Process(img image.Image, options string, format str
 	return img, types.ImageMetadata{}, nil
 }
 
-// OpenGifInViewer currently supports GIF preview only in Kitty via `kitty icat`.
+// OpenGifInViewer previews GIFs only in Kitty via `kitty icat`, other terminals can't play them so they are skipped.
 func OpenGifInViewer(filePath string) error {
-	if !config.GowallConfig.EnableImagePreviewing {
+	if !config.GowallConfig.EnableImagePreviewing || !terminal.IsKittyTerminalRunning() {
 		return nil
-	}
-
-	if !terminal.IsKittyTerminalRunning() {
-		return fmt.Errorf("gif preview is only supported in kitty terminal via `kitty icat`")
 	}
 
 	cmd := exec.Command("kitty", "icat", filePath)

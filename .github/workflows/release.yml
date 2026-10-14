@@ -69,11 +69,18 @@ jobs:
           
           echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
           
+      - name: Build Debian Package
+        shell: bash
+        if: ${{ matrix.os == 'linux' }}
+        run: |
+          chmod +x ./scripts/build-deb.sh
+          ./scripts/build-deb.sh "${BINARY_NAME}" "${{ github.ref_name || '0.2.4' }}" "${{ matrix.arch }}" "release"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: gowall-${{ matrix.arch }}-${{ matrix.os }}
-          path: release/${{ env.ARCHIVE_NAME }}
+          path: release/*
 
   release:
     needs: build
@@ -106,8 +113,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Find and upload all tar.gz files
-          find ./artifacts -name "*.tar.gz" -type f | while read -r file; do
+          # Find and upload all tar.gz and deb files
+          find ./artifacts -type f \( -name "*.tar.gz" -o -name "*.deb" \) | while read -r file; do
             filename=$(basename "$file")
             echo "Uploading $filename"
             gh release upload ${{ github.ref_name }} "$file" --clobber

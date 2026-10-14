@@ -1,0 +1,17 @@
+Source: gowall
+Section: utils
+Priority: optional
+Maintainer: Adam Magued <adamismailmageud@gmail.com>
+Build-Depends: debhelper-compat (= 13), golang-any
+Standards-Version: 4.6.2
+Homepage: https://github.com/Achno/gowall
+Vcs-Git: https://github.com/Achno/gowall.git
+Vcs-Browser: https://github.com/Achno/gowall
+
+Package: gowall
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Wallpaper color scheme and palette converter tool
+ Gowall is a CLI tool to convert wallpaper color schemes,
+ extract color palettes, perform OCR, image compression, upscaling,
+ and various image processing operations.

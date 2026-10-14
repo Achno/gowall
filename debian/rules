@@ -1,0 +1,5 @@
+#!/usr/bin/make -f
+export DH_GOPKG := github.com/Achno/gowall
+
+%:
+	dh $@ --buildsystem=golang --with=golang

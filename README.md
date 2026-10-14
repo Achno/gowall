@@ -154,6 +154,28 @@ More installation options : [here](https://search.nixos.org/packages?channel=24.
 sudo xbps-install -S gowall
 ```
 
+### Debian / Ubuntu - (APT / .deb)
+
+Download the `.deb` package for your architecture from the [Releases](https://github.com/Achno/gowall/releases) page:
+
+```sh
+sudo apt install ./gowall-amd64-linux.deb
+```
+
+Or configure the APT repository:
+
+```sh
+# Add the repository signing key
+curl -fsSL https://achno.github.io/gowall/apt/KEY.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/gowall.gpg
+
+# Add the repository to sources list
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/gowall.gpg] https://achno.github.io/gowall/apt stable main" | sudo tee /etc/apt/sources.list.d/gowall.list
+
+# Update and install
+sudo apt update
+sudo apt install gowall
+```
+
 ### Build from source (Cutting Edge) 
 
 If you are a normal user, consider using using the method above for a stable gowall release.

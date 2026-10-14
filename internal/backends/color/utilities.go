@@ -3,6 +3,7 @@ package color
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"image"
 	"image/color"
 	"math"
 )
@@ -86,4 +87,31 @@ func Clamp(val, min, max int) int {
 		return max
 	}
 	return val
+}
+
+func ClampFloat(val, min, max float64) float64 {
+	return math.Max(min, math.Min(max, val))
+}
+
+func Luminance(r, g, b uint8) float64 {
+	return (0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)) / 255
+}
+
+// LuminanceRange returns the darkest and brightest luminance of the opaque pixels across all images, 0 and 1 if there are none
+func LuminanceRange(imgs []*image.NRGBA) (float64, float64) {
+	lo, hi := 1.0, 0.0
+	for _, img := range imgs {
+		for i := 0; i+3 < len(img.Pix); i += 4 {
+			if img.Pix[i+3] < 128 {
+				continue
+			}
+			lum := Luminance(img.Pix[i], img.Pix[i+1], img.Pix[i+2])
+			lo, hi = math.Min(lo, lum), math.Max(hi, lum)
+		}
+	}
+
+	if lo > hi {
+		return 0, 1
+	}
+	return lo, hi
 }

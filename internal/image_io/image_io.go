@@ -428,6 +428,11 @@ func resolveOutputPath(flags config.GlobalSubCommandFlags, args []string, input 
 		return "", err
 	}
 
+	// gifs go in the same folder as the ones from the gif command
+	if strings.EqualFold(filepath.Ext(name), ".gif") {
+		dir = filepath.Join(dir, "gifs")
+	}
+
 	// --output full destination - single file
 	if flags.OutputDestination != "" && filepath.Ext(flags.OutputDestination) != "" && (flags.InputDir == "" && len(flags.InputFiles) <= 0) {
 		return flags.OutputDestination, nil

@@ -5,6 +5,7 @@ import (
 	"image"
 	"math"
 
+	"github.com/Achno/gowall/internal/backends/pixels"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/gamut"
 )
@@ -101,46 +102,49 @@ type GradientKeypoint struct {
 // GradientTable contains the keypoints of the gradient
 type GradientTable []GradientKeypoint
 
+// blendMethods are the ways two colors of a gradient can be blended
+var blendMethods = map[string]func(color1, color2 colorful.Color, blendT float64) colorful.Color{
+	"hcl": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendHcl(color2, blendT).Clamped()
+	},
+	"lab": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendLab(color2, blendT).Clamped()
+	},
+	"rgb": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendRgb(color2, blendT).Clamped()
+	},
+	"hsv": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendHsv(color2, blendT).Clamped()
+	},
+	"luv": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendLuv(color2, blendT).Clamped()
+	},
+	"luvlch": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
+		return color1.BlendLuvLCh(color2, blendT).Clamped()
+	},
+}
+
 // GetInterpolatedColorFor returns a HCL-blended color for position t [0,1]
 func (gt GradientTable) GetInterpolatedColorFor(t float64, method string) (colorful.Color, error) {
-
-	methodMap := map[string]func(color1, color2 colorful.Color, blendT float64) colorful.Color{
-		"hcl": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendHcl(color2, blendT).Clamped()
-		},
-		"lab": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendLab(color2, blendT).Clamped()
-		},
-		"rgb": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendRgb(color2, blendT).Clamped()
-		},
-		"hsv": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendHsv(color2, blendT).Clamped()
-		},
-		"luv": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendLuv(color2, blendT).Clamped()
-		},
-		"luvlch": func(color1, color2 colorful.Color, blendT float64) colorful.Color {
-			return color1.BlendLuvLCh(color2, blendT).Clamped()
-		},
-	}
-
-	methodFunc, ok := methodMap[method]
+	methodFunc, ok := blendMethods[method]
 	if !ok {
 		return colorful.Color{}, fmt.Errorf("invalid method: %s", method)
 	}
+	return gt.interpolate(t, methodFunc), nil
+}
 
+func (gt GradientTable) interpolate(t float64, methodFunc func(color1, color2 colorful.Color, blendT float64) colorful.Color) colorful.Color {
 	for i := 0; i < len(gt)-1; i++ {
 		c1 := gt[i]
 		c2 := gt[i+1]
 		if c1.Position <= t && t <= c2.Position {
 			// Blend between c1 and c2
 			blendT := (t - c1.Position) / (c2.Position - c1.Position)
-			return methodFunc(c1.Color, c2.Color, blendT), nil
+			return methodFunc(c1.Color, c2.Color, blendT)
 		}
 	}
 	// Return the last color if past the end
-	return gt[len(gt)-1].Color, nil
+	return gt[len(gt)-1].Color
 }
 
 // GenerateGradient creates a gradient image from a list of hex colors.
@@ -174,25 +178,31 @@ func GenerateGradient(hexColors []string, width, height int, angle float64, inte
 
 	halfLen := (math.Abs(float64(width)*dx) + math.Abs(float64(height)*dy)) / 2.0
 
+	methodFunc, ok := blendMethods[interpolationMethod]
+	if !ok {
+		return nil, fmt.Errorf("invalid method: %s", interpolationMethod)
+	}
+
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	for y := range height {
-		for x := range width {
-			proj := (float64(x)-cx)*dx + (float64(y)-cy)*dy
-			t := (proj + halfLen) / (2.0 * halfLen)
-			if t < 0 {
-				t = 0
-			} else if t > 1 {
-				t = 1
-			}
+	pixels.ParallelRows(height, func(y0, y1 int) {
+		for y := y0; y < y1; y++ {
+			row := img.Pix[y*img.Stride : y*img.Stride+width*4]
+			for x := range width {
+				proj := (float64(x)-cx)*dx + (float64(y)-cy)*dy
+				t := (proj + halfLen) / (2.0 * halfLen)
+				if t < 0 {
+					t = 0
+				} else if t > 1 {
+					t = 1
+				}
 
-			c, err := keypoints.GetInterpolatedColorFor(t, interpolationMethod)
-			if err != nil {
-				return nil, err
+				// the same as img.Set(x, y, c) without boxing c in a color.Color for every pixel
+				r, g, b, a := keypoints.interpolate(t, methodFunc).RGBA()
+				row[x*4+0], row[x*4+1], row[x*4+2], row[x*4+3] = uint8(r>>8), uint8(g>>8), uint8(b>>8), uint8(a>>8)
 			}
-			img.Set(x, y, c)
 		}
-	}
+	})
 
 	return img, nil
 }

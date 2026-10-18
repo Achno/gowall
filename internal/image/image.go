@@ -127,12 +127,14 @@ type ProcessOptions struct {
 }
 
 // Processes the image depending on a processor that impliments the "ImageProcessor" interface.
+// Images are processed concurrently, at most one per CPU so a big batch doesn't decode every image into memory at once.
 func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts ProcessOptions) ([]string, error) {
 	var wg sync.WaitGroup
 	remaining := int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
 	var processedImagesFilePaths []string
 	var pathsMutex sync.Mutex
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 
 	// optionally specify a temporary theme via json file in runtime.
 	// Loaded once before the goroutines start, as loading it adds it to the global themes map
@@ -150,6 +152,9 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts Proc
 		wg.Add(1)
 		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
 			img, err := imageio.LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)

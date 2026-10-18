@@ -132,25 +132,28 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts Proc
 	remaining := int32(len(imageOps))
 	errChan := make(chan error, len(imageOps))
 	var processedImagesFilePaths []string
+	var pathsMutex sync.Mutex
+
+	// optionally specify a temporary theme via json file in runtime.
+	// Loaded once before the goroutines start, as loading it adds it to the global themes map
+	theme := opts.Theme
+	if strings.HasSuffix(theme, ".json") {
+		var err error
+		theme, err = LoadThemeFromJson(theme)
+		if err != nil {
+			return nil, fmt.Errorf("file %s : %w", opts.Theme, err)
+		}
+	}
 
 	// Load the image
 	for index, imageOp := range imageOps {
 		wg.Add(1)
 		go func(i int, imgProcessor ImageProcessor, currentImgOp imageio.ImageIO) {
 			defer wg.Done()
-			theme := opts.Theme
 			img, err := imageio.LoadImage(currentImgOp.ImageInput)
 			if err != nil {
 				errChan <- fmt.Errorf("while loading image: %w", err)
 				return
-			}
-			// optionally specify a temporary theme via json file in runtime
-			if strings.HasSuffix(theme, ".json") {
-				theme, err = LoadThemeFromJson(theme)
-				if err != nil {
-					errChan <- fmt.Errorf("file %s : %w", currentImgOp.ImageInput, err)
-					return
-				}
 			}
 			// Process the image
 			newImg, metadata, err := imgProcessor.Process(img, theme, currentImgOp.Format)
@@ -172,7 +175,9 @@ func ProcessImgs(processor ImageProcessor, imageOps []imageio.ImageIO, opts Proc
 				// Default completion message
 				logger.Printf("::: Image completed & saved in %s, %d Images left :::\n", currentImgOp.ImageOutput.String(), remainingCount)
 			}
+			pathsMutex.Lock()
 			processedImagesFilePaths = append(processedImagesFilePaths, currentImgOp.ImageOutput.String())
+			pathsMutex.Unlock()
 		}(index, processor, imageOp)
 	}
 	wg.Wait()

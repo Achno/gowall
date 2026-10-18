@@ -9,6 +9,7 @@ import (
 	"github.com/disintegration/imaging"
 	drawx "golang.org/x/image/draw"
 
+	"github.com/Achno/gowall/internal/backends/pixels"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -113,8 +114,14 @@ func ResizeWithPadding(img image.Image, width, height int) image.Image {
 	newHeight := int(float64(srcHeight) * ratio)
 	dstRect := image.Rect(0, 0, newWidth, newHeight)
 
-	dst := image.NewRGBA(dstRect)
-	drawx.CatmullRom.Scale(dst, dstRect, img, img.Bounds(), draw.Over, nil)
+	// skip same scale resizing
+	var dst *image.RGBA
+	if newWidth == srcWidth && newHeight == srcHeight {
+		dst = pixels.ToRGBA(img)
+	} else {
+		dst = image.NewRGBA(dstRect)
+		drawx.CatmullRom.Scale(dst, dstRect, img, img.Bounds(), draw.Over, nil)
+	}
 
 	// Center the image in the target dimensions if needed
 	if newWidth < width || newHeight < height {

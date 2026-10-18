@@ -78,8 +78,38 @@ func (d *Decoder) disposalAt(i int) byte {
 	return gif.DisposalNone
 }
 
+// paint draws the frame over the canvas. Gif colors are either opaque or fully transparent, so drawing over is
+// copying the opaque ones and skipping the transparent ones, done directly instead of through draw.Draw's slow generic path.
 func (d *Decoder) paint(frame *image.Paletted) {
-	draw.Draw(d.canvas, frame.Bounds(), frame, frame.Bounds().Min, draw.Over)
+	colors := make([][4]uint8, len(frame.Palette))
+	opaque := make([]bool, len(frame.Palette))
+	for i, c := range frame.Palette {
+		r, g, b, a := c.RGBA()
+		switch a {
+		case 0xffff:
+			colors[i], opaque[i] = [4]uint8{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), 0xff}, true
+		case 0:
+		default:
+			draw.Draw(d.canvas, frame.Bounds(), frame, frame.Bounds().Min, draw.Over)
+			return
+		}
+	}
+
+	r := frame.Bounds().Intersect(d.canvas.Bounds())
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		src := frame.Pix[frame.PixOffset(r.Min.X, y):frame.PixOffset(r.Max.X, y)]
+		dst := d.canvas.Pix[d.canvas.PixOffset(r.Min.X, y):]
+		for x, idx := range src {
+			if int(idx) >= len(colors) {
+				// not a color of the palette, let draw.Draw handle it the way it always has
+				draw.Draw(d.canvas, frame.Bounds(), frame, frame.Bounds().Min, draw.Over)
+				return
+			}
+			if opaque[idx] {
+				copy(dst[x*4:x*4+4], colors[idx][:])
+			}
+		}
+	}
 }
 
 // dispose prepares the canvas for the next frame, as the frame's disposal method asks

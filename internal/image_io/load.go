@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	"image/png"
 	"io"
 	"os"
 
+	"github.com/Achno/gowall/internal/backends/fastpng"
 	gifbackend "github.com/Achno/gowall/internal/backends/gif"
 	webp "github.com/chai2010/webp"
 	avif "github.com/gen2brain/avif"
@@ -18,10 +18,7 @@ import (
 // Available formats to Encode an image in
 var encoders = map[string]func(file *os.File, img image.Image) error{
 	"png": func(file *os.File, img image.Image) error {
-		png := &png.Encoder{
-			CompressionLevel: png.BestSpeed,
-		}
-		return png.Encode(file, img)
+		return fastpng.Encode(file, img)
 	},
 	"jpg": func(file *os.File, img image.Image) error {
 		return jpeg.Encode(file, img, nil)

@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image"
-	"image/png"
 	"os"
 
+	"github.com/Achno/gowall/internal/backends/fastpng"
 	"golang.org/x/term"
 )
 
@@ -152,7 +152,7 @@ func readInput(onInput func(in []byte) bool) error {
 // transmit uploads img as a png in 4096 byte chunks, the protocol's max chunk size.
 func transmit(w *bytes.Buffer, id int, img image.Image) error {
 	var p bytes.Buffer
-	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&p, img); err != nil {
+	if err := fastpng.Encode(&p, img); err != nil {
 		return fmt.Errorf("encoding PNG: %w", err)
 	}
 	data := base64.StdEncoding.EncodeToString(p.Bytes())

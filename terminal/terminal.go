@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image"
-	"image/png"
+	_ "image/png"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
 
+	"github.com/Achno/gowall/internal/backends/fastpng"
 	"golang.org/x/term"
 )
 
@@ -29,7 +30,7 @@ func RenderKittyImg(filePath string) error {
 	}
 
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
+	if err := fastpng.Encode(&buf, img); err != nil {
 		return fmt.Errorf("encoding PNG: %w", err)
 	}
 

@@ -124,15 +124,7 @@ var blendMethods = map[string]func(color1, color2 colorful.Color, blendT float64
 	},
 }
 
-// GetInterpolatedColorFor returns a HCL-blended color for position t [0,1]
-func (gt GradientTable) GetInterpolatedColorFor(t float64, method string) (colorful.Color, error) {
-	methodFunc, ok := blendMethods[method]
-	if !ok {
-		return colorful.Color{}, fmt.Errorf("invalid method: %s", method)
-	}
-	return gt.interpolate(t, methodFunc), nil
-}
-
+// interpolate returns the color at position t [0,1], blending the two keypoints around it with methodFunc
 func (gt GradientTable) interpolate(t float64, methodFunc func(color1, color2 colorful.Color, blendT float64) colorful.Color) colorful.Color {
 	for i := 0; i < len(gt)-1; i++ {
 		c1 := gt[i]

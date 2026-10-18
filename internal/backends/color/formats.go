@@ -119,3 +119,9 @@ func ToRGBA(clrs []color.Color) ([]color.RGBA, error) {
 
 	return rgbaColors, nil
 }
+
+// RGBA8 returns the 8-bit premultiplied channels of a color, the same as color.RGBAModel.Convert(c).(color.RGBA)
+func RGBA8(c color.Color) color.RGBA {
+	r, g, b, a := c.RGBA()
+	return color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
+}

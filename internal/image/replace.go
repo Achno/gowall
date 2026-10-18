@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"sync/atomic"
 
 	cpkg "github.com/Achno/gowall/internal/backends/color"
+	"github.com/Achno/gowall/internal/backends/pixels"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -39,25 +41,38 @@ func (r *ReplaceProcessor) Process(img image.Image, theme string, format string)
 
 // replaces every pixel from the "from" color over to the "to" color in the image
 func replaceColor(img image.Image, from, to color.Color, threshold float64) (image.Image, error) {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(bounds)
+	src := pixels.ToRGBA(img)
+	newImg := image.NewRGBA(src.Rect)
+	width, height := src.Rect.Dx(), src.Rect.Dy()
 
-	replacementMade := false
+	fromRGBA := cpkg.RGBA8(from)
+	toRGBA := cpkg.RGBA8(to)
 
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			originalColor := img.At(x, y)
-			blendWeight := cpkg.ColorSimilarityWeight(originalColor, from, threshold)
-			if blendWeight > 0 {
-				newImg.Set(x, y, cpkg.BlendColor(originalColor, to, blendWeight))
-				replacementMade = true
-			} else {
-				newImg.Set(x, y, originalColor)
+	var replacementMade atomic.Bool
+
+	pixels.ParallelRows(height, func(y0, y1 int) {
+		replaced := false
+		for y := y0; y < y1; y++ {
+			srcRow := src.Pix[y*src.Stride : y*src.Stride+width*4]
+			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
+			for i := 0; i < len(srcRow); i += 4 {
+				originalColor := color.RGBA{srcRow[i], srcRow[i+1], srcRow[i+2], srcRow[i+3]}
+				blendWeight := cpkg.ColorSimilarityWeight(originalColor, fromRGBA, threshold)
+				if blendWeight > 0 {
+					c := cpkg.BlendColorRGBA(originalColor, toRGBA, blendWeight)
+					dstRow[i], dstRow[i+1], dstRow[i+2], dstRow[i+3] = c.R, c.G, c.B, c.A
+					replaced = true
+				} else {
+					copy(dstRow[i:i+4], srcRow[i:i+4])
+				}
 			}
 		}
-	}
+		if replaced {
+			replacementMade.Store(true)
+		}
+	})
 
-	if !replacementMade {
+	if !replacementMade.Load() {
 		hex := cpkg.RGBtoHex(from.(color.RGBA))
 		return nil, fmt.Errorf("the color : %s was not found in the image, nothing to replace", hex)
 	}

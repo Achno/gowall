@@ -244,7 +244,7 @@ func (c *AsciiConverter) pickColors(smalls []*image.NRGBA) {
 	}
 	c.colors = make([]color.RGBA, len(colors))
 	for i, clr := range colors {
-		c.colors[i] = color.RGBAModel.Convert(clr).(color.RGBA)
+		c.colors[i] = cpkg.RGBA8(clr)
 	}
 }
 

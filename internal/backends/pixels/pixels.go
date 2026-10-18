@@ -42,3 +42,15 @@ func ParallelRows(height int, fn func(y0, y1 int)) {
 	}
 	wg.Wait()
 }
+
+// CopyPixel copies the pixel at (sx,sy) of src to (dx,dy) of dst. Pixels outside of src are copied as transparent,
+// the same as src.At() returns them.
+func CopyPixel(dst *image.RGBA, dx, dy int, src *image.RGBA, sx, sy int) {
+	d := dst.PixOffset(dx, dy)
+	if !(image.Point{sx, sy}.In(src.Rect)) {
+		clear(dst.Pix[d : d+4])
+		return
+	}
+	s := src.PixOffset(sx, sy)
+	copy(dst.Pix[d:d+4], src.Pix[s:s+4])
+}

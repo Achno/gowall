@@ -4,6 +4,9 @@ import (
 	"image"
 	"image/color"
 	"sort"
+	"sync"
+
+	"github.com/Achno/gowall/internal/backends/pixels"
 )
 
 const (
@@ -26,27 +29,31 @@ func GetPalette(img image.Image, maxCubes int) ([]color.Color, error) {
 }
 
 func getHistogram(img image.Image) []int {
-	bounds := img.Bounds()
+	src := pixels.ToRGBA(img)
+	width, height := src.Rect.Dx(), src.Rect.Dy()
 
+	// every chunk of rows counts into its own histogram, they are summed at the end
+	var mu sync.Mutex
 	hist := make([]int, HistogramSize)
 
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r, g, b, a := img.At(x, y).RGBA()
-			r = r >> 8
-			g = g >> 8
-			b = b >> 8
-			a = a >> 8
-
-			if a < 125 {
-				// skip transparent pixels
-				continue
+	pixels.ParallelRows(height, func(y0, y1 int) {
+		local := make([]int, HistogramSize)
+		for y := y0; y < y1; y++ {
+			row := src.Pix[y*src.Stride : y*src.Stride+width*4]
+			for i := 0; i < len(row); i += 4 {
+				if row[i+3] < 125 {
+					// skip transparent pixels
+					continue
+				}
+				local[RGB(row[i], row[i+1], row[i+2])]++
 			}
-			cl := RGB(uint8(r), uint8(g), uint8(b))
-			hist[cl]++
-
 		}
-	}
+		mu.Lock()
+		for i, n := range local {
+			hist[i] += n
+		}
+		mu.Unlock()
+	})
 	return hist
 }
 

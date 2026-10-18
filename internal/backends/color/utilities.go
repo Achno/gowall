@@ -8,18 +8,10 @@ import (
 	"math"
 )
 
-func ColorSimilarityWeight(c1, c2 color.Color, threshold float64) float64 {
-	r1, g1, b1, _ := c1.RGBA()
-	r2, g2, b2, _ := c2.RGBA()
-
-	r1, g1, b1 = r1>>8, g1>>8, b1>>8
-	r2, g2, b2 = r2>>8, g2>>8, b2>>8
-
-	distance := math.Sqrt(
-		math.Pow(float64(r1)-float64(r2), 2) +
-			math.Pow(float64(g1)-float64(g2), 2) +
-			math.Pow(float64(b1)-float64(b2), 2),
-	)
+// ColorSimilarityWeight takes color.RGBA instead of color.Color, so calling it per pixel doesn't allocate
+func ColorSimilarityWeight(c1, c2 color.RGBA, threshold float64) float64 {
+	dr, dg, db := float64(c1.R)-float64(c2.R), float64(c1.G)-float64(c2.G), float64(c1.B)-float64(c2.B)
+	distance := math.Sqrt(dr*dr + dg*dg + db*db)
 
 	if threshold < 0 {
 		threshold = 0
@@ -37,21 +29,23 @@ func ColorSimilarityWeight(c1, c2 color.Color, threshold float64) float64 {
 }
 
 func BlendColor(c1, c2 color.Color, weight float64) color.Color {
+	return BlendColorRGBA(RGBA8(c1), RGBA8(c2), weight)
+}
+
+// BlendColorRGBA is BlendColor for color.RGBA, it doesn't box the colors in an interface so it doesn't allocate in per pixel loops
+func BlendColorRGBA(c1, c2 color.RGBA, weight float64) color.RGBA {
 	weight = math.Max(0, math.Min(1, weight))
 
-	r1, g1, b1, a1 := c1.RGBA()
-	r2, g2, b2, a2 := c2.RGBA()
-
-	blend := func(v1, v2 uint32) uint8 {
-		mixed := (1-weight)*float64(v1>>8) + weight*float64(v2>>8)
+	blend := func(v1, v2 uint8) uint8 {
+		mixed := (1-weight)*float64(v1) + weight*float64(v2)
 		return uint8(math.Round(mixed))
 	}
 
 	return color.RGBA{
-		R: blend(r1, r2),
-		G: blend(g1, g2),
-		B: blend(b1, b2),
-		A: blend(a1, a2),
+		R: blend(c1.R, c2.R),
+		G: blend(c1.G, c2.G),
+		B: blend(c1.B, c2.B),
+		A: blend(c1.A, c2.A),
 	}
 }
 

@@ -35,6 +35,20 @@ func WithAsciiBackground(background color.RGBA) AsciiOption {
 	}
 }
 
+// WithAsciiSize sets the size of the output in px, zero keeps the size of the input
+func WithAsciiSize(width, height int) AsciiOption {
+	return func(o *imgbackend.AsciiOptions) {
+		o.Size = image.Pt(width, height)
+	}
+}
+
+// WithAsciiScale sets how the image is placed on the size when their shapes differ
+func WithAsciiScale(scale imgbackend.AsciiScale) AsciiOption {
+	return func(o *imgbackend.AsciiOptions) {
+		o.Scale = scale
+	}
+}
+
 func NewAsciiProcessor(opts ...AsciiOption) *AsciiProcessor {
 	options := imgbackend.DefaultAsciiOptions()
 	for _, opt := range opts {

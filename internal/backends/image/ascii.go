@@ -7,6 +7,7 @@ import (
 	"image/gif"
 	"io"
 	"math"
+	"slices"
 
 	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/backends/colorthief/mediancut"
@@ -54,10 +55,39 @@ func AsciiModes() []string {
 	return []string{string(AsciiColor), string(AsciiWhite), string(AsciiBlack)}
 }
 
+// AsciiScale decides how the image is placed on an output of a given size when their shapes differ
+type AsciiScale string
+
+const (
+	AsciiFit AsciiScale = "fit" // the whole image as large as it fits, centered, the rest is background
+)
+
+// ScaleStrategy places an image on an output of another shape
+type ScaleStrategy interface {
+	// Place returns the part of the image that is used (crop) and where on the output it is drawn (dst)
+	Place(src image.Rectangle, out image.Point) (crop, dst image.Rectangle)
+}
+
+// asciiScales are the supported scales, a new one only needs its strategy registered here
+var asciiScales = map[AsciiScale]ScaleStrategy{
+	AsciiFit: FitStrategy{},
+}
+
+func AsciiScales() []string {
+	scales := make([]string, 0, len(asciiScales))
+	for scale := range asciiScales {
+		scales = append(scales, string(scale))
+	}
+	slices.Sort(scales)
+	return scales
+}
+
 type AsciiOptions struct {
-	Detail     int // 0-100, how many characters fit in the output width: 0 is chunky, 100 is the densest
+	Detail     int // 0-100, how many characters fit in the drawn width: 0 is chunky, 100 is the densest
 	Mode       AsciiMode
 	Background color.RGBA
+	Size       image.Point // of the output in px, zero keeps the size of the input
+	Scale      AsciiScale  // how the image is placed on Size when their shapes differ
 }
 
 func DefaultAsciiOptions() AsciiOptions {
@@ -65,6 +95,7 @@ func DefaultAsciiOptions() AsciiOptions {
 		Detail:     50,
 		Mode:       AsciiColor,
 		Background: AsciiDark,
+		Scale:      AsciiFit,
 	}
 }
 
@@ -79,14 +110,17 @@ type AsciiCell struct {
 type AsciiFrame [][]AsciiCell
 
 // AsciiConverter converts images into AsciiFrames and renders them back into images or gifs.
-// The output keeps the size of the input (at least minOutputWidth wide), the detail only decides how many characters fill it.
+// The output keeps the size of the input (at least minOutputWidth wide) unless a Size is given, the detail only decides
+// how many characters fill it.
 type AsciiConverter struct {
 	AsciiOptions
 
 	ramp          []rune
 	colors        []color.RGBA // the character colors, a single one unless the mode is color
 	palette       color.Palette
-	width, height int // of the output in px
+	width, height int             // of the output in px
+	crop          image.Rectangle // the part of the input that is drawn
+	area          image.Rectangle // where on the output the characters are drawn, the rest stays background
 	cols, rows    int
 	cell          int                       // size in px of the square every character is drawn in
 	atlas         [inkLevels][]*image.Alpha // a pre-rendered tile per ink level and character
@@ -105,13 +139,18 @@ func (c *AsciiConverter) Convert(imgs []image.Image) ([]AsciiFrame, error) {
 		return nil, fmt.Errorf("there are no frames to convert")
 	}
 
-	c.layout(imgs[0].Bounds())
+	if err := c.layout(imgs[0].Bounds()); err != nil {
+		return nil, err
+	}
 	if err := c.buildAtlas(); err != nil {
 		return nil, err
 	}
 
 	smalls := make([]*image.NRGBA, len(imgs))
 	for i, img := range imgs {
+		if c.crop != img.Bounds() {
+			img = imaging.Crop(img, c.crop)
+		}
 		smalls[i] = imaging.Resize(img, c.cols, c.rows, imaging.Box)
 	}
 
@@ -129,9 +168,10 @@ func (c *AsciiConverter) Convert(imgs []image.Image) ([]AsciiFrame, error) {
 }
 
 // Render draws a frame, every pixel is a shade between the background and a character color so it is paletted without any loss.
-// The cells are spread over the exact output size, so some are 1px further apart than others.
+// The cells are spread over the exact drawn area, so some are 1px further apart than others.
 func (c *AsciiConverter) Render(frame AsciiFrame) *image.Paletted {
 	out := image.NewPaletted(image.Rect(0, 0, c.width, c.height), c.palette)
+	areaW, areaH := c.area.Dx(), c.area.Dy()
 
 	for y, row := range frame {
 		for x, cell := range row {
@@ -139,7 +179,7 @@ func (c *AsciiConverter) Render(frame AsciiFrame) *image.Paletted {
 				continue
 			}
 			tile := c.atlas[c.levelFor(cell.Ink)][cell.Char]
-			c.drawTile(out, tile, cell.Color, x*c.width/c.cols, y*c.height/c.rows)
+			c.drawTile(out, tile, cell.Color, c.area.Min.X+x*areaW/c.cols, c.area.Min.Y+y*areaH/c.rows)
 		}
 	}
 
@@ -158,16 +198,40 @@ func (c *AsciiConverter) EncodeGif(w io.Writer, frames []AsciiFrame, delays []in
 	return gif.EncodeAll(w, g)
 }
 
-// layout sets the output size and how many characters fill it, the detail goes from minColumns to the columns of minCellSize
-func (c *AsciiConverter) layout(bounds image.Rectangle) {
-	scale := math.Max(1, float64(minOutputWidth)/float64(bounds.Dx()))
-	c.width = int(math.Round(float64(bounds.Dx()) * scale))
-	c.height = max(1, int(math.Round(float64(bounds.Dy())*scale)))
+// layout sets the output size, where the image is drawn on it and how many characters fill that area.
+// The detail goes from minColumns to the columns of minCellSize.
+func (c *AsciiConverter) layout(bounds image.Rectangle) error {
+	if c.Size == (image.Point{}) {
+		scale := math.Max(1, float64(minOutputWidth)/float64(bounds.Dx()))
+		c.width = int(math.Round(float64(bounds.Dx()) * scale))
+		c.height = max(1, int(math.Round(float64(bounds.Dy())*scale)))
+		c.crop, c.area = bounds, image.Rect(0, 0, c.width, c.height)
+	} else {
+		strategy, ok := asciiScales[c.Scale]
+		if !ok {
+			return fmt.Errorf("unsupported scale %q", c.Scale)
+		}
+		c.width, c.height = c.Size.X, c.Size.Y
+		c.crop, c.area = strategy.Place(bounds, c.Size)
+	}
 
-	maxCols := c.width / minCellSize
+	areaW, areaH := c.area.Dx(), c.area.Dy()
+	maxCols := max(minColumns, areaW/minCellSize)
 	c.cols = minColumns + (maxCols-minColumns)*cpkg.Clamp(c.Detail, 0, 100)/100
-	c.rows = max(1, int(math.Round(float64(c.cols)*float64(c.height)/float64(c.width))))
-	c.cell = max(minCellSize, c.width/c.cols)
+	c.rows = max(1, int(math.Round(float64(c.cols)*float64(areaH)/float64(areaW))))
+	c.cell = max(minCellSize, areaW/c.cols)
+	return nil
+}
+
+// FitStrategy draws the whole image as large as it fits in the output, centered, the rest stays background
+type FitStrategy struct{}
+
+func (FitStrategy) Place(src image.Rectangle, out image.Point) (crop, dst image.Rectangle) {
+	scale := math.Min(float64(out.X)/float64(src.Dx()), float64(out.Y)/float64(src.Dy()))
+	w := cpkg.Clamp(int(math.Round(float64(src.Dx())*scale)), 1, out.X)
+	h := cpkg.Clamp(int(math.Round(float64(src.Dy())*scale)), 1, out.Y)
+	x, y := (out.X-w)/2, (out.Y-h)/2
+	return src, image.Rect(x, y, x+w, y+h)
 }
 
 // buildAtlas renders every character at every ink level once, rendering a frame then only copies tiles.
@@ -322,12 +386,13 @@ func (c *AsciiConverter) levelFor(ink float64) int {
 	return min(inkLevels-1, int(ink*inkLevels*1.6))
 }
 
-// drawTile copies a pre-rendered character into the output as shades of its color, untouched pixels stay index 0 (the background)
+// drawTile copies a pre-rendered character into the output as shades of its color, untouched pixels stay index 0 (the background).
+// Characters are cut off at the edges of the drawn area.
 func (c *AsciiConverter) drawTile(out *image.Paletted, tile *image.Alpha, colorIndex, px, py int) {
 	shades := c.shades()
-	size := min(c.cell, c.width-px)
+	size := min(c.cell, c.area.Max.X-px)
 
-	for row := 0; row < c.cell && py+row < c.height; row++ {
+	for row := 0; row < c.cell && py+row < c.area.Max.Y; row++ {
 		dst := out.PixOffset(px, py+row)
 		src := tile.PixOffset(0, row)
 		for i, coverage := range tile.Pix[src : src+size] {

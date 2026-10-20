@@ -3,11 +3,12 @@ package image
 import (
 	"image"
 	"image/color/palette"
-	"image/draw"
 	"image/gif"
 	"io"
+	"runtime"
 	"sync"
 
+	gifbackend "github.com/Achno/gowall/internal/backends/gif"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -70,27 +71,18 @@ type palleted struct {
 	bounds   image.Rectangle
 }
 
-// paletteFramesFromImages converts images to paletted with a 216-bit palette and optionally resizes all frames to the same dimensions
+// paletteFramesFromImages converts images to paletted with a 216-bit palette and optionally resizes all frames to the same dimensions.
 func paletteFramesFromImages(images []image.Image, maxWidth, maxHeight int, mode int) ([]*palleted, error) {
-	const maxWorkers = 5
-	results := make(chan *palleted, len(images))
-	errChan := make(chan error, len(images))
+	processedImages := make([]*palleted, len(images))
+	next := make(chan int)
 
-	// Process in batches to control concurrency
-	var processedImages []*palleted
-
-	for i := 0; i < len(images); i += maxWorkers {
-		end := i + maxWorkers
-		if end > len(images) {
-			end = len(images)
-		}
-
-		var wg sync.WaitGroup
-		for j := i; j < end; j++ {
-			wg.Add(1)
-			go func(img image.Image) {
-				defer wg.Done()
-
+	var wg sync.WaitGroup
+	for range min(runtime.GOMAXPROCS(0), len(images)) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				img := images[i]
 				if mode == Resize {
 					img = ResizeWithPadding(img, maxWidth, maxHeight)
 				}
@@ -98,30 +90,21 @@ func paletteFramesFromImages(images []image.Image, maxWidth, maxHeight int, mode
 				// Convert to paletted
 				bounds := img.Bounds()
 				paletted := image.NewPaletted(bounds, palette.WebSafe)
-				draw.FloydSteinberg.Draw(paletted, bounds, img, bounds.Min)
+				gifbackend.DitherWebSafe(paletted, img)
 
-				results <- &palleted{
+				processedImages[i] = &palleted{
 					paletted: paletted,
 					bounds:   bounds,
 				}
-			}(images[j])
-		}
-		wg.Wait()
+			}
+		}()
 	}
 
-	close(results)
-	close(errChan)
-
-	select {
-	case err := <-errChan:
-		if err != nil {
-			return nil, err
-		}
-	default:
+	for i := range images {
+		next <- i
 	}
+	close(next)
+	wg.Wait()
 
-	for result := range results {
-		processedImages = append(processedImages, result)
-	}
 	return processedImages, nil
 }

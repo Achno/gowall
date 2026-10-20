@@ -25,3 +25,6 @@ go.work.sum
 
 dist/
 .vscode
+
+# local notes for the performance work
+perf.diff

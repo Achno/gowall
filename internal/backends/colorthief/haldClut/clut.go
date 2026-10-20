@@ -7,6 +7,14 @@ import (
 	"image/png"
 	"os"
 	"sync"
+
+	"github.com/Achno/gowall/internal/backends/pixels"
+)
+
+// CLUTs decoded by LoadCachedHaldCLUT, by file path
+var (
+	cacheMutex sync.Mutex
+	cache      = map[string]*image.RGBA{}
 )
 
 // Interface for all the possible interpolation and mapping algorithms
@@ -67,37 +75,53 @@ func LoadHaldCLUT(filePath string) (*image.RGBA, error) {
 	return clut, nil
 }
 
-func ApplyCLUT(img *image.RGBA, clut *image.RGBA, level int) *image.RGBA {
-	// cubeSize := level * level
-	newImg := image.NewRGBA(img.Bounds())
+// LoadCachedHaldCLUT is LoadHaldCLUT but every path is decoded only once, so a batch doesn't decode the same CLUT for every image.
+// It doesn't notice if the file changes afterwards, and the returned CLUT is shared so callers must not modify it.
+func LoadCachedHaldCLUT(filePath string) (*image.RGBA, error) {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
 
-	for y := 0; y < img.Bounds().Dy(); y++ {
-		for x := 0; x < img.Bounds().Dx(); x++ {
-			original := img.RGBAAt(x, y)
-
-			clutX, clutY := correctPixel(original, level)
-
-			mappedColor := clut.RGBAAt(clutX, clutY)
-			if original.A == 0 {
-				mappedColor.A = 0
-			}
-			newImg.SetRGBA(x, y, mappedColor)
-		}
+	if clut, ok := cache[filePath]; ok {
+		return clut, nil
 	}
-	return newImg
+	clut, err := LoadHaldCLUT(filePath)
+	if err != nil {
+		return nil, err
+	}
+	cache[filePath] = clut
+	return clut, nil
 }
 
-func correctPixel(original color.RGBA, level int) (int, int) {
+// ApplyCLUT maps every pixel of img through the clut, img must start at (0,0)
+func ApplyCLUT(img *image.RGBA, clut *image.RGBA, level int) *image.RGBA {
+	newImg := image.NewRGBA(img.Bounds())
+	width, height := img.Bounds().Dx(), img.Bounds().Dy()
+
+	// the cube coordinate of every channel value, computed 256 times instead of 3 times per pixel
 	cubeSize := level * level
+	var cube [256]int
+	for v := range cube {
+		cube[v] = v * (cubeSize - 1) / 255
+	}
 
-	r := int(original.R) * (cubeSize - 1) / 255
-	g := int(original.G) * (cubeSize - 1) / 255
-	b := int(original.B) * (cubeSize - 1) / 255
+	pixels.ParallelRows(height, func(y0, y1 int) {
+		for y := y0; y < y1; y++ {
+			srcRow := img.Pix[y*img.Stride : y*img.Stride+width*4]
+			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
+			for i := 0; i < len(srcRow); i += 4 {
+				r, g, b := cube[srcRow[i]], cube[srcRow[i+1]], cube[srcRow[i+2]]
+				clutX := (r % cubeSize) + (g%level)*cubeSize
+				clutY := (b * level) + (g / level)
 
-	x := (r % cubeSize) + (g%level)*cubeSize
-	y := (b * level) + (g / level)
-
-	return x, y
+				c := clut.PixOffset(clutX, clutY)
+				copy(dstRow[i:i+4], clut.Pix[c:c+4])
+				if srcRow[i+3] == 0 {
+					dstRow[i+3] = 0
+				}
+			}
+		}
+	})
+	return newImg
 }
 
 func InterpolateCLUT(identityClut *image.RGBA, palette []color.RGBA, level int, mapper Mapperfunc) *image.RGBA {

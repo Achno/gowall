@@ -48,7 +48,7 @@ The scale flag decides how the image is placed on that size: fit (the whole imag
 	flags.StringVarP(&bg, "bg", "b", cpkg.RGBtoHex(imgbackend.AsciiDark), "Usage: --bg [#hex] background color, --mode black defaults to "+cpkg.RGBtoHex(imgbackend.AsciiLight))
 
 	flags.StringVarP(&size, "size", "s", "", "Usage: --size [WIDTHxHEIGHT] output size in px (e.g. 1920x1080), keeps the size of the input when empty")
-	flags.StringVar(&scale, "scale", string(imgbackend.AsciiFit), "Usage: --scale ["+strings.Join(imgbackend.AsciiScales(), ",")+"] how the image is placed on --size")
+	flags.StringVar(&scale, "scale", string(imgbackend.AsciiFit), "Usage: --scale ["+strings.Join(imgbackend.GetScaleStrategyNames(), ",")+"] how the image is placed on --size")
 
 	// Hidden flags to pass the parsed --size from PreRunE to Run, 0 keeps the size of the input
 	flags.IntVar(&width, "width", 0, "")
@@ -127,8 +127,8 @@ func ValidateParseAsciiCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlag
 	}
 
 	scale, _ := cmd.Flags().GetString("scale")
-	if !slices.Contains(imgbackend.AsciiScales(), scale) {
-		return fmt.Errorf("unsupported scale %q, use one of: %s", scale, strings.Join(imgbackend.AsciiScales(), ", "))
+	if _, err := imgbackend.GetScaleStrategy(imgbackend.AsciiScale(scale)); err != nil {
+		return err
 	}
 
 	size, _ := cmd.Flags().GetString("size")
@@ -167,7 +167,7 @@ func asciiModeCompletion(cmd *cobra.Command, args []string, toComplete string) (
 }
 
 func asciiScaleCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return imgbackend.AsciiScales(), cobra.ShellCompDirectiveNoFileComp
+	return imgbackend.GetScaleStrategyNames(), cobra.ShellCompDirectiveNoFileComp
 }
 
 func init() {

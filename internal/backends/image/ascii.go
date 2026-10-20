@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"slices"
+	"strings"
 
 	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/backends/colorthief/mediancut"
@@ -73,13 +74,23 @@ var asciiScales = map[AsciiScale]ScaleStrategy{
 	AsciiFit: FitStrategy{},
 }
 
-func AsciiScales() []string {
-	scales := make([]string, 0, len(asciiScales))
-	for scale := range asciiScales {
-		scales = append(scales, string(scale))
+// GetScaleStrategy returns the strategy registered under name
+func GetScaleStrategy(name AsciiScale) (ScaleStrategy, error) {
+	strategy, ok := asciiScales[name]
+	if !ok {
+		return nil, fmt.Errorf("unsupported scale %q, use one of: %s", name, strings.Join(GetScaleStrategyNames(), ", "))
 	}
-	slices.Sort(scales)
-	return scales
+	return strategy, nil
+}
+
+// GetScaleStrategyNames returns the names of all registered strategies, sorted
+func GetScaleStrategyNames() []string {
+	names := make([]string, 0, len(asciiScales))
+	for name := range asciiScales {
+		names = append(names, string(name))
+	}
+	slices.Sort(names)
+	return names
 }
 
 type AsciiOptions struct {
@@ -207,9 +218,9 @@ func (c *AsciiConverter) layout(bounds image.Rectangle) error {
 		c.height = max(1, int(math.Round(float64(bounds.Dy())*scale)))
 		c.crop, c.area = bounds, image.Rect(0, 0, c.width, c.height)
 	} else {
-		strategy, ok := asciiScales[c.Scale]
-		if !ok {
-			return fmt.Errorf("unsupported scale %q", c.Scale)
+		strategy, err := GetScaleStrategy(c.Scale)
+		if err != nil {
+			return err
 		}
 		c.width, c.height = c.Size.X, c.Size.Y
 		c.crop, c.area = strategy.Place(bounds, c.Size)

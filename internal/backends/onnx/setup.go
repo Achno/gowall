@@ -20,6 +20,8 @@ func SharedLibraryName() string {
 	switch runtime.GOOS {
 	case "linux":
 		return fmt.Sprintf("libonnxruntime.so.%s", onnxRuntimeVersion)
+	case "freebsd":
+		return fmt.Sprintf("libonnxruntime.so")
 	case "darwin":
 		return fmt.Sprintf("libonnxruntime.%s.dylib", onnxRuntimeVersion)
 	case "windows":
@@ -156,6 +158,9 @@ func SetupOnnxRuntime() error {
 // CheckOnnxRuntimeInstalled checks if the ONNX runtime shared library is available
 func CheckOnnxRuntimeInstalled() (string, error) {
 	destFolder := config.GowallConfig.OnnxRuntimeFolderPath
+	if runtime.GOOS == "freebsd" {
+		destFolder = filepath.Join("/usr/local", "lib")
+	}
 	libName := SharedLibraryName()
 
 	if libName == "" {

@@ -47,7 +47,7 @@ printing images directly in the terminal. See [Gowall Terminal Image preview](ht
 
 Launch an interactive terminal studio to preview 35+ themes, apply 16+ effects (ASCII art, Pixelate, 3D Tilt, Crop, Gradient), remove backgrounds (`BgRm` via K-Means & ONNX U2-Net/Bria), extract OCR text/Markdown, inspect dominant `Hex`/`RGB`/`HSL` color palettes, and compare **Original vs. Preview** side-by-side in real time:
 
-<div align="center"><img width="900" src="assets/tui-demo.gif" alt="Gowall Studio TUI running in Alacritty with termimg"><br><br></div>
+<div align="center"><img width="900" src="https://raw.githubusercontent.com/thebanri/gowall/feat/studio-tui/assets/tui-demo.gif" alt="Gowall Studio TUI running in Alacritty with termimg"><br><br></div>
 
 ```sh
 # Launch Gowall Studio on an image or directory

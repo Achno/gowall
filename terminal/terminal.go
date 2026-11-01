@@ -97,8 +97,18 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 	}
 	defer term.Restore(int(ttyRead.Fd()), oldState)
 
+	if c, r, sizeErr := term.GetSize(int(ttyRead.Fd())); sizeErr == nil && c > 0 && r > 0 {
+		cols, rows = c, r
+	}
+
 	// query the terminal for its dimensions via ANSI escape codes
-	_, err = ttyWrite.Write([]byte("\033[18t\033[14t"))
+	query := "\033[18t\033[14t"
+	wantReplies := 2
+	if rows > 0 && cols > 0 {
+		query = "\033[14t"
+		wantReplies = 1
+	}
+	_, err = ttyWrite.Write([]byte(query))
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("failed to set raw mode: %w", err)
 	}
@@ -112,7 +122,7 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 			break
 		}
 		response = append(response, buf[:n]...)
-		if bytes.Count(response, []byte("t")) >= 2 {
+		if bytes.Count(response, []byte("t")) >= wantReplies {
 			break
 		}
 	}
@@ -129,6 +139,19 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 	if len(matchesPixel) == 3 {
 		pxHeight, _ = strconv.Atoi(matchesPixel[1])
 		pxWidth, _ = strconv.Atoi(matchesPixel[2])
+	}
+
+	if rows <= 0 {
+		rows = 24
+	}
+	if cols <= 0 {
+		cols = 80
+	}
+	if pxWidth <= 0 {
+		pxWidth = cols * 10
+	}
+	if pxHeight <= 0 {
+		pxHeight = rows * 20
 	}
 
 	return rows, cols, pxWidth, pxHeight, nil

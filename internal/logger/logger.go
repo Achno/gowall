@@ -38,13 +38,22 @@ func (l *Logger) SetQuiet(quiet bool) {
 	l.quiet = quiet
 	if quiet {
 		l.outWriter = io.Discard
+		l.errWriter = io.Discard
 	} else {
 		l.outWriter = os.Stdout
+		l.errWriter = os.Stderr
 	}
 }
 
 func (l *Logger) Quiet() bool {
-	return defaultLogger.quiet
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.quiet
+}
+
+// Quiet returns the global logger's quiet state
+func Quiet() bool {
+	return defaultLogger.Quiet()
 }
 
 // SetQuiet sets the global logger's quiet state

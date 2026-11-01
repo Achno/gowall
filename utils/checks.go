@@ -12,6 +12,9 @@ func Confirm(msg string) bool {
 	if config.GlobalFlags.Yes {
 		return true
 	}
+	if logger.Quiet() {
+		return false
+	}
 
 	var input string
 

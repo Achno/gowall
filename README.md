@@ -23,6 +23,7 @@ Gowall is really well documented with **visual examples**: [Gowall Docs](https:/
 ❗ Although Gowall is a CLI tool, it has an `Image preview` feature that allows
 printing images directly in the terminal. See [Gowall Terminal Image preview](https://achno.github.io/gowall-docs/#image-preview)
 
+- **Interactive Studio TUI (`gowall tui`)** – Live side-by-side theme conversion, 16+ effects (including ASCII art, Pixelate, 3D Tilt, Crop & Gradient), background removal (`BgRm`), multi-provider OCR text extraction (`Tesseract`, `Ollama`, `Gemini`, `OpenAI`, `Mistral`, `Docling`), dominant color palette extraction (`Hex`/`RGB`/`HSL` + `Lighten`), **Drag & Drop image/folder loading**, and file browser powered by [Limoni](https://github.com/thebanri/limoni) & `termimg` (with full-resolution pixel previews even in **Alacritty**).
 - **Convert Wallpaper's theme**  – Recolor an image to match your favorite + (Custom) themes (Catppuccin...).
 - **Image compression** - Reduce the size of png,jpeg,jpg,webp images.
 - **OCR** - Extract text from images and pdfs', supporting 9+ providers (Traditional OCR, Visual Language Models and hybrid methods).
@@ -39,6 +40,41 @@ printing images directly in the terminal. See [Gowall Terminal Image preview](ht
 - Remove the background of the image - Pretty self explanatory.
 - Effects - Mirror,Flip,Grayscale,change brightness and more to come!
 - Daily wallpapers - Explore community-voted wallpapers that reset daily.
+
+---
+
+## Interactive Studio TUI (`gowall tui`) :sparkles:
+
+Launch an interactive terminal studio to preview 35+ themes, apply 16+ effects (ASCII art, Pixelate, 3D Tilt, Crop, Gradient), remove backgrounds (`BgRm` via K-Means & ONNX U2-Net/Bria), extract OCR text/Markdown, inspect dominant `Hex`/`RGB`/`HSL` color palettes, and compare **Original vs. Preview** side-by-side in real time:
+
+<div align="center"><img width="900" src="assets/tui-demo.gif" alt="Gowall Studio TUI running in Alacritty with termimg"><br><br></div>
+
+```sh
+# Launch Gowall Studio on an image or directory
+gowall tui ~/Pictures/wallpaper.png
+
+# Full-resolution pixel rendering inside Alacritty (via termimg X11 overlay)
+termimg gowall tui ~/Pictures/wallpaper.png
+```
+
+### Keybindings
+
+| Key | Action |
+| :--- | :--- |
+| `1` – `6` or `Tab` | Switch between **1:Themes**, **2:Effects**, **3:BgRm**, **4:OCR**, **5:Palette**, and **6:Files** |
+| **Drag & Drop** or `d` | Drag & drop any image/folder from your file manager onto the terminal, or press `d` for the **Drop Zone** |
+| `↑` / `↓` or Mouse Click | Select theme, effect, background removal mode, OCR provider, palette color, or file |
+| `[` / `]` or `←` / `→` | Adjust effect parameter, K-Means iteration count, or extracted palette count slider |
+| `v` | Toggle **Side-by-Side (Before/After)** vs. **Single Full Preview** |
+| `b` | Toggle color engine between **HaldCLUT (RBF)** and **Nearest-Neighbour** |
+| `o` / `Enter` (in OCR) | Run OCR text extraction (`Tesseract`, `Ollama`, `Gemini`, `OpenAI`, `Mistral`, `Docling`) |
+| `l` | Lighten selected color in the extracted palette (`gowall color light`) |
+| `a` | Chain current preview output as the new working base layer |
+| `r` | Reset working image back to original |
+| `e` | Toggle palette extraction source (**Preview** vs. **Original**) |
+| `/` or `Ctrl+P` | Open fuzzy **Command Palette** |
+| `s` | Save full-resolution processed image (or `.md` OCR transcript) to your Gowall output directory |
+| `q` / `Esc` | Quit Gowall Studio |
 
 ---
 

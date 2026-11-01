@@ -35,6 +35,10 @@ func ensureRuntimeAvailable() (string, error) {
 		return runtimePath, nil
 	}
 
+	if logger.Quiet() {
+		return "", fmt.Errorf("onnx runtime is not installed (non-interactive mode)")
+	}
+
 	prompt := fmt.Sprintf("%s ◈ ONNX Runtime is not installed. Would you like to set it up?%s", utils.BlueColor, utils.ResetColor)
 	if !utils.Confirm(prompt) {
 		return "", fmt.Errorf("onnx runtime download declined")
@@ -48,6 +52,9 @@ func ensureRuntimeAvailable() (string, error) {
 }
 
 func ensureEnvironment(libraryPath string) error {
+	if ort.IsInitialized() {
+		return nil
+	}
 	ort.SetSharedLibraryPath(libraryPath)
 	if err := ort.InitializeEnvironment(); err != nil {
 		return fmt.Errorf("initialize onnxruntime: %w", err)
@@ -64,6 +71,10 @@ func ensureModelAvailable(model Model) (string, error) {
 		return modelPath, nil
 	} else if !os.IsNotExist(err) {
 		return "", fmt.Errorf("check model path %q: %w", modelPath, err)
+	}
+
+	if logger.Quiet() {
+		return "", fmt.Errorf("model %q is not installed (non-interactive mode)", model.Name())
 	}
 
 	prompt := fmt.Sprintf("%s ◈ Model %q is missing. Download it?%s", utils.BlueColor, model.Name(), utils.ResetColor)
@@ -173,6 +184,28 @@ func CheckOnnxRuntimeInstalled() (string, error) {
 	}
 
 	return libPath, nil
+}
+
+// IsRuntimeInstalled checks whether the ONNX runtime shared library is present on disk.
+func IsRuntimeInstalled() bool {
+	p, err := CheckOnnxRuntimeInstalled()
+	return err == nil && p != ""
+}
+
+// IsModelInstalled checks whether the model ONNX file is present on disk and non-empty.
+func IsModelInstalled(model Model) bool {
+	if model == nil {
+		return false
+	}
+	baseDir := config.GowallConfig.OnnxModelFolderPath
+	p := modelCachePath(baseDir, model)
+	fi, err := os.Stat(p)
+	return err == nil && !fi.IsDir() && fi.Size() > 0
+}
+
+// IsReady returns true if both the ONNX runtime and the specified model are installed on disk.
+func IsReady(model Model) bool {
+	return IsRuntimeInstalled() && IsModelInstalled(model)
 }
 
 // modelCachePath returns ~/.u2net/<model>.onnx

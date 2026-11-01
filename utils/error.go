@@ -12,7 +12,7 @@ func HandleError(err error, msg ...string) {
 		case len(msg) > 0:
 			logger.Fatalf("\n %s: %s", msg[0], err)
 		default:
-			logger.Fatalf("\n" + err.Error())
+			logger.Fatalf("\n%s", err.Error())
 		}
 	}
 }

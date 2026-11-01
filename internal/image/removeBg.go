@@ -8,6 +8,8 @@ import (
 	"slices"
 
 	bgremoval "github.com/Achno/gowall/internal/backends/bgRemoval"
+	"github.com/Achno/gowall/internal/backends/onnx"
+	"github.com/Achno/gowall/internal/backends/onnx/sessions"
 	types "github.com/Achno/gowall/internal/types"
 )
 
@@ -65,6 +67,20 @@ func IsValidBgStrategy(name string) bool {
 	}
 
 	return false
+}
+
+// IsBgStrategyReady checks whether the required runtime and model files are already installed on disk.
+func IsBgStrategyReady(method string) bool {
+	switch method {
+	case "kmeans":
+		return true
+	case "u2net":
+		return onnx.IsReady(&sessions.U2Net{})
+	case "bria-rmbg":
+		return onnx.IsReady(&sessions.BriaRmBg{})
+	default:
+		return false
+	}
 }
 
 func GetBgStrategy(method string, maxIter int, convergence float64, sampleRate float64, numRoutines int) (bgremoval.BgRemovalStrategy, func() error, error) {

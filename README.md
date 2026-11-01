@@ -27,7 +27,7 @@ printing images directly in the terminal. See [Gowall Terminal Image preview](ht
 
 Gowall now supports full-resolution terminal image previews in **Alacritty** and other terminals without native graphics protocols through [termimg](https://github.com/thebanri/limoni):
 
-<div align="center"><img width="860" src="assets/termimg-demo.gif" alt="Gowall Image Preview running inside Alacritty with termimg"><br><br></div>
+<div align="center"><img width="860" src="https://raw.githubusercontent.com/thebanri/gowall/feat/termimg-preview/assets/termimg-demo.gif" alt="Gowall Image Preview running inside Alacritty with termimg"><br><br></div>
 
 ```sh
 # Run any gowall command with termimg for instant high-resolution terminal previews:

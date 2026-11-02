@@ -218,6 +218,7 @@ The following are **third-party projects** built by the community that extend or
 ### 🔗 Projects
 
 - [**tinted-gowall**](https://github.com/tinted-theming/tinted-gowall) — A bridge between `gowall` and the [tinted-theming](https://github.com/tinted-theming) ecosystem. This project enables users to apply their `base16`/`base24` themes with `gowall`, unlocking hundreds of new visual styles.
+- [**termimg**](https://github.com/thebanri/limoni/tree/main/apps/termimg) — Runs a command so the images it prints show in terminals without an image protocol, such as Alacritty. Run `termimg gowall ... --preview true` to get gowall's image preview there.
 
 
 # Special Thanks

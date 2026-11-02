@@ -97,8 +97,18 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 	}
 	defer term.Restore(int(ttyRead.Fd()), oldState)
 
+	if c, r, sizeErr := term.GetSize(int(ttyRead.Fd())); sizeErr == nil && c > 0 && r > 0 {
+		cols, rows = c, r
+	}
+
 	// query the terminal for its dimensions via ANSI escape codes
-	_, err = ttyWrite.Write([]byte("\033[18t\033[14t"))
+	query := "\033[18t\033[14t"
+	wantReplies := 2
+	if rows > 0 && cols > 0 {
+		query = "\033[14t"
+		wantReplies = 1
+	}
+	_, err = ttyWrite.Write([]byte(query))
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("failed to set raw mode: %w", err)
 	}
@@ -112,7 +122,7 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 			break
 		}
 		response = append(response, buf[:n]...)
-		if bytes.Count(response, []byte("t")) >= 2 {
+		if bytes.Count(response, []byte("t")) >= wantReplies {
 			break
 		}
 	}
@@ -150,12 +160,19 @@ func textCells(img image.Image) (int, int, error) {
 		return 0, 0, fmt.Errorf("while getting terminal dimensions: %w", err)
 	}
 
+	if termRows <= 0 || termCols <= 0 {
+		return 0, 0, fmt.Errorf("could not determine terminal size")
+	}
+
 	imgAspect := aspectRatio(img)
 
-	// Compute the size of one cell (in pixels).
-	cellWidth := float64(termPxWidth) / float64(termCols)
-	cellHeight := float64(termPxHeight) / float64(termRows)
-	cellAspect := cellWidth / cellHeight
+	// Compute the size of one cell (in pixels), assuming cells twice as tall as wide when the terminal does not report pixels.
+	cellAspect := 0.5
+	if termPxWidth > 0 && termPxHeight > 0 {
+		cellWidth := float64(termPxWidth) / float64(termCols)
+		cellHeight := float64(termPxHeight) / float64(termRows)
+		cellAspect = cellWidth / cellHeight
+	}
 
 	// Adjust image aspect ratio to account for the non-square text cells.
 	effectiveAspect := imgAspect / cellAspect

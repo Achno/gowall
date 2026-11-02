@@ -67,3 +67,8 @@ func HasChafa() bool {
 
 	return path != ""
 }
+
+// Checks if gowall is running inside a termimg session
+func IsTermimgRunning() bool {
+	return os.Getenv("TERMIMG") != ""
+}

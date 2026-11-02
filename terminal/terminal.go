@@ -141,19 +141,6 @@ func getTerminalDimensions() (rows, cols, pxWidth, pxHeight int, err error) {
 		pxWidth, _ = strconv.Atoi(matchesPixel[2])
 	}
 
-	if rows <= 0 {
-		rows = 24
-	}
-	if cols <= 0 {
-		cols = 80
-	}
-	if pxWidth <= 0 {
-		pxWidth = cols * 10
-	}
-	if pxHeight <= 0 {
-		pxHeight = rows * 20
-	}
-
 	return rows, cols, pxWidth, pxHeight, nil
 }
 
@@ -173,12 +160,19 @@ func textCells(img image.Image) (int, int, error) {
 		return 0, 0, fmt.Errorf("while getting terminal dimensions: %w", err)
 	}
 
+	if termRows <= 0 || termCols <= 0 {
+		return 0, 0, fmt.Errorf("could not determine terminal size")
+	}
+
 	imgAspect := aspectRatio(img)
 
-	// Compute the size of one cell (in pixels).
-	cellWidth := float64(termPxWidth) / float64(termCols)
-	cellHeight := float64(termPxHeight) / float64(termRows)
-	cellAspect := cellWidth / cellHeight
+	// Compute the size of one cell (in pixels), assuming cells twice as tall as wide when the terminal does not report pixels.
+	cellAspect := 0.5
+	if termPxWidth > 0 && termPxHeight > 0 {
+		cellWidth := float64(termPxWidth) / float64(termCols)
+		cellHeight := float64(termPxHeight) / float64(termRows)
+		cellAspect = cellWidth / cellHeight
+	}
 
 	// Adjust image aspect ratio to account for the non-square text cells.
 	effectiveAspect := imgAspect / cellAspect

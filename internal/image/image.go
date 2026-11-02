@@ -74,7 +74,7 @@ func OpenImageInViewer(filePath string) error {
 		return cmd.Run()
 	}
 
-	if terminal.IsTermimgRunning() || config.GowallConfig.ImagePreviewBackend == "termimg" {
+	if terminal.IsTermimgRunning() {
 		return terminal.RenderKittyImg(filePath)
 	}
 

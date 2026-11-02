@@ -23,19 +23,6 @@ Gowall is really well documented with **visual examples**: [Gowall Docs](https:/
 ❗ Although Gowall is a CLI tool, it has an `Image preview` feature that allows
 printing images directly in the terminal. See [Gowall Terminal Image preview](https://achno.github.io/gowall-docs/#image-preview)
 
-### Terminal Image Preview in Alacritty via `termimg` :sparkles:
-
-Gowall now supports full-resolution terminal image previews in **Alacritty** and other terminals without native graphics protocols through [termimg](https://github.com/thebanri/limoni):
-
-<div align="center"><img width="860" src="https://raw.githubusercontent.com/thebanri/gowall/feat/termimg-preview/assets/termimg-demo.gif" alt="Gowall Image Preview running inside Alacritty with termimg"><br><br></div>
-
-```sh
-# Run any gowall command with termimg for instant high-resolution terminal previews:
-termimg gowall convert input.png -t catppuccin --preview true
-termimg gowall invert photo.png --preview true
-termimg gowall bg meme.jpg -m kmeans --preview true
-```
-
 - **Convert Wallpaper's theme**  – Recolor an image to match your favorite + (Custom) themes (Catppuccin...).
 - **Image compression** - Reduce the size of png,jpeg,jpg,webp images.
 - **OCR** - Extract text from images and pdfs', supporting 9+ providers (Traditional OCR, Visual Language Models and hybrid methods).
@@ -231,6 +218,7 @@ The following are **third-party projects** built by the community that extend or
 ### 🔗 Projects
 
 - [**tinted-gowall**](https://github.com/tinted-theming/tinted-gowall) — A bridge between `gowall` and the [tinted-theming](https://github.com/tinted-theming) ecosystem. This project enables users to apply their `base16`/`base24` themes with `gowall`, unlocking hundreds of new visual styles.
+- [**termimg**](https://github.com/thebanri/limoni/tree/main/apps/termimg) — Runs a command so the images it prints show in terminals without an image protocol, such as Alacritty. Run `termimg gowall ... --preview true` to get gowall's image preview there.
 
 
 # Special Thanks

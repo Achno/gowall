@@ -72,14 +72,3 @@ func HasChafa() bool {
 func IsTermimgRunning() bool {
 	return os.Getenv("LIMONI_BACKDROP_SHELL") != "" || os.Getenv("TERMIMG_X11") != ""
 }
-
-// Checks if the user has termimg in his $PATH
-func HasTermimg() bool {
-	path, err := exec.LookPath("termimg")
-	if err != nil {
-		return false
-	}
-
-	return path != ""
-}
-

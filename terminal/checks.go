@@ -70,5 +70,5 @@ func HasChafa() bool {
 
 // Checks if gowall is running inside a termimg session
 func IsTermimgRunning() bool {
-	return os.Getenv("LIMONI_BACKDROP_SHELL") != "" || os.Getenv("TERMIMG_X11") != ""
+	return os.Getenv("TERMIMG") != ""
 }

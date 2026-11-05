@@ -16,6 +16,12 @@ type EnvConfig struct {
 	OPENROUTER_API_KEY                    string
 	OPENAI_API_COMPATIBLE_SERVICE_API_KEY string
 
+	// MiniCPM-OCR
+	MINICPM_OCR_BASE_URL        string
+	MINICPM_OCR_API_KEY         string
+	MINICPM_OCR_TIMEOUT_SECONDS int
+	MINICPM_OCR_MAX_TOKENS      int
+
 	// Ollama
 	OLLAMA_HOST string
 
@@ -47,6 +53,10 @@ func GetEnvConfig(envFilePath string) *EnvConfig {
 		OPENAI_API_KEY:                        GetString("OPENAI_API_KEY", ""),
 		OPENROUTER_API_KEY:                    GetString("OPENROUTER_API_KEY", ""),
 		OPENAI_API_COMPATIBLE_SERVICE_API_KEY: GetString("OPENAI_API_COMPATIBLE_SERVICE_API_KEY", ""),
+		MINICPM_OCR_BASE_URL:                  GetString("MINICPM_OCR_BASE_URL", "http://localhost:8000/v1"),
+		MINICPM_OCR_API_KEY:                   GetString("MINICPM_OCR_API_KEY", ""),
+		MINICPM_OCR_TIMEOUT_SECONDS:           GetInt("MINICPM_OCR_TIMEOUT_SECONDS", 300),
+		MINICPM_OCR_MAX_TOKENS:                GetInt("MINICPM_OCR_MAX_TOKENS", 8192),
 		OLLAMA_HOST:                           GetString("OLLAMA_HOST", ""),
 		DOCLING_BASE_URL:                      GetString("DOCLING_BASE_URL", ""),
 		MISTRAL_API_KEY:                       GetString("MISTRAL_API_KEY", ""),

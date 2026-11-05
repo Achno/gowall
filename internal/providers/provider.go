@@ -88,6 +88,7 @@ func (s *ProviderService) GetConfig() Config {
 func getProviderFactories() map[string]func(config Config) (OCRProvider, error) {
 	return map[string]func(config Config) (OCRProvider, error){
 		"ollama":     NewOllamaProvider,
+		"minicpm":    NewMiniCPMOCRProvider,
 		"vllm":       NewOpenAIProvider,
 		"openai":     NewOpenAIProvider,
 		"gemini":     NewGeminiProvider,

@@ -223,3 +223,16 @@ The following are **third-party projects** built by the community that extend or
 # Special Thanks
 
 Special thanks to [lutgen](https://github.com/ozwaldorf/lutgen-rs) for the original implementation of the color correction algorithm which i adapted for this project.
+
+### MiniCPM-OCR
+
+Use a self-hosted MiniCPM-OCR server with an OpenAI-compatible vLLM endpoint:
+
+```sh
+export MINICPM_OCR_BASE_URL="http://localhost:8000/v1"
+# Optional if the server requires authentication:
+export MINICPM_OCR_API_KEY="your-api-key"
+gowall ocr scan.pdf --provider minicpm --model minicpm-ocr
+```
+
+`MINICPM_OCR_TIMEOUT_SECONDS` (default `300`) and `MINICPM_OCR_MAX_TOKENS` (default `8192`) configure each page request. The provider uses the model's `Text Recognition:` prompt and vLLM-specific decoding parameters. Gowall renders PDF pages to images before sending them. This is whole-page recognition, not MiniCPM-OCR's layout detection and crop pipeline; table structure and reading order may differ. Configure a trusted endpoint, since page images are transmitted to it. Compatibility with other serving engines depends on their support for the vLLM-specific request parameters.

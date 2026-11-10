@@ -114,6 +114,12 @@ func themeExists(theme string) bool {
 	return exists
 }
 
+// JsonTheme is the json theme file format: what `gowall convert --theme file.json` reads and `gowall extract --json` writes.
+type JsonTheme struct {
+	Name   string   `json:"name"`
+	Colors []string `json:"colors"`
+}
+
 // returns themeName that was inserted to the theme map
 func LoadThemeFromJson(jsonTheme string) (string, error) {
 	reader, err := os.Open(jsonTheme)
@@ -125,10 +131,7 @@ func LoadThemeFromJson(jsonTheme string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("while reading the json file")
 	}
-	var tm struct {
-		Name   string   `json:"name"`
-		Colors []string `json:"colors"`
-	}
+	var tm JsonTheme
 
 	if err := json.Unmarshal(data, &tm); err != nil {
 		return "", fmt.Errorf("while parsing json theme file, ensure your .json is written correctly")

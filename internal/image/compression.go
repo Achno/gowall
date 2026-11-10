@@ -100,6 +100,12 @@ func (p *CompressionProcessor) GetStrategies() map[string]func(quality int, spee
 		"lossyjpg-jpg": func(quality int, speed int) (CompressionStrategy, error) {
 			return jpg.NewLossyJpgStrategy(quality)
 		},
+		"jpegli-jpeg": func(quality int, speed int) (CompressionStrategy, error) {
+			return jpg.NewJpegliStrategy(quality)
+		},
+		"jpegli-jpg": func(quality int, speed int) (CompressionStrategy, error) {
+			return jpg.NewJpegliStrategy(quality)
+		},
 		"lossywebp-webp": func(quality int, speed int) (CompressionStrategy, error) {
 			return webp.NewLossyWebpStrategy(quality)
 		},
@@ -119,10 +125,8 @@ func (p *CompressionProcessor) GetDefaultStrategyNameForFormat(format string) (s
 	switch format {
 	case "png":
 		defaultStrategyName = "pngquant"
-	case "jpeg":
-		defaultStrategyName = "lossyjpeg"
-	case "jpg":
-		defaultStrategyName = "lossyjpg"
+	case "jpeg", "jpg":
+		defaultStrategyName = "jpegli"
 	case "webp":
 		defaultStrategyName = "lossywebp"
 	case "avif":
@@ -171,13 +175,14 @@ func (p *CompressionProcessor) GetStrategy(format string) (CompressionStrategy, 
 func (p *CompressionProcessor) GetAllStrategiesNames() []string {
 	strategies := p.GetStrategies()
 	var strategyNames []string
+	seen := make(map[string]bool)
 
+	// A strategy registered for several formats (e.g. jpegli-jpeg, jpegli-jpg) is listed once.
 	for key := range strategies {
-		strategyName, _, found := strings.Cut(key, "-")
-		if found {
+		strategyName, _, _ := strings.Cut(key, "-")
+		if !seen[strategyName] {
+			seen[strategyName] = true
 			strategyNames = append(strategyNames, strategyName)
-		} else {
-			strategyNames = append(strategyNames, key)
 		}
 	}
 

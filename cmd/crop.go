@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/Achno/gowall/config"
 	ipkg "github.com/Achno/gowall/internal/backends/image"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
-	"github.com/Achno/gowall/internal/logger"
 	"github.com/Achno/gowall/terminal"
 	"github.com/Achno/gowall/utils"
 	"github.com/spf13/cobra"
@@ -42,17 +40,14 @@ func RunCropCmd(cmd *cobra.Command, args []string) {
 
 	processor := &image.CropProcessor{}
 	if rect != "" {
-		processor.Rect, err = ipkg.ParseCropRect(rect)
+		rects, parseErr := ipkg.ParseRects(rect)
+		utils.HandleError(parseErr, "Error")
+		processor.Rect = rects[0]
 	} else {
 		img, loadErr := imageio.LoadImage(ops[0].ImageInput)
 		utils.HandleError(loadErr, "Error")
 
 		processor.Rect, err = terminal.SelectCropRegion(img)
-	}
-
-	if errors.Is(err, terminal.ErrCropCancelled) {
-		logger.Print("Crop cancelled")
-		return
 	}
 	utils.HandleError(err, "Error")
 
@@ -71,7 +66,7 @@ func ValidateParseCropCmd(cmd *cobra.Command, flags config.GlobalSubCommandFlags
 	}
 	rect, _ := cmd.Flags().GetString("rect")
 	if rect != "" {
-		_, err := ipkg.ParseCropRect(rect)
+		_, err := ipkg.ParseRects(rect)
 		return err
 	}
 	if args[0] == "-" || imageio.IsStdoutOutput(flags, args) {

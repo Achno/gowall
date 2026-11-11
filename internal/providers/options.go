@@ -9,11 +9,14 @@ import (
 	"github.com/Achno/gowall/utils"
 )
 
+// ProviderConfig is the shared OCR provider block. RawPrompt sends Prompt
+// verbatim; otherwise prompt building appends format instructions, page context, and AppendPrompt.
 type ProviderConfig struct {
 	Provider     string `yaml:"provider"`
 	Model        string `yaml:"model"`
 	Prompt       string `yaml:"prompt"`
 	AppendPrompt string `yaml:"append_prompt"`
+	RawPrompt    bool   `yaml:"raw_prompt"`
 	Language     string `yaml:"language"`
 	Format       string `yaml:"format"`
 	SupportsPDF  bool   `yaml:"supports_pdf"`
@@ -123,9 +126,15 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 	return optionsMap, nil
 }
 
+// OpenAIOptions configures chat-completion requests for OpenAI-compatible providers.
+// Nil MaxTokens and Temperature are unset. OCR sends a sampling field only when it
+// is set; text correction fills 4096 and 0.7 for the unset ones.
+// Extra is copied onto the JSON body for server-specific fields such as vLLM
+// top_k, top_p, no_repeat_ngram_size, and chat_template_kwargs.
 type OpenAIOptions struct {
-	MaxTokens   int64   `yaml:"max_tokens"`
-	Temperature float64 `yaml:"temperature"`
+	MaxTokens   *int64         `yaml:"max_tokens,omitempty"`
+	Temperature *float64       `yaml:"temperature,omitempty"`
+	Extra       map[string]any `yaml:"extra,omitempty"`
 }
 
 func (o *OpenAIOptions) Apply(defaults any, config Config) (any, error) {
@@ -144,6 +153,7 @@ func (o *OpenAIOptions) Apply(defaults any, config Config) (any, error) {
 	return &OpenAIOptions{
 		MaxTokens:   merged.MaxTokens,
 		Temperature: merged.Temperature,
+		Extra:       merged.Extra,
 	}, nil
 }
 

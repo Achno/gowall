@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+// ResolvePrompt returns the prompt sent to a provider. With raw_prompt set, the
+// configured prompt is sent verbatim; BuildPrompt otherwise appends format
+// instructions even when the user already supplied a prompt.
+func ResolvePrompt(cfg ProviderConfig, filename string) string {
+	if cfg.RawPrompt {
+		return cfg.Prompt
+	}
+	return BuildPrompt(cfg.Prompt, cfg.AppendPrompt, filename, cfg.Format)
+}
+
 func BuildPrompt(base, appendPrompt, filename, format string) string {
 
 	prompt := base

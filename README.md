@@ -226,13 +226,30 @@ Special thanks to [lutgen](https://github.com/ozwaldorf/lutgen-rs) for the origi
 
 ### MiniCPM-OCR
 
-Use a self-hosted MiniCPM-OCR server with an OpenAI-compatible vLLM endpoint:
+MiniCPM-OCR supports Chinese and English only. Serve the model with vLLM and use the existing `vllm` provider (`http://localhost:8000/v1` by default). `raw_prompt` sends the prompt verbatim; `--uprompt` alone still goes through prompt building. `openai_options.extra` passes server-specific fields. A truncated completion (`finish_reason: length`) is still returned, with a warning. PDF pages are rendered to images first, which is whole-page recognition rather than MiniCPM-OCR's layout detection and crop pipeline. This example was not run against a real MiniCPM-OCR server.
 
-```sh
-export MINICPM_OCR_BASE_URL="http://localhost:8000/v1"
-# Optional if the server requires authentication:
-export MINICPM_OCR_API_KEY="your-api-key"
-gowall ocr scan.pdf --provider minicpm --model minicpm-ocr
+`~/.config/gowall/schema.yml`:
+
+```yaml
+schemas:
+  - name: minicpm
+    config:
+      ocr:
+        provider: vllm
+        model: <served-name>
+        prompt: "Text Recognition:"
+        raw_prompt: true
+      openai_options:
+        max_tokens: 8192
+        temperature: 0.01
+        extra:
+          top_k: 1
+          top_p: 0.001
+          no_repeat_ngram_size: 100
+          chat_template_kwargs:
+            enable_thinking: false
 ```
 
-`MINICPM_OCR_TIMEOUT_SECONDS` (default `300`) and `MINICPM_OCR_MAX_TOKENS` (default `8192`) configure each page request. The provider uses the model's `Text Recognition:` prompt and vLLM-specific decoding parameters. Gowall renders PDF pages to images before sending them. This is whole-page recognition, not MiniCPM-OCR's layout detection and crop pipeline; table structure and reading order may differ. Configure a trusted endpoint, since page images are transmitted to it. Compatibility with other serving engines depends on their support for the vLLM-specific request parameters.
+```sh
+gowall ocr scan.pdf --schema minicpm
+```

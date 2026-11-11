@@ -19,6 +19,9 @@ type OpenAIProvider struct {
 	config Config
 }
 
+// warnf reports a truncated completion. Tests replace it to observe the warning.
+var warnf = logger.Warnf
+
 // NewOpenAIProvider creates a new OpenAI provider
 func NewOpenAIProvider(config Config) (OCRProvider, error) {
 
@@ -76,16 +79,23 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		return nil, err
 	}
 
-	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages: messages,
-		Model:    o.model,
-	})
+	params, err := o.newChatParams(messages)
 	if err != nil {
 		return nil, err
 	}
 
+	chatCompletion, err := o.client.Chat.Completions.New(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	choice := chatCompletion.Choices[0]
+	if warning := truncationWarning(choice.FinishReason); warning != "" {
+		warnf("%s", warning)
+	}
+
 	return &OCRResult{
-		Text: chatCompletion.Choices[0].Message.Content,
+		Text: choice.Message.Content,
 		Metadata: map[string]string{
 			"Model":    chatCompletion.Model,
 			"RawJSON":  chatCompletion.JSON.Choices.Raw(),
@@ -102,23 +112,23 @@ func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, err
 	}
 
 	//TODO: make sure to use this ApplyOptions() abstraction in other providers like docling
-	openaiOptions, err := o.ApplyOptions()
+	params, err := o.newChatParams(messages)
 	if err != nil {
 		return "", err
 	}
 
-	chatCompletion, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages:    messages,
-		Model:       o.model,
-		MaxTokens:   openai.Int(openaiOptions.MaxTokens),
-		Temperature: openai.Float(openaiOptions.Temperature),
-	})
+	chatCompletion, err := o.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		logger.Warnf("Error correcting text falling back to original: %v", err)
 		return text, nil
 	}
 
-	return chatCompletion.Choices[0].Message.Content, nil
+	choice := chatCompletion.Choices[0]
+	if warning := truncationWarning(choice.FinishReason); warning != "" {
+		warnf("%s", warning)
+	}
+
+	return choice.Message.Content, nil
 }
 
 func (o *OpenAIProvider) GetConfig() Config {
@@ -161,8 +171,7 @@ func (o *OpenAIProvider) WithPDF(base64PDF string, prompt string) openai.ChatCom
 
 func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 
-	prompt := o.config.OCR.Prompt
-	prompt = BuildPrompt(prompt, o.config.OCR.AppendPrompt, input.Filename, o.config.OCR.Format)
+	prompt := ResolvePrompt(o.config.OCR, input.Filename)
 
 	switch input.Type {
 	case InputTypeImage:
@@ -184,6 +193,31 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 	default:
 		return nil, fmt.Errorf("unsupported input type: %v", input.Type)
 	}
+}
+
+func (o *OpenAIProvider) newChatParams(messages []openai.ChatCompletionMessageParamUnion) (openai.ChatCompletionNewParams, error) {
+	openaiOptions, err := o.ApplyOptions()
+	if err != nil {
+		return openai.ChatCompletionNewParams{}, err
+	}
+
+	params := openai.ChatCompletionNewParams{
+		Messages:    messages,
+		Model:       o.model,
+		MaxTokens:   openai.Int(openaiOptions.MaxTokens),
+		Temperature: openai.Float(openaiOptions.Temperature),
+	}
+	if len(openaiOptions.Extra) > 0 {
+		params.WithExtraFields(openaiOptions.Extra)
+	}
+	return params, nil
+}
+
+func truncationWarning(reason string) string {
+	if reason != "length" {
+		return ""
+	}
+	return "response truncated (finish_reason=length); increase openai_options.max_tokens"
 }
 
 // ApplyOptions merges the schema.yml openai specific options with the default options

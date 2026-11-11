@@ -163,6 +163,9 @@ func LoadOCRConfig(cmd *cobra.Command) (providers.Config, error) {
 				if schema.Config.OCR.AppendPrompt != "" {
 					cfg.OCR.AppendPrompt = schema.Config.OCR.AppendPrompt
 				}
+				if schema.Config.OCR.RawPrompt {
+					cfg.OCR.RawPrompt = true
+				}
 				if schema.Config.OCR.Language != "" {
 					cfg.OCR.Language = schema.Config.OCR.Language
 				}

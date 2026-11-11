@@ -60,8 +60,7 @@ func (o *OllamaProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		return nil, fmt.Errorf("failed to convert image to base64: %w", err)
 	}
 
-	prompt := o.config.OCR.Prompt
-	prompt = BuildPrompt(prompt, o.config.OCR.AppendPrompt, input.Filename, o.config.OCR.Format)
+	prompt := ResolvePrompt(o.config.OCR, input.Filename)
 
 	ollamaOptions, err := o.ApplyOptions()
 	if err != nil {

@@ -37,7 +37,7 @@ func BuildInpaintCmd() *cobra.Command {
 
 	cmd.RegisterFlagCompletionFunc("method", inpaintCompletion)
 
-	addFlags(cmd).WithOutput().WithPreview()
+	addFlags(cmd).WithBatch().WithDir().WithOutput().WithPreview()
 
 	return cmd
 }
@@ -91,7 +91,7 @@ func ValidateParseInpaintCmd(cmd *cobra.Command, flags config.GlobalSubCommandFl
 	if _, err := ipkg.ParseRects(rects...); err != nil {
 		return err
 	}
-	if len(rects) == 0 && (args[0] == "-" || imageio.IsStdoutOutput(flags, args)) {
+	if len(rects) == 0 && ((len(args) > 0 && args[0] == "-") || imageio.IsStdoutOutput(flags, args)) {
 		return fmt.Errorf("inpaint uses the terminal for the mouse and the image, so it can't read from stdin or write to stdout with -, use --rect for that")
 	}
 

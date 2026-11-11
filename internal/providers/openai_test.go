@@ -105,6 +105,7 @@ openai_options:
 		t.Fatalf("requests = %d", len(bodies))
 	}
 	assertNumber(t, bodies[1], "max_tokens", 8192)
+	assertNumber(t, bodies[1], "temperature", 0.01)
 	assertNumber(t, bodies[1], "top_k", 1)
 	if len(warnings) != 1 {
 		t.Fatalf("stop should not warn, warnings = %#v", warnings)
@@ -115,11 +116,13 @@ func TestOpenAIOCRBuildsPromptAndDefaults(t *testing.T) {
 	cfg := Config{OCR: ProviderConfig{
 		Provider: "vllm", Model: "served-name", Prompt: "Read this.", AppendPrompt: "Keep line breaks.", Format: "md",
 	}}
-	var body map[string]any
+	var bodies []map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Errorf("decode body: %v", err)
 		}
+		bodies = append(bodies, body)
 		writeChatCompletion(w, "stop", "ok")
 	}))
 	defer srv.Close()
@@ -130,17 +133,57 @@ func TestOpenAIOCRBuildsPromptAndDefaults(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	got := messageText(t, body)
+	got := messageText(t, bodies[0])
 	for _, want := range []string{"Read this.", "Format the output in Markdown.", "PAGE 2", "Keep line breaks."} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("prompt %q missing %q", got, want)
 		}
 	}
-	assertNumber(t, body, "max_tokens", 4096)
-	assertNumber(t, body, "temperature", 0.7)
-	if _, ok := body["top_k"]; ok {
-		t.Fatalf("unexpected extra field: %#v", body["top_k"])
+	assertAbsent(t, bodies[0], "max_tokens")
+	assertAbsent(t, bodies[0], "temperature")
+	if _, ok := bodies[0]["top_k"]; ok {
+		t.Fatalf("unexpected extra field: %#v", bodies[0]["top_k"])
 	}
+
+	if _, err := p.Complete(context.Background(), "page text"); err != nil {
+		t.Fatal(err)
+	}
+	if len(bodies) != 2 {
+		t.Fatalf("requests = %d", len(bodies))
+	}
+	assertNumber(t, bodies[1], "max_tokens", 4096)
+	assertNumber(t, bodies[1], "temperature", 0.7)
+}
+
+func TestOpenAIOCRExplicitSampling(t *testing.T) {
+	const schema = `
+ocr:
+  provider: vllm
+  model: served-name
+openai_options:
+  max_tokens: 0
+  temperature: 0
+`
+	var cfg Config
+	if err := yaml.Unmarshal([]byte(schema), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("decode body: %v", err)
+		}
+		writeChatCompletion(w, "stop", "ok")
+	}))
+	defer srv.Close()
+
+	if _, err := openAIProvider(srv, cfg).OCR(context.Background(), OCRInput{
+		Type: InputTypeImage, Image: image.NewRGBA(image.Rect(0, 0, 1, 1)),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	assertNumber(t, body, "max_tokens", 0)
+	assertNumber(t, body, "temperature", 0)
 }
 
 func TestTruncationWarning(t *testing.T) {
@@ -200,6 +243,13 @@ func messageText(t *testing.T, body map[string]any) string {
 	default:
 		t.Fatalf("content = %#v", content)
 		return ""
+	}
+}
+
+func assertAbsent(t *testing.T, body map[string]any, key string) {
+	t.Helper()
+	if _, ok := body[key]; ok {
+		t.Fatalf("%s = %#v, want omitted", key, body[key])
 	}
 }
 

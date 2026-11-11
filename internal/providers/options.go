@@ -127,11 +127,13 @@ func (d *DoclingOptions) Apply(defaults any, config Config) (any, error) {
 }
 
 // OpenAIOptions configures chat-completion requests for OpenAI-compatible providers.
+// Nil MaxTokens and Temperature are unset. OCR sends a sampling field only when it
+// is set; text correction fills 4096 and 0.7 for the unset ones.
 // Extra is copied onto the JSON body for server-specific fields such as vLLM
 // top_k, top_p, no_repeat_ngram_size, and chat_template_kwargs.
 type OpenAIOptions struct {
-	MaxTokens   int64          `yaml:"max_tokens"`
-	Temperature float64        `yaml:"temperature"`
+	MaxTokens   *int64         `yaml:"max_tokens,omitempty"`
+	Temperature *float64       `yaml:"temperature,omitempty"`
 	Extra       map[string]any `yaml:"extra,omitempty"`
 }
 

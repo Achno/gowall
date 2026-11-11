@@ -50,7 +50,7 @@ schemas:
 	if cfg.OCR.Provider != "vllm" || cfg.OCR.Model != "served-name" || cfg.OCR.Prompt != "Text Recognition:" || !cfg.OCR.RawPrompt {
 		t.Fatalf("ocr config = %+v", cfg.OCR)
 	}
-	if cfg.OpenAIOptions == nil || cfg.OpenAIOptions.MaxTokens != 8192 || cfg.OpenAIOptions.Temperature != 0.01 {
+	if cfg.OpenAIOptions == nil || cfg.OpenAIOptions.MaxTokens == nil || *cfg.OpenAIOptions.MaxTokens != 8192 || cfg.OpenAIOptions.Temperature == nil || *cfg.OpenAIOptions.Temperature != 0.01 {
 		t.Fatalf("openai options = %+v", cfg.OpenAIOptions)
 	}
 	extra := cfg.OpenAIOptions.Extra

@@ -79,10 +79,7 @@ func (o *OpenAIProvider) OCR(ctx context.Context, input OCRInput) (*OCRResult, e
 		return nil, err
 	}
 
-	params, err := o.newChatParams(messages)
-	if err != nil {
-		return nil, err
-	}
+	params := o.chatParams(messages, o.config.OpenAIOptions)
 
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, params)
 	if err != nil {
@@ -112,10 +109,11 @@ func (o *OpenAIProvider) Complete(ctx context.Context, text string) (string, err
 	}
 
 	//TODO: make sure to use this ApplyOptions() abstraction in other providers like docling
-	params, err := o.newChatParams(messages)
+	opts, err := o.ApplyOptions()
 	if err != nil {
 		return "", err
 	}
+	params := o.chatParams(messages, opts)
 
 	chatCompletion, err := o.client.Chat.Completions.New(ctx, params)
 	if err != nil {
@@ -195,22 +193,24 @@ func (o *OpenAIProvider) InputToMessages(input OCRInput) ([]openai.ChatCompletio
 	}
 }
 
-func (o *OpenAIProvider) newChatParams(messages []openai.ChatCompletionMessageParamUnion) (openai.ChatCompletionNewParams, error) {
-	openaiOptions, err := o.ApplyOptions()
-	if err != nil {
-		return openai.ChatCompletionNewParams{}, err
-	}
-
+func (o *OpenAIProvider) chatParams(messages []openai.ChatCompletionMessageParamUnion, opts *OpenAIOptions) openai.ChatCompletionNewParams {
 	params := openai.ChatCompletionNewParams{
-		Messages:    messages,
-		Model:       o.model,
-		MaxTokens:   openai.Int(openaiOptions.MaxTokens),
-		Temperature: openai.Float(openaiOptions.Temperature),
+		Messages: messages,
+		Model:    o.model,
 	}
-	if len(openaiOptions.Extra) > 0 {
-		params.WithExtraFields(openaiOptions.Extra)
+	if opts == nil {
+		return params
 	}
-	return params, nil
+	if opts.MaxTokens != nil {
+		params.MaxTokens = openai.Int(*opts.MaxTokens)
+	}
+	if opts.Temperature != nil {
+		params.Temperature = openai.Float(*opts.Temperature)
+	}
+	if len(opts.Extra) > 0 {
+		params.WithExtraFields(opts.Extra)
+	}
+	return params
 }
 
 func truncationWarning(reason string) string {
@@ -240,8 +240,10 @@ func (o *OpenAIProvider) ApplyOptions() (*OpenAIOptions, error) {
 }
 
 func (o *OpenAIProvider) getOpenAIOptions() *OpenAIOptions {
+	maxTokens := int64(4096)
+	temperature := 0.7
 	return &OpenAIOptions{
-		MaxTokens:   4096,
-		Temperature: 0.7,
+		MaxTokens:   &maxTokens,
+		Temperature: &temperature,
 	}
 }

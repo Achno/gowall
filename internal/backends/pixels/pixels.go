@@ -55,14 +55,27 @@ func CopyPixel(dst *image.RGBA, dx, dy int, src *image.RGBA, sx, sy int) {
 	copy(dst.Pix[d:d+4], src.Pix[s:s+4])
 }
 
-// Straight undoes the premultiplication of an *image.RGBA pixel: the color as it looks at full opacity.
-// a must not be 0, a fully transparent pixel has no color.
-func Straight(r, g, b, a uint8) (uint8, uint8, uint8) {
-	if a == 255 {
-		return r, g, b
+// Unpremultiply converts alpha-premultiplied RGBA (as *image.RGBA stores it) to non-premultiplied RGBA,
+// the color as it looks at full opacity, the same way image/png does. dst and src may be the same slice.
+func Unpremultiply(dst, src []byte) {
+	for ; len(src) >= 4; dst, src = dst[4:], src[4:] {
+		d := (*[4]byte)(dst)
+		s := (*[4]byte)(src)
+		switch s[3] {
+		case 0x00:
+			*d = [4]byte{}
+		case 0xff:
+			*d = *s
+		default:
+			// 0x101 converts 8-bit color to 16-bit, 0xffff together with the division by a removes the premultiplication
+			const m = 0x101 * 0xffff
+			a := uint32(s[3]) * 0x101
+			d[0] = uint8((uint32(s[0]) * m / a) >> 8)
+			d[1] = uint8((uint32(s[1]) * m / a) >> 8)
+			d[2] = uint8((uint32(s[2]) * m / a) >> 8)
+			d[3] = s[3]
+		}
 	}
-	un := func(c uint8) uint8 { return uint8(min(255, (int(c)*255+int(a)/2)/int(a))) }
-	return un(r), un(g), un(b)
 }
 
 // Premultiply scales a straight color by a, as an *image.RGBA pixel stores it.

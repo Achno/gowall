@@ -119,15 +119,16 @@ func ApplyCLUT(img *image.RGBA, clut *image.RGBA, level int) *image.RGBA {
 	blend := func(x, y, f int32) int32 { return x*(256-f) + y*f }
 
 	pixels.ParallelRows(height, func(y0, y1 int) {
+		straight := make([]byte, width*4) // the row's colors at full opacity
 		for y := y0; y < y1; y++ {
-			srcRow := img.Pix[y*img.Stride : y*img.Stride+width*4]
+			pixels.Unpremultiply(straight, img.Pix[y*img.Stride:y*img.Stride+width*4])
 			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
-			for i := 0; i < len(srcRow); i += 4 {
-				a := srcRow[i+3]
+			for i := 0; i < len(straight); i += 4 {
+				a := straight[i+3]
 				if a == 0 {
 					continue // NewRGBA is already transparent black
 				}
-				r, g, b := pixels.Straight(srcRow[i], srcRow[i+1], srcRow[i+2], a)
+				r, g, b := straight[i], straight[i+1], straight[i+2]
 				fr, fg, fb := rF[r], gF[g], bF[b]
 				c00, c10 := rLo[r]+gLo[g], rHi[r]+gLo[g]
 				c01, c11 := rLo[r]+gHi[g], rHi[r]+gHi[g]

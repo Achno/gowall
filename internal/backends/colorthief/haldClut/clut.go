@@ -92,32 +92,57 @@ func LoadCachedHaldCLUT(filePath string) (*image.RGBA, error) {
 	return clut, nil
 }
 
-// ApplyCLUT maps every pixel of img through the clut, img must start at (0,0)
+// ApplyCLUT maps every pixel of img through the clut, img must start at (0,0).
+// A color is looked up at full opacity and blended between the 8 cube cells around it, so a gradient
+// stays smooth instead of stepping from cell to cell, and every pixel keeps its own alpha.
 func ApplyCLUT(img *image.RGBA, clut *image.RGBA, level int) *image.RGBA {
 	newImg := image.NewRGBA(img.Bounds())
 	width, height := img.Bounds().Dx(), img.Bounds().Dy()
 
-	// the cube coordinate of every channel value, computed 256 times instead of 3 times per pixel
+	// For every channel value: where the cube cell at or below it starts in clut.Pix, where the next cell
+	// starts, and how far towards it the value is (0-255). A cell's offset is the sum of one entry per
+	// channel, so the 8 cells around a color cost 8 additions, computed 256 times instead of per pixel.
 	cubeSize := level * level
-	var cube [256]int
-	for v := range cube {
-		cube[v] = v * (cubeSize - 1) / 255
+	var rLo, rHi, gLo, gHi, bLo, bHi [256]int
+	var rF, gF, bF [256]int32
+	base := clut.PixOffset(0, 0)
+	for v := range 256 {
+		pos := v * (cubeSize - 1) * 256 / 255
+		lo, f := pos>>8, int32(pos&255)
+		hi := min(lo+1, cubeSize-1)
+		rLo[v], rHi[v], rF[v] = base+lo*4, base+hi*4, f
+		gLo[v], gHi[v], gF[v] = (lo%level)*cubeSize*4+(lo/level)*clut.Stride, (hi%level)*cubeSize*4+(hi/level)*clut.Stride, f
+		bLo[v], bHi[v], bF[v] = lo*level*clut.Stride, hi*level*clut.Stride, f
 	}
+	p := clut.Pix
+	// x*(256-f) + y*f: f of the way from x to y, at 256x scale
+	blend := func(x, y, f int32) int32 { return x*(256-f) + y*f }
 
 	pixels.ParallelRows(height, func(y0, y1 int) {
+		straight := make([]byte, width*4) // the row's colors at full opacity
 		for y := y0; y < y1; y++ {
-			srcRow := img.Pix[y*img.Stride : y*img.Stride+width*4]
+			pixels.Unpremultiply(straight, img.Pix[y*img.Stride:y*img.Stride+width*4])
 			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
-			for i := 0; i < len(srcRow); i += 4 {
-				r, g, b := cube[srcRow[i]], cube[srcRow[i+1]], cube[srcRow[i+2]]
-				clutX := (r % cubeSize) + (g%level)*cubeSize
-				clutY := (b * level) + (g / level)
-
-				c := clut.PixOffset(clutX, clutY)
-				copy(dstRow[i:i+4], clut.Pix[c:c+4])
-				if srcRow[i+3] == 0 {
-					dstRow[i+3] = 0
+			for i := 0; i < len(straight); i += 4 {
+				a := straight[i+3]
+				if a == 0 {
+					continue // NewRGBA is already transparent black
 				}
+				r, g, b := straight[i], straight[i+1], straight[i+2]
+				fr, fg, fb := rF[r], gF[g], bF[b]
+				c00, c10 := rLo[r]+gLo[g], rHi[r]+gLo[g]
+				c01, c11 := rLo[r]+gHi[g], rHi[r]+gHi[g]
+				b0, b1 := bLo[b], bHi[b]
+
+				var out [3]uint8
+				for ch := range 3 {
+					// blend along r, then g (both at 256x scale), then b
+					x0 := (blend(blend(int32(p[c00+b0+ch]), int32(p[c10+b0+ch]), fr), blend(int32(p[c01+b0+ch]), int32(p[c11+b0+ch]), fr), fg) + 128) >> 8
+					x1 := (blend(blend(int32(p[c00+b1+ch]), int32(p[c10+b1+ch]), fr), blend(int32(p[c01+b1+ch]), int32(p[c11+b1+ch]), fr), fg) + 128) >> 8
+					out[ch] = uint8((blend(x0, x1, fb) + 1<<15) >> 16)
+				}
+				dstRow[i], dstRow[i+1], dstRow[i+2] = pixels.Premultiply(out[0], out[1], out[2], a)
+				dstRow[i+3] = a
 			}
 		}
 	})

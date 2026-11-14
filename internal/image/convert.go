@@ -96,12 +96,19 @@ func NearestNeighbour(img image.Image, theme Theme) (image.Image, error) {
 
 	// replace each pixel with the selected theme's nearest color
 	pixels.ParallelRows(height, func(y0, y1 int) {
+		straight := make([]byte, width*4) // the row's colors at full opacity
 		for y := y0; y < y1; y++ {
-			srcRow := src.Pix[y*src.Stride : y*src.Stride+width*4]
+			pixels.Unpremultiply(straight, src.Pix[y*src.Stride:y*src.Stride+width*4])
 			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
-			for i := 0; i < len(srcRow); i += 4 {
-				c := palette[nearestColor(srcRow[i], srcRow[i+1], srcRow[i+2], palette)]
-				dstRow[i], dstRow[i+1], dstRow[i+2], dstRow[i+3] = c.R, c.G, c.B, c.A
+			for i := 0; i < len(straight); i += 4 {
+				// matched at full opacity, and the pixel keeps its own alpha
+				a := straight[i+3]
+				if a == 0 {
+					continue
+				}
+				c := palette[nearestColor(straight[i], straight[i+1], straight[i+2], palette)]
+				dstRow[i], dstRow[i+1], dstRow[i+2] = pixels.Premultiply(c.R, c.G, c.B, a)
+				dstRow[i+3] = a
 			}
 		}
 	})

@@ -17,6 +17,8 @@ import (
 	"io"
 	"runtime"
 	"sync"
+
+	"github.com/Achno/gowall/internal/backends/pixels"
 )
 
 const (
@@ -78,7 +80,9 @@ func newEncoder(img image.Image) (*encoder, bool) {
 			e.rowFn = func(dst []byte, y int) { dropAlpha(dst, m.Pix[m.PixOffset(b.Min.X, y):m.PixOffset(b.Max.X, y)]) }
 		} else {
 			e.colorType, e.bpp = ctTrueColorAlpha, 4
-			e.rowFn = func(dst []byte, y int) { unpremultiply(dst, m.Pix[m.PixOffset(b.Min.X, y):m.PixOffset(b.Max.X, y)]) }
+			e.rowFn = func(dst []byte, y int) {
+				pixels.Unpremultiply(dst, m.Pix[m.PixOffset(b.Min.X, y):m.PixOffset(b.Max.X, y)])
+			}
 		}
 	default:
 		return nil, false
@@ -194,28 +198,6 @@ func (e *encoder) compressStrip(s *strip, last bool, fw *flate.Writer, cr *[5][]
 func dropAlpha(dst, src []byte) {
 	for i, j := 0, 0; j+3 < len(src); i, j = i+3, j+4 {
 		dst[i], dst[i+1], dst[i+2] = src[j], src[j+1], src[j+2]
-	}
-}
-
-// unpremultiply converts alpha-premultiplied RGBA to PNG's non-premultiplied RGBA, the same way image/png does
-func unpremultiply(dst, src []byte) {
-	for ; len(src) >= 4; dst, src = dst[4:], src[4:] {
-		d := (*[4]byte)(dst)
-		s := (*[4]byte)(src)
-		switch s[3] {
-		case 0x00:
-			*d = [4]byte{}
-		case 0xff:
-			*d = *s
-		default:
-			// 0x101 converts 8-bit color to 16-bit, 0xffff together with the division by a removes the premultiplication
-			const m = 0x101 * 0xffff
-			a := uint32(s[3]) * 0x101
-			d[0] = uint8((uint32(s[0]) * m / a) >> 8)
-			d[1] = uint8((uint32(s[1]) * m / a) >> 8)
-			d[2] = uint8((uint32(s[2]) * m / a) >> 8)
-			d[3] = s[3]
-		}
 	}
 }
 

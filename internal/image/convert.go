@@ -24,6 +24,11 @@ const (
 	ModeMono    = "mono"    // one color in all its shades, every pixel keeps its own lightness
 )
 
+// ListThemeConverterModes returns the modes of ThemeConverter, the default mode of the convert command first
+func ListThemeConverterModes() []string {
+	return []string{ModeShading, ModeNormal, ModeMono}
+}
+
 type ThemeConverter struct {
 	Mode  string // ModeNormal when empty
 	Color string // the hex color ModeMono uses

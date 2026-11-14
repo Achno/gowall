@@ -19,18 +19,18 @@ import (
 var clutMutex sync.Mutex
 
 const (
-	ModeNormal  = "normal"  // move every color toward the theme's colors
+	ModePalette = "palette" // move every color toward the theme's colors, lightness included
 	ModeShading = "shading" // the theme's colors, but every pixel keeps its own lightness
 	ModeMono    = "mono"    // one color in all its shades, every pixel keeps its own lightness
 )
 
 // ListThemeConverterModes returns the modes of ThemeConverter, the default mode of the convert command first
 func ListThemeConverterModes() []string {
-	return []string{ModeShading, ModeNormal, ModeMono}
+	return []string{ModeShading, ModePalette, ModeMono}
 }
 
 type ThemeConverter struct {
-	Mode  string // ModeNormal when empty
+	Mode  string // ModePalette when empty
 	Color string // the hex color ModeMono uses
 
 	// the CLUT of ModeShading and ModeMono, built once in memory and shared by every image of the conversion

@@ -100,8 +100,15 @@ func NearestNeighbour(img image.Image, theme Theme) (image.Image, error) {
 			srcRow := src.Pix[y*src.Stride : y*src.Stride+width*4]
 			dstRow := newImg.Pix[y*newImg.Stride : y*newImg.Stride+width*4]
 			for i := 0; i < len(srcRow); i += 4 {
-				c := palette[nearestColor(srcRow[i], srcRow[i+1], srcRow[i+2], palette)]
-				dstRow[i], dstRow[i+1], dstRow[i+2], dstRow[i+3] = c.R, c.G, c.B, c.A
+				// matched at full opacity, and the pixel keeps its own alpha
+				a := srcRow[i+3]
+				if a == 0 {
+					continue
+				}
+				r, g, b := pixels.Straight(srcRow[i], srcRow[i+1], srcRow[i+2], a)
+				c := palette[nearestColor(r, g, b, palette)]
+				dstRow[i], dstRow[i+1], dstRow[i+2] = pixels.Premultiply(c.R, c.G, c.B, a)
+				dstRow[i+3] = a
 			}
 		}
 	})

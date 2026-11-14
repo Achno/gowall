@@ -54,3 +54,22 @@ func CopyPixel(dst *image.RGBA, dx, dy int, src *image.RGBA, sx, sy int) {
 	s := src.PixOffset(sx, sy)
 	copy(dst.Pix[d:d+4], src.Pix[s:s+4])
 }
+
+// Straight undoes the premultiplication of an *image.RGBA pixel: the color as it looks at full opacity.
+// a must not be 0, a fully transparent pixel has no color.
+func Straight(r, g, b, a uint8) (uint8, uint8, uint8) {
+	if a == 255 {
+		return r, g, b
+	}
+	un := func(c uint8) uint8 { return uint8(min(255, (int(c)*255+int(a)/2)/int(a))) }
+	return un(r), un(g), un(b)
+}
+
+// Premultiply scales a straight color by a, as an *image.RGBA pixel stores it.
+func Premultiply(r, g, b, a uint8) (uint8, uint8, uint8) {
+	if a == 255 {
+		return r, g, b
+	}
+	pre := func(c uint8) uint8 { return uint8((int(c)*int(a) + 127) / 255) }
+	return pre(r), pre(g), pre(b)
+}

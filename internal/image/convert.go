@@ -18,18 +18,45 @@ import (
 
 var clutMutex sync.Mutex
 
-type ThemeConverter struct{}
+const (
+	ModeNormal  = "normal"  // move every color toward the theme's colors
+	ModeShading = "shading" // the theme's colors, but every pixel keeps its own lightness
+	ModeMono    = "mono"    // one color in all its shades, every pixel keeps its own lightness
+)
+
+type ThemeConverter struct {
+	Mode  string // ModeNormal when empty
+	Color string // the hex color ModeMono uses
+
+	// the CLUT of ModeShading and ModeMono, built once in memory and shared by every image of the conversion
+	once sync.Once
+	clut *image.RGBA
+	err  error
+}
 
 func (themeConv *ThemeConverter) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 	level := 8
+
+	if themeConv.Mode == ModeMono {
+		clut, err := themeConv.buildOnce(func() (*image.RGBA, error) {
+			seed, err := cpkg.HexToRGBA(themeConv.Color)
+			if err != nil {
+				return nil, fmt.Errorf("while parsing the mono color %s: %w", themeConv.Color, err)
+			}
+			return haldclut.MonoCLUT(seed, level), nil
+		})
+		if err != nil {
+			return nil, types.ImageMetadata{}, err
+		}
+		return haldclut.ApplyCLUT(pixels.ToRGBA(img), clut, level), types.ImageMetadata{}, nil
+	}
 
 	selectedTheme, err := SelectTheme(theme)
 	if err != nil {
 		return nil, types.ImageMetadata{}, fmt.Errorf("%w %s", err, theme)
 	}
 
-	// NearestNeighbour backend if specified in the config
-	if config.GowallConfig.ColorCorrectionBackend == "nn" {
+	if config.GowallConfig.ColorCorrectionBackend == "nn" && themeConv.Mode != ModeShading {
 		newimg, err := NearestNeighbour(img, selectedTheme)
 		if err != nil {
 			return nil, types.ImageMetadata{}, err
@@ -37,10 +64,33 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string, format s
 		return newimg, types.ImageMetadata{}, nil
 	}
 
+	clut, err := GetOrCreateCLUT(theme, selectedTheme, level)
+	if err != nil {
+		return nil, types.ImageMetadata{}, err
+	}
+	if themeConv.Mode == ModeShading {
+		clut, _ = themeConv.buildOnce(func() (*image.RGBA, error) { return haldclut.KeepShading(clut, level), nil })
+	}
+	rgba := pixels.ToRGBA(img)
+	newImg := haldclut.ApplyCLUT(rgba, clut, level)
+
+	return newImg, types.ImageMetadata{}, nil
+}
+
+// buildOnce runs build on the first call and returns its result on every call, so the CLUT of ModeShading or
+// ModeMono is built once in memory and shared by every image of the conversion
+func (themeConv *ThemeConverter) buildOnce(build func() (*image.RGBA, error)) (*image.RGBA, error) {
+	themeConv.once.Do(func() { themeConv.clut, themeConv.err = build() })
+	return themeConv.clut, themeConv.err
+}
+
+// GetOrCreateCLUT loads the theme's CLUT from the cluts folder, generating and saving it first if it isn't there
+// The returned CLUT is shared, callers must not modify it
+func GetOrCreateCLUT(theme string, selectedTheme Theme, level int) (*image.RGBA, error) {
 	// hash colors to know if anything in the custom themes have changed
 	clrs, err := GetThemeColors(theme)
 	if err != nil {
-		return nil, types.ImageMetadata{}, err
+		return nil, err
 	}
 	hash := cpkg.HashPalette(clrs)
 	clutPath := fmt.Sprintf("%s_%s.png", theme, hash)
@@ -53,19 +103,19 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string, format s
 		identityClut, err := haldclut.GenerateIdentityCLUT(level)
 		if err != nil {
 			clutMutex.Unlock()
-			return nil, types.ImageMetadata{}, fmt.Errorf("could not generate Identity CLUT")
+			return nil, fmt.Errorf("could not generate Identity CLUT")
 		}
 		mapper := &haldclut.RBFMapper{}
 		palette, err := cpkg.ToRGBA(selectedTheme.Colors)
 		if err != nil {
 			clutMutex.Unlock()
-			return nil, types.ImageMetadata{}, fmt.Errorf("could not parse colors to RGBA")
+			return nil, fmt.Errorf("could not parse colors to RGBA")
 		}
 		modifiedClut := haldclut.InterpolateCLUT(identityClut, palette, level, mapper)
 		err = haldclut.SaveHaldCLUT(modifiedClut, filepath.Join(config.GowallConfig.OutputFolder, "cluts", clutPath))
 		if err != nil {
 			clutMutex.Unlock()
-			return nil, types.ImageMetadata{}, fmt.Errorf("while saving the CLUT: %w", err)
+			return nil, fmt.Errorf("while saving the CLUT: %w", err)
 		}
 
 	}
@@ -73,15 +123,12 @@ func (themeConv *ThemeConverter) Process(img image.Image, theme string, format s
 
 	clut, err := haldclut.LoadCachedHaldCLUT(filepath.Join(config.GowallConfig.OutputFolder, "cluts", clutPath))
 	if err != nil {
-		return nil, types.ImageMetadata{}, fmt.Errorf("while loading CLUT: %w", err)
+		return nil, fmt.Errorf("while loading CLUT: %w", err)
 	}
 	if clut == nil {
-		return nil, types.ImageMetadata{}, fmt.Errorf("CLUT is nil even though is was loaded")
+		return nil, fmt.Errorf("CLUT is nil even though is was loaded")
 	}
-	rgba := pixels.ToRGBA(img)
-	newImg := haldclut.ApplyCLUT(rgba, clut, level)
-
-	return newImg, types.ImageMetadata{}, nil
+	return clut, nil
 }
 
 func NearestNeighbour(img image.Image, theme Theme) (image.Image, error) {

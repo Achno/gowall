@@ -6,6 +6,8 @@ import (
 	"image"
 	"image/color"
 	"math"
+
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 // ColorSimilarityWeight takes color.RGBA instead of color.Color, so calling it per pixel doesn't allocate
@@ -108,4 +110,25 @@ func LuminanceRange(imgs []*image.NRGBA) (float64, float64) {
 		return 0, 1
 	}
 	return lo, hi
+}
+
+// LabInGamut returns the CIELAB color l, a, b (as colorful.Lab takes them), or when that color can't be shown in sRGB,
+// the same lightness and hue with a and b scaled down to the most chroma that can. Very light and very dark colors can't
+// be as colorful as mid tones, so their chroma is reduced to fit instead of clamping the RGB channels, which would
+// also move the lightness and the hue.
+func LabInGamut(l, a, b float64) color.RGBA {
+	col := colorful.Lab(l, a, b)
+	if !col.IsValid() {
+		lo, hi := 0.0, 1.0
+		for range 12 {
+			if mid := (lo + hi) / 2; colorful.Lab(l, a*mid, b*mid).IsValid() {
+				lo = mid
+			} else {
+				hi = mid
+			}
+		}
+		col = colorful.Lab(l, a*lo, b*lo).Clamped()
+	}
+	r, g, bl := col.RGB255()
+	return color.RGBA{r, g, bl, 255}
 }

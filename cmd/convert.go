@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Achno/gowall/config"
+	cpkg "github.com/Achno/gowall/internal/backends/color"
 	"github.com/Achno/gowall/internal/image"
 	imageio "github.com/Achno/gowall/internal/image_io"
 	"github.com/Achno/gowall/internal/logger"
@@ -30,13 +31,20 @@ func BuildConvertCmd() *cobra.Command {
 	var (
 		theme     string
 		colorPair []string
+		mode      string
+		monoColor string
 	)
 
 	flags.StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName] or [PATH to Json file containing theme]")
 	flags.StringVarP(&shared.Format, "format", "f", "", "Usage : --format [image format] png,webp,jpg,jpeg")
 	flags.StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
+	flags.StringVarP(&mode, "mode", "m", image.ModeNormal, "Usage: --mode normal|shading|mono, shading keeps every pixel's lightness and takes the --theme colors, mono keeps it and uses one --color")
+	flags.StringVarP(&monoColor, "color", "c", "", "Usage: --mode mono --color #cba6f7, the color mono mode uses")
 
 	cmd.RegisterFlagCompletionFunc("theme", themeCompletion)
+	cmd.RegisterFlagCompletionFunc("mode", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{image.ModeNormal, image.ModeShading, image.ModeMono}, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	addGlobalFlags(cmd)
 
@@ -51,12 +59,16 @@ func RunConvertCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	colorPair, err := cmd.Flags().GetStringSlice("replace")
 	utils.HandleError(err, "Error")
+	mode, err := cmd.Flags().GetString("mode")
+	utils.HandleError(err, "Error")
+	monoColor, err := cmd.Flags().GetString("color")
+	utils.HandleError(err, "Error")
 
 	var processor image.ImageProcessor
 
 	// Determine which processor to use
-	if len(theme) > 0 {
-		processor = &image.ThemeConverter{}
+	if len(theme) > 0 || mode == image.ModeMono {
+		processor = &image.ThemeConverter{Mode: mode, Color: monoColor}
 	} else if len(colorPair) > 0 {
 		logger.Print("Replacing color...")
 		processor = &image.ReplaceProcessor{}
@@ -101,6 +113,31 @@ func ValidateParseConvertCmd(cmd *cobra.Command, flags config.GlobalSubCommandFl
 
 	if len(theme) > 0 && len(colorPair) > 0 {
 		return fmt.Errorf("cannot use both the --theme and --replace flags together")
+	}
+
+	mode, _ := cmd.Flags().GetString("mode")
+	monoColor, _ := cmd.Flags().GetString("color")
+
+	switch mode {
+	case image.ModeNormal, image.ModeShading:
+		if cmd.Flags().Changed("mode") && len(theme) == 0 {
+			return fmt.Errorf("--mode %s needs a --theme", mode)
+		}
+		if len(monoColor) > 0 {
+			return fmt.Errorf("--color is only used with --mode mono")
+		}
+	case image.ModeMono:
+		if len(monoColor) == 0 {
+			return fmt.Errorf("--mode mono needs a --color, ie --color #cba6f7")
+		}
+		if _, err := cpkg.HexToRGBA(monoColor); err != nil {
+			return fmt.Errorf("--color %s is not a hex color: %w", monoColor, err)
+		}
+		if len(theme) > 0 || len(colorPair) > 0 {
+			return fmt.Errorf("--mode mono uses --color only, it cannot be used with --theme or --replace")
+		}
+	default:
+		return fmt.Errorf("unknown --mode %s, use normal, shading or mono", mode)
 	}
 
 	return nil

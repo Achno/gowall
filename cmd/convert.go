@@ -38,12 +38,12 @@ func BuildConvertCmd() *cobra.Command {
 	flags.StringVarP(&theme, "theme", "t", "", "Usage : --theme [ThemeName] or [PATH to Json file containing theme]")
 	flags.StringVarP(&shared.Format, "format", "f", "", "Usage : --format [image format] png,webp,jpg,jpeg")
 	flags.StringSliceVarP(&colorPair, "replace", "r", nil, "Usage: --replace #FromColor,#ToColor")
-	flags.StringVarP(&mode, "mode", "m", image.ModeNormal, "Usage: --mode normal|shading|mono, shading keeps every pixel's lightness and takes the --theme colors, mono keeps it and uses one --color")
+	flags.StringVarP(&mode, "mode", "m", image.ModeShading, "Usage: --mode shading|normal|mono, shading keeps every pixel's lightness and takes the --theme colors, normal moves every color toward the --theme colors, mono keeps the lightness and uses one --color")
 	flags.StringVarP(&monoColor, "color", "c", "", "Usage: --mode mono --color #cba6f7, the color mono mode uses")
 
 	cmd.RegisterFlagCompletionFunc("theme", themeCompletion)
 	cmd.RegisterFlagCompletionFunc("mode", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{image.ModeNormal, image.ModeShading, image.ModeMono}, cobra.ShellCompDirectiveNoFileComp
+		return []string{image.ModeShading, image.ModeNormal, image.ModeMono}, cobra.ShellCompDirectiveNoFileComp
 	})
 
 	addGlobalFlags(cmd)
@@ -63,6 +63,11 @@ func RunConvertCmd(cmd *cobra.Command, args []string) {
 	utils.HandleError(err, "Error")
 	monoColor, err := cmd.Flags().GetString("color")
 	utils.HandleError(err, "Error")
+
+	// the nn backend set in the config has no shading, so it keeps using the normal mode unless --mode is given
+	if !cmd.Flags().Changed("mode") && config.GowallConfig.ColorCorrectionBackend == "nn" {
+		mode = image.ModeNormal
+	}
 
 	var processor image.ImageProcessor
 
@@ -137,7 +142,7 @@ func ValidateParseConvertCmd(cmd *cobra.Command, flags config.GlobalSubCommandFl
 			return fmt.Errorf("--mode mono uses --color only, it cannot be used with --theme or --replace")
 		}
 	default:
-		return fmt.Errorf("unknown --mode %s, use normal, shading or mono", mode)
+		return fmt.Errorf("unknown --mode %s, use shading, normal or mono", mode)
 	}
 
 	return nil

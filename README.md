@@ -223,3 +223,33 @@ The following are **third-party projects** built by the community that extend or
 # Special Thanks
 
 Special thanks to [lutgen](https://github.com/ozwaldorf/lutgen-rs) for the original implementation of the color correction algorithm which i adapted for this project.
+
+### MiniCPM-OCR
+
+MiniCPM-OCR supports Chinese and English only. Serve the model with vLLM and use the existing `vllm` provider (`http://localhost:8000/v1` by default). `raw_prompt` sends the prompt verbatim; `--uprompt` alone still goes through prompt building. `openai_options.extra` passes server-specific fields. A truncated completion (`finish_reason: length`) is still returned, with a warning. PDF pages are rendered to images first, which is whole-page recognition rather than MiniCPM-OCR's layout detection and crop pipeline. This example was not run against a real MiniCPM-OCR server.
+
+`~/.config/gowall/schema.yml`:
+
+```yaml
+schemas:
+  - name: minicpm
+    config:
+      ocr:
+        provider: vllm
+        model: <served-name>
+        prompt: "Text Recognition:"
+        raw_prompt: true
+      openai_options:
+        max_tokens: 8192
+        temperature: 0.01
+        extra:
+          top_k: 1
+          top_p: 0.001
+          no_repeat_ngram_size: 100
+          chat_template_kwargs:
+            enable_thinking: false
+```
+
+```sh
+gowall ocr scan.pdf --schema minicpm
+```

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Achno/gowall/config"
 	imageio "github.com/Achno/gowall/internal/image_io"
@@ -21,6 +22,9 @@ type UpscaleProcessor struct {
 
 func (p *UpscaleProcessor) Process(img image.Image, theme string, format string) (image.Image, types.ImageMetadata, error) {
 	destFolder := filepath.Join(config.GowallConfig.OutputFolder, "upscaler")
+	if runtime.GOOS == "freebsd" {
+		destFolder = filepath.Join("/usr/local", "bin")
+	}
 	// setup upscaler if it has not been already
 	if _, err := os.Stat(destFolder); os.IsNotExist(err) {
 
@@ -35,6 +39,7 @@ func (p *UpscaleProcessor) Process(img image.Image, theme string, format string)
 		"windows": "realesrgan-ncnn-vulkan.exe",
 		"darwin":  "realesrgan-ncnn-vulkan",
 		"linux":   "realesrgan-ncnn-vulkan",
+		"freebsd": "realesrgan-ncnn-vulkan",
 	}
 
 	binary, err := utils.FindBinary(binaryNames, destFolder)

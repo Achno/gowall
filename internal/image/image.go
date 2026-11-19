@@ -74,6 +74,10 @@ func OpenImageInViewer(filePath string) error {
 		return cmd.Run()
 	}
 
+	if terminal.IsTermimgRunning() {
+		return terminal.RenderKittyImg(filePath)
+	}
+
 	if terminal.IsKittyTerminalRunning() {
 		cmd = exec.Command("kitty", "icat", filePath)
 		cmd.Stdout = os.Stdout

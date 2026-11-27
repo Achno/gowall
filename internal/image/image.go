@@ -49,7 +49,7 @@ func OpenGifInViewer(filePath string) error {
 		return nil
 	}
 
-	cmd := exec.Command("kitty", "icat", "--image-id", config.GifPreviewImageID, filePath)
+	cmd := exec.Command("kitty", "icat", "--fit", "both", "--image-id", config.GifPreviewImageID, filePath)
 	cmd.Stdout = os.Stdout
 
 	return cmd.Run()
@@ -75,7 +75,7 @@ func OpenImageInViewer(filePath string) error {
 	}
 
 	if terminal.IsKittyTerminalRunning() {
-		cmd = exec.Command("kitty", "icat", filePath)
+		cmd = exec.Command("kitty", "icat", "--fit", "both", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()
@@ -84,7 +84,7 @@ func OpenImageInViewer(filePath string) error {
 	isKonsoleOrGhostty := terminal.IsKonsoleTerminalRunning() || terminal.IsGhosttyTerminalRunning()
 
 	if isKonsoleOrGhostty && terminal.HasIcat() && !config.GowallConfig.InlineImagePreview {
-		cmd = exec.Command("kitty", "icat", filePath)
+		cmd = exec.Command("kitty", "icat", "--fit", "both", filePath)
 		cmd.Stdout = os.Stdout
 
 		return cmd.Run()

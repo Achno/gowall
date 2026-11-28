@@ -78,8 +78,7 @@ func (g *GeminiProvider) GetConfig() Config {
 }
 
 func (g *GeminiProvider) InputToMessages(input OCRInput) ([]*genai.Part, error) {
-	prompt := g.config.OCR.Prompt
-	prompt = BuildPrompt(prompt, g.config.OCR.AppendPrompt, input.Filename, g.config.OCR.Format)
+	prompt := ResolvePrompt(g.config.OCR, input.Filename)
 
 	switch input.Type {
 	case InputTypeImage:
